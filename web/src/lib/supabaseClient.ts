@@ -20,7 +20,7 @@ export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
 // Test connection function
 export const testConnection = async () => {
   try {
-    const { data, error } = await supabase.from('devices').select('count').limit(1)
+    const { error } = await supabase.from('devices').select('count').limit(1)
     if (error) {
       console.error('Supabase connection test failed:', error)
       return false
