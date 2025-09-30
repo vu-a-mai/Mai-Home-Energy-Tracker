@@ -390,54 +390,54 @@ export default function Dashboard() {
       )}
 
       {/* Header */}
-      <header className="mb-8 p-8 energy-header-gradient rounded-2xl text-white shadow-xl energy-glow">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold energy-pulse">
+      <header className="mb-6 md:mb-8 p-4 md:p-8 energy-header-gradient rounded-2xl text-white shadow-xl energy-glow">
+        <div className="flex items-center justify-between mb-4 md:mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold energy-pulse">
             ⚡ Energy Dashboard
           </h1>
         </div>
         
-        <div className="flex items-center gap-4">
-          <span className="text-base font-semibold opacity-90 whitespace-nowrap">Current Rate:</span>
-          <div className="flex items-center gap-4 flex-1">
+        <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+          <span className="text-sm md:text-base font-semibold opacity-90 whitespace-nowrap">Current Rate:</span>
+          <div className="grid grid-cols-2 md:flex md:items-center gap-2 md:gap-4 flex-1">
             {/* Off-Peak */}
-            <div className={`flex-1 px-4 py-2.5 rounded-lg transition-all flex items-center justify-center gap-2 ${
+            <div className={`flex-1 px-2 md:px-4 py-2 md:py-2.5 rounded-lg transition-all flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 ${
               currentRate.name === 'Off-Peak' 
                 ? 'bg-green-500 text-white font-bold shadow-lg ring-2 ring-white/50' 
                 : 'bg-white/20 text-white/80 border border-white/30'
             }`}>
               <span className="text-base">🟢</span>
-              <span className="text-sm whitespace-nowrap">Off-Peak</span>
+              <span className="text-xs md:text-sm whitespace-nowrap">Off-Peak</span>
               <span className="text-xs opacity-80">$0.25/kWh</span>
             </div>
             {/* Mid-Peak */}
-            <div className={`flex-1 px-4 py-2.5 rounded-lg transition-all flex items-center justify-center gap-2 ${
+            <div className={`flex-1 px-2 md:px-4 py-2 md:py-2.5 rounded-lg transition-all flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 ${
               currentRate.name === 'Mid-Peak' 
                 ? 'bg-yellow-500 text-white font-bold shadow-lg ring-2 ring-white/50' 
                 : 'bg-white/20 text-white/80 border border-white/30'
             }`}>
               <span className="text-base">🟡</span>
-              <span className="text-sm whitespace-nowrap">Mid-Peak</span>
+              <span className="text-xs md:text-sm whitespace-nowrap">Mid-Peak</span>
               <span className="text-xs opacity-80">$0.37/kWh</span>
             </div>
             {/* On-Peak */}
-            <div className={`flex-1 px-4 py-2.5 rounded-lg transition-all flex items-center justify-center gap-2 ${
+            <div className={`flex-1 px-2 md:px-4 py-2 md:py-2.5 rounded-lg transition-all flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 ${
               currentRate.name === 'On-Peak' 
                 ? 'bg-red-500 text-white font-bold shadow-lg ring-2 ring-white/50' 
                 : 'bg-white/20 text-white/80 border border-white/30'
             }`}>
               <span className="text-base">🔴</span>
-              <span className="text-sm whitespace-nowrap">On-Peak</span>
+              <span className="text-xs md:text-sm whitespace-nowrap">On-Peak</span>
               <span className="text-xs opacity-80">$0.55/kWh</span>
             </div>
             {/* Super Off-Peak */}
-            <div className={`flex-1 px-4 py-2.5 rounded-lg transition-all flex items-center justify-center gap-2 ${
+            <div className={`flex-1 px-2 md:px-4 py-2 md:py-2.5 rounded-lg transition-all flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 ${
               currentRate.name === 'Super Off-Peak' 
                 ? 'bg-blue-500 text-white font-bold shadow-lg ring-2 ring-white/50' 
                 : 'bg-white/20 text-white/80 border border-white/30'
             }`}>
               <span className="text-base">🔵</span>
-              <span className="text-sm whitespace-nowrap">Super Off-Peak</span>
+              <span className="text-xs md:text-sm whitespace-nowrap">Super Off-Peak</span>
               <span className="text-xs opacity-80">$0.24/kWh</span>
             </div>
           </div>
