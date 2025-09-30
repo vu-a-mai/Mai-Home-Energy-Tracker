@@ -4,9 +4,9 @@ import type { ReactNode } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../hooks/useAuth'
 import { useDemoMode } from './DemoContext'
-import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription'
-import { useCache } from '../hooks/useCache'
-import { MockDataService } from '../services/mockDataService'
+// import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription'
+// import { useCache } from '../hooks/useCache'
+// import { MockDataService } from '../services/mockDataService'
 import { demoEnergyLogs, demoDevices } from '../demo/demoData'
 
 export interface EnergyLog {

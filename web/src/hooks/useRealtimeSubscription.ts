@@ -25,20 +25,20 @@ export function useRealtimeSubscription({
 
   useEffect(() => {
     // Create channel name
-    const channelName = `realtime-${table}${filter ? `-${filter}` : ''}`
+    const channelName = `${table}-changes-${Date.now()}`
     
     // Create subscription
     channelRef.current = supabase
       .channel(channelName)
       .on(
-        'postgres_changes',
+        'postgres_changes' as any,
         {
           event: event,
           schema: 'public',
           table: table,
           ...(filter && { filter })
-        },
-        (payload) => {
+        } as any,
+        (payload: any) => {
           console.log(`Real-time ${payload.eventType} on ${table}:`, payload)
           
           // Call specific event handlers
@@ -58,7 +58,7 @@ export function useRealtimeSubscription({
           onChange?.(payload)
         }
       )
-      .subscribe((status) => {
+      .subscribe((status: any) => {
         console.log(`Subscription status for ${table}:`, status)
       })
 
