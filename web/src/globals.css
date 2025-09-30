@@ -1,0 +1,512 @@
+@import "tailwindcss";
+
+@layer theme {
+  :root {
+    /* Modern Dark Energy Theme Colors */
+    --color-background: 222 47% 8%; /* Deeper dark blue-gray */
+    --color-foreground: 213 31% 95%; /* Brighter light gray text */
+    --color-card: 224 44% 12%; /* Darker card background with subtle blue tint */
+    --color-card-foreground: 213 31% 95%;
+    --color-popover: 224 44% 12%;
+    --color-popover-foreground: 213 31% 95%;
+    --color-primary: 142 76% 42%; /* Brighter energy green */
+    --color-primary-foreground: 355 7% 97%;
+    --color-secondary: 215 28% 15%; /* Darker secondary */
+    --color-secondary-foreground: 213 31% 95%;
+    --color-muted: 215 28% 15%;
+    --color-muted-foreground: 217 10% 70%;
+    --color-accent: 142 76% 42%; /* Brighter energy accent */
+    --color-accent-foreground: 355 7% 97%;
+    --color-destructive: 0 84% 60%;
+    --color-destructive-foreground: 355 7% 97%;
+    --color-border: 215 28% 20%; /* Lighter border for better definition */
+    --color-input: 215 28% 15%;
+    --color-ring: 142 76% 42%;
+    
+    /* Enhanced Energy-specific colors */
+    --color-energy-off-peak: 142 76% 42%; /* Brighter Green */
+    --color-energy-mid-peak: 48 96% 58%; /* Brighter Yellow */
+    --color-energy-on-peak: 0 84% 65%; /* Brighter Red */
+    --color-energy-super-off-peak: 217 91% 65%; /* Brighter Blue */
+    
+    /* Energy gradient stops */
+    --energy-gradient-start: 142 76% 42%;
+    --energy-gradient-end: 158 64% 52%;
+    
+    /* Border radius */
+    --radius: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-md: calc(0.75rem - 2px);
+    --radius-sm: calc(0.75rem - 4px);
+    
+    /* Shadows for depth */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  }
+}
+
+/* Base styles */
+* {
+  border-color: hsl(var(--color-border));
+}
+
+body {
+  background-color: hsl(var(--color-background));
+  color: hsl(var(--color-foreground));
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Fix dropdown/select styling for dark theme */
+select {
+  background-color: hsl(var(--color-card));
+  color: hsl(var(--color-foreground));
+  border: 1px solid hsl(var(--color-border));
+}
+
+select option {
+  background-color: hsl(var(--color-card));
+  color: hsl(var(--color-foreground));
+  padding: 8px;
+}
+
+select option:hover,
+select option:focus,
+select option:checked {
+  background-color: hsl(var(--color-primary) / 0.2);
+  color: hsl(var(--color-foreground));
+}
+
+/* Input fields dark theme */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+textarea {
+  background-color: hsl(var(--color-card));
+  color: hsl(var(--color-foreground));
+  border: 1px solid hsl(var(--color-border));
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+textarea:focus {
+  outline: none;
+  border-color: hsl(var(--color-primary));
+  box-shadow: 0 0 0 2px hsl(var(--color-primary) / 0.2);
+}
+  
+  /* Custom scrollbar for dark theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+::-webkit-scrollbar-track {
+  background: hsl(var(--color-muted));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--color-border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--color-accent));
+}
+  
+/* Modern Energy-themed animations */
+@keyframes energy-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes energy-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px hsl(var(--color-primary) / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px hsl(var(--color-primary) / 0.6), 0 0 30px hsl(var(--color-primary) / 0.4);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.energy-pulse {
+  animation: energy-pulse 3s ease-in-out infinite;
+}
+
+.energy-glow {
+  animation: energy-glow 2s ease-in-out infinite;
+}
+
+.slide-up {
+  animation: slide-up 0.6s ease-out;
+}
+
+.fade-in {
+  animation: fade-in 0.4s ease-out;
+}
+
+/* Subtle rate period cards with glow effects */
+.energy-gradient-green {
+  background: hsl(var(--color-card));
+  border: 1px solid hsl(var(--color-energy-off-peak) / 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
+              0 0 0 1px hsl(var(--color-energy-off-peak) / 0.1),
+              0 0 15px hsl(var(--color-energy-off-peak) / 0.05);
+  color: hsl(var(--color-foreground));
+}
+
+.energy-gradient-yellow {
+  background: hsl(var(--color-card));
+  border: 1px solid hsl(var(--color-energy-mid-peak) / 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
+              0 0 0 1px hsl(var(--color-energy-mid-peak) / 0.1),
+              0 0 15px hsl(var(--color-energy-mid-peak) / 0.05);
+  color: hsl(var(--color-foreground));
+}
+
+.energy-gradient-red {
+  background: hsl(var(--color-card));
+  border: 1px solid hsl(var(--color-energy-on-peak) / 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
+              0 0 0 1px hsl(var(--color-energy-on-peak) / 0.1),
+              0 0 15px hsl(var(--color-energy-on-peak) / 0.05);
+  color: hsl(var(--color-foreground));
+}
+
+.energy-gradient-blue {
+  background: hsl(var(--color-card));
+  border: 1px solid hsl(var(--color-energy-super-off-peak) / 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3),
+              0 0 0 1px hsl(var(--color-energy-super-off-peak) / 0.1),
+              0 0 15px hsl(var(--color-energy-super-off-peak) / 0.05);
+  color: hsl(var(--color-foreground));
+}
+
+/* Hover effects for rate cards */
+.energy-gradient-green:hover {
+  border-color: hsl(var(--color-energy-off-peak) / 0.5);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4),
+              0 0 0 1px hsl(var(--color-energy-off-peak) / 0.2),
+              0 0 25px hsl(var(--color-energy-off-peak) / 0.1);
+}
+
+.energy-gradient-yellow:hover {
+  border-color: hsl(var(--color-energy-mid-peak) / 0.5);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4),
+              0 0 0 1px hsl(var(--color-energy-mid-peak) / 0.2),
+              0 0 25px hsl(var(--color-energy-mid-peak) / 0.1);
+}
+
+.energy-gradient-red:hover {
+  border-color: hsl(var(--color-energy-on-peak) / 0.5);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4),
+              0 0 0 1px hsl(var(--color-energy-on-peak) / 0.2),
+              0 0 25px hsl(var(--color-energy-on-peak) / 0.1);
+}
+
+.energy-gradient-blue:hover {
+  border-color: hsl(var(--color-energy-super-off-peak) / 0.5);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4),
+              0 0 0 1px hsl(var(--color-energy-super-off-peak) / 0.2),
+              0 0 25px hsl(var(--color-energy-super-off-peak) / 0.1);
+}
+
+/* Modern card styles - Subtle glow like login page */
+.energy-card {
+  background: hsl(var(--color-card));
+  border: 1px solid hsl(var(--color-primary) / 0.2);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3),
+              0 0 0 1px hsl(var(--color-primary) / 0.1),
+              0 0 20px hsl(var(--color-primary) / 0.05);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.energy-card:hover {
+  transform: translateY(-2px);
+  border-color: hsl(var(--color-primary) / 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+              0 0 0 1px hsl(var(--color-primary) / 0.3),
+              0 0 40px hsl(var(--color-primary) / 0.15);
+}
+
+/* Shimmer effect for energy cards */
+.energy-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  transition: left 0.7s;
+}
+
+.energy-card:hover::before {
+  left: 100%;
+}
+
+/* Header gradient - Subtle dark with glow */
+.energy-header-gradient {
+  background: linear-gradient(135deg, 
+    hsl(var(--color-card)) 0%, 
+    hsl(var(--color-muted)) 50%, 
+    hsl(var(--color-card)) 100%);
+  border: 1px solid hsl(var(--color-primary) / 0.3);
+  box-shadow: 0 0 20px hsl(var(--color-primary) / 0.1), 
+              0 0 40px hsl(var(--color-primary) / 0.05),
+              inset 0 1px 0 hsl(var(--color-primary) / 0.1);
+}
+
+/* Action button styles - Subtle with glow */
+.energy-action-btn {
+  background: linear-gradient(135deg, hsl(var(--color-primary) / 0.8) 0%, hsl(var(--color-primary) / 0.9) 100%);
+  border: 1px solid hsl(var(--color-primary) / 0.3);
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px hsl(var(--color-primary) / 0.2),
+              0 0 0 1px hsl(var(--color-primary) / 0.1);
+}
+
+.energy-action-btn:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, hsl(var(--color-primary) / 0.9) 0%, hsl(var(--color-primary)) 100%);
+  box-shadow: 0 4px 16px hsl(var(--color-primary) / 0.3),
+              0 0 0 1px hsl(var(--color-primary) / 0.2),
+              0 0 20px hsl(var(--color-primary) / 0.1);
+}
+
+/* Rate period indicators */
+.rate-indicator {
+  position: relative;
+  overflow: hidden;
+}
+
+.rate-indicator::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.5s;
+}
+
+.rate-indicator:hover::before {
+  left: 100%;
+}
+
+/* Subtle Quick Actions styling */
+.quick-actions-card {
+  background: hsl(var(--color-card));
+  border: 1px solid hsl(var(--color-primary) / 0.15);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
+              0 0 0 1px hsl(var(--color-primary) / 0.08),
+              0 0 15px hsl(var(--color-primary) / 0.03);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-actions-card:hover {
+  transform: translateY(-1px);
+  border-color: hsl(var(--color-primary) / 0.25);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3),
+              0 0 0 1px hsl(var(--color-primary) / 0.15),
+              0 0 25px hsl(var(--color-primary) / 0.08);
+}
+
+/* Shimmer effect for quick actions */
+.quick-actions-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.5s;
+}
+
+.quick-actions-card:hover::before {
+  left: 100%;
+}
+
+/* Subtle background for sections */
+.energy-section-bg {
+  background: linear-gradient(135deg, 
+    hsl(var(--color-background)) 0%, 
+    hsl(var(--color-card) / 0.3) 50%, 
+    hsl(var(--color-background)) 100%);
+}
+
+/* Enhanced hover effects for interactive elements */
+.hover-glow {
+  transition: all 0.3s ease;
+  border: 1px solid hsl(var(--color-border));
+  position: relative;
+  overflow: hidden;
+}
+
+.hover-glow:hover {
+  transform: translateY(-1px);
+  border-color: hsl(var(--color-primary) / 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3),
+              0 0 0 1px hsl(var(--color-primary) / 0.2),
+              0 0 25px hsl(var(--color-primary) / 0.1);
+}
+
+/* Shimmer effect for general hover elements */
+.hover-glow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.5s;
+}
+
+.hover-glow:hover::before {
+  left: 100%;
+}
+
+/* Navigation items hover effect */
+.nav-item-hover {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-item-hover:hover {
+  transform: translateY(-1px);
+  text-shadow: 0 0 8px hsl(var(--color-primary) / 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
+              0 0 0 1px hsl(var(--color-primary) / 0.1),
+              0 0 15px hsl(var(--color-primary) / 0.05);
+}
+
+/* Shimmer effect for navigation items */
+.nav-item-hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  transition: left 0.4s;
+}
+
+.nav-item-hover:hover::before {
+  left: 100%;
+}
+
+/* Form input hover effects */
+.input-hover {
+  transition: all 0.3s ease;
+}
+
+.input-hover:hover, .input-hover:focus {
+  border-color: hsl(var(--color-primary) / 0.4);
+  box-shadow: 0 0 0 1px hsl(var(--color-primary) / 0.1),
+              0 0 15px hsl(var(--color-primary) / 0.05);
+}
+
+/* Chart container hover effects */
+.chart-hover {
+  transition: all 0.3s ease;
+  border: 1px solid hsl(var(--color-border));
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-hover:hover {
+  border-color: hsl(var(--color-primary) / 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3),
+              0 0 0 1px hsl(var(--color-primary) / 0.1),
+              0 0 20px hsl(var(--color-primary) / 0.08);
+}
+
+/* Shimmer effect for charts */
+.chart-hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  transition: left 0.6s;
+}
+
+.chart-hover:hover::before {
+  left: 100%;
+}
+
+/* Statistics card hover effects */
+.stats-card-hover {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-card-hover:hover {
+  transform: translateY(-2px) scale(1.02);
+  border-color: hsl(var(--color-primary) / 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
+              0 0 0 1px hsl(var(--color-primary) / 0.2),
+              0 0 30px hsl(var(--color-primary) / 0.12);
+}
+
+/* Shimmer effect for stats cards */
+.stats-card-hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.5s;
+}
+
+.stats-card-hover:hover::before {
+  left: 100%;
+}
