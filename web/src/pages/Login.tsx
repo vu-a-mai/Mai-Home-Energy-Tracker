@@ -15,11 +15,12 @@ export default function Login() {
   const { enableDemoMode } = useDemoMode()
   const navigate = useNavigate()
 
-  const predefinedUsers = [
-    { email: 'Vu@maihome.com', password: 'password123', name: 'Vu Mai' },
-    { email: 'Thuy@maihome.com', password: 'password123', name: 'Thuy Mai' },
-    { email: 'Vy@maihome.com', password: 'password123', name: 'Vy Mai' },
-    { email: 'Han@maihome.com', password: 'password123', name: 'Han Mai' }
+  // Predefined household members (names only for display)
+  const householdMembers = [
+    { name: 'Vu Mai' },
+    { name: 'Thuy Mai' },
+    { name: 'Vy Mai' },
+    { name: 'Han Mai' }
   ]
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,10 +42,6 @@ export default function Login() {
     }
   }
 
-  const handleQuickLogin = (userEmail: string, userPassword: string) => {
-    setEmail(userEmail)
-    setPassword(userPassword)
-  }
 
   const handleViewDemo = () => {
     enableDemoMode()
@@ -132,26 +129,12 @@ export default function Login() {
               🏠 Mai Family Accounts
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Click on any family member to quick-fill the login form:
+              Household members: {householdMembers.map(m => m.name).join(', ')}
             </p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {predefinedUsers.map((user, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => handleQuickLogin(user.email, user.password)}
-                  className="bg-card border-2 border-border rounded-lg p-3 cursor-pointer transition-all duration-200 text-left hover:border-primary hover:-translate-y-1 hover:shadow-md"
-                >
-                  <div className="font-semibold text-foreground text-sm mb-1">
-                    {user.name}
-                  </div>
-                  <div className="text-muted-foreground text-xs">
-                    {user.email}
-                  </div>
-                </button>
-              ))}
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Enter your credentials to access your household's energy data.
+            </p>
           </div>
 
           {/* View Demo Button */}

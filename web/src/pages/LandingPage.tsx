@@ -19,15 +19,14 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="text-center py-20 px-5 slide-up">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-6xl font-extrabold mb-6 text-foreground energy-pulse">
+          <h1 className="text-5xl md:text-6xl font-extrabold mb-4 text-foreground energy-pulse leading-tight">
             Smart Energy Management
           </h1>
-          <h2 className="text-3xl mb-8 font-normal text-muted-foreground">
+          <h2 className="text-2xl md:text-3xl mb-8 font-normal text-muted-foreground">
             for the Mai Family
           </h2>
-          <p className="text-xl max-w-2xl mx-auto mb-12 leading-relaxed text-muted-foreground">
-            Track household energy usage, calculate costs with TOU-D-PRIME rates, 
-            and fairly split electricity bills between family members.
+          <p className="text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed text-muted-foreground px-4">
+            Track household energy usage, calculate costs with TOU-D-PRIME rates, and fairly split electricity bills between family members.
           </p>
           <Link 
             to="/login"
@@ -88,10 +87,10 @@ export default function LandingPage() {
       {/* Rate Information */}
       <section className="py-20 px-5 bg-card slide-up">
         <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-6 text-foreground">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-foreground">
             TOU-D-PRIME Rate Structure
           </h2>
-          <p className="text-xl mb-12 text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl mb-12 text-muted-foreground max-w-2xl mx-auto px-4">
             Our system automatically detects the correct rate period based on time and season
           </p>
           
@@ -130,15 +129,15 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section className="py-20 px-5 energy-header-gradient text-center text-white slide-up">
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-4xl font-bold mb-6 energy-pulse">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 energy-pulse">
             Ready to Start Tracking?
           </h2>
-          <p className="text-xl mb-8 opacity-90 max-w-lg mx-auto">
+          <p className="text-lg md:text-xl mb-8 opacity-90 max-w-2xl mx-auto px-4 leading-relaxed">
             Join the Mai family in smart energy management. Login to access your personalized dashboard.
           </p>
           <Link 
             to="/login"
-            className="inline-flex items-center justify-center bg-white text-primary hover:bg-white/90 px-8 py-4 text-xl font-bold shadow-2xl rounded-lg transition-all duration-300"
+            className="inline-flex items-center justify-center bg-white text-primary hover:bg-white/90 px-8 py-4 text-lg md:text-xl font-bold shadow-2xl rounded-lg transition-all duration-300"
           >
             Login to Dashboard →
           </Link>
