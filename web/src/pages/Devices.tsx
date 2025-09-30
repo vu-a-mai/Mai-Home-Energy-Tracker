@@ -205,20 +205,20 @@ export default function Devices() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-5 min-h-screen bg-background text-foreground font-sans fade-in">
+    <div className="max-w-7xl mx-auto p-3 md:p-5 min-h-screen bg-background text-foreground font-sans fade-in">
       {/* Header */}
-      <header className="flex justify-between items-center mb-8 p-6 energy-header-gradient rounded-2xl text-white shadow-xl energy-glow">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 md:mb-8 p-4 md:p-6 energy-header-gradient rounded-2xl text-white shadow-xl energy-glow">
         <div>
-          <h1 className="text-3xl font-bold mb-2 energy-pulse">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 energy-pulse">
             🔌 Device Management
           </h1>
-          <p className="opacity-90">
+          <p className="opacity-90 text-sm md:text-base">
             Manage household devices and track energy consumption
           </p>
         </div>
         <Button
           onClick={() => setShowForm(true)}
-          className="energy-action-btn px-6 py-3 text-lg font-semibold"
+          className="energy-action-btn px-4 md:px-6 py-2 md:py-3 text-base md:text-lg font-semibold w-full md:w-auto"
         >
           + Add Device
         </Button>
