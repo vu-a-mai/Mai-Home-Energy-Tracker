@@ -805,13 +805,17 @@ export default function EnergyLogs() {
       {/* Energy Logs List - Compact with Expandable Details */}
       <section className="space-y-3 slide-up">
         {paginatedLogs.map(log => {
-          // Calculate accurate usage with rate breakdown
+          // Use database cost and calculate rate breakdown for display
           const usageCalc = calculateUsageCost(
             log.device_wattage || 0,
             log.start_time,
             log.end_time,
             log.usage_date
           )
+          // Override with actual database cost
+          usageCalc.totalCost = log.calculated_cost
+          usageCalc.totalKwh = log.total_kwh
+          
           const isExpanded = expandedLog === log.id
           
           return (
