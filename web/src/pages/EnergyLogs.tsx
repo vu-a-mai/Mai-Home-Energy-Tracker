@@ -3,11 +3,13 @@ import { useEnergyLogs } from '../hooks/useEnergyLogs'
 import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
 import { useAuth } from '../hooks/useAuth'
+import { toast } from 'sonner'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card'
 import { BackupRestore } from '../components/BackupRestore'
 import { calculateUsageCost, getSeason } from '../utils/rateCalculator'
+import { validateDate, validateTimeRange, validateUsageDuration } from '../utils/validation'
 import type { BackupData } from '../utils/dataBackup'
 import { supabase } from '../lib/supabaseClient'
 
@@ -75,18 +77,40 @@ export default function EnergyLogs() {
   const validateForm = (): boolean => {
     const errors: Partial<EnergyLogFormData> = {}
     
-    if (!formData.device_id) errors.device_id = 'Device is required'
-    if (!formData.usage_date) errors.usage_date = 'Date is required'
-    if (!formData.start_time) errors.start_time = 'Start time is required'
-    if (!formData.end_time) errors.end_time = 'End time is required'
+    // Device validation
+    if (!formData.device_id) {
+      errors.device_id = 'Device is required'
+    }
     
+    // Date validation
+    if (!formData.usage_date) {
+      errors.usage_date = 'Date is required'
+    } else {
+      const dateValidation = validateDate(formData.usage_date)
+      if (!dateValidation.valid) {
+        errors.usage_date = dateValidation.error
+      }
+    }
+    
+    // Time validation
+    if (!formData.start_time) {
+      errors.start_time = 'Start time is required'
+    }
+    if (!formData.end_time) {
+      errors.end_time = 'End time is required'
+    }
+    
+    // Time range validation
     if (formData.start_time && formData.end_time) {
-      const start = new Date(`2000-01-01T${formData.start_time}`)
-      const end = new Date(`2000-01-01T${formData.end_time}`)
-      // Allow overnight usage (end time can be before start time if it crosses midnight)
-      // Only validate that they're not exactly the same
-      if (formData.start_time === formData.end_time) {
-        errors.end_time = 'End time must be different from start time'
+      const timeRangeValidation = validateTimeRange(formData.start_time, formData.end_time)
+      if (!timeRangeValidation.valid) {
+        errors.end_time = timeRangeValidation.error
+      }
+      
+      // Duration validation (warn if too long)
+      const durationValidation = validateUsageDuration(formData.start_time, formData.end_time)
+      if (durationValidation.error && durationValidation.error.includes('Warning')) {
+        toast.warning(durationValidation.error)
       }
     }
     
@@ -114,11 +138,13 @@ export default function EnergyLogs() {
           assigned_users: formData.assigned_users.length > 0 ? formData.assigned_users : undefined
         })
       }
+      toast.success(editingLog ? 'Energy log updated successfully!' : 'Energy log added successfully!')
       resetForm()
     } catch (err) {
       console.error(editingLog ? 'Error updating energy log:' : 'Error adding energy log:', err)
       const errorMessage = err instanceof Error ? err.message : `Failed to ${editingLog ? 'update' : 'add'} energy log. Please try again.`
       setSubmitError(errorMessage)
+      toast.error(errorMessage)
       // Don't close the form on error
     } finally {
       setSubmitting(false)
