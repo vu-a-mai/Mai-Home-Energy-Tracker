@@ -2,10 +2,14 @@ import { useState, useMemo } from 'react'
 import { useEnergyLogs } from '../hooks/useEnergyLogs'
 import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
+import { useAuth } from '../hooks/useAuth'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card'
+import { BackupRestore } from '../components/BackupRestore'
 import { calculateUsageCost, getSeason } from '../utils/rateCalculator'
+import type { BackupData } from '../utils/dataBackup'
+import { supabase } from '../lib/supabaseClient'
 
 interface EnergyLogFormData {
   device_id: string
@@ -39,9 +43,10 @@ const getDeviceIcon = (deviceName: string): string => {
 }
 
 export default function EnergyLogs() {
-  const { energyLogs, loading, addEnergyLog, updateEnergyLog, deleteEnergyLog, getTotalUsage } = useEnergyLogs()
-  const { devices } = useDevices()
+  const { energyLogs, loading, addEnergyLog, updateEnergyLog, deleteEnergyLog, getTotalUsage, refreshEnergyLogs } = useEnergyLogs()
+  const { devices, refreshDevices } = useDevices()
   const { users: householdUsers } = useHouseholdUsers()
+  const { user } = useAuth()
   const [showForm, setShowForm] = useState(false)
   const [expandedLog, setExpandedLog] = useState<string | null>(null)
   const [editingLog, setEditingLog] = useState<string | null>(null)
@@ -211,6 +216,55 @@ export default function EnergyLogs() {
     setShowForm(true)
   }
 
+  // Handle restore from backup
+  const handleRestore = async (backupData: BackupData) => {
+    if (!user) throw new Error('User not authenticated')
+
+    try {
+      // Get user's household_id
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('household_id')
+        .eq('id', user.id)
+        .single()
+
+      if (userError) throw userError
+
+      // Restore devices first
+      for (const device of backupData.devices) {
+        const { error } = await supabase
+          .from('devices')
+          .upsert({
+            ...device,
+            household_id: userData.household_id,
+            created_by: user.id
+          })
+
+        if (error) console.error('Error restoring device:', error)
+      }
+
+      // Restore energy logs
+      for (const log of backupData.energyLogs) {
+        const { error } = await supabase
+          .from('energy_logs')
+          .upsert({
+            ...log,
+            household_id: userData.household_id,
+            created_by: user.id
+          })
+
+        if (error) console.error('Error restoring energy log:', error)
+      }
+
+      // Refresh data
+      await refreshDevices(false)
+      await refreshEnergyLogs()
+    } catch (error) {
+      console.error('Restore failed:', error)
+      throw error
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-96 text-xl text-muted-foreground">
@@ -238,6 +292,16 @@ export default function EnergyLogs() {
           + Log Usage
         </Button>
       </header>
+
+      {/* Backup & Restore */}
+      {user && (
+        <BackupRestore
+          devices={devices}
+          energyLogs={energyLogs}
+          householdId={user.id}
+          onRestore={handleRestore}
+        />
+      )}
 
       {/* Summary Statistics - Color Coded */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 slide-up">
