@@ -269,7 +269,17 @@ export default function Dashboard() {
         currentUserName: userNames[currentUserId],
         personalTotal,
         allUserTotals: userTotals,
-        totalHousehold: { kwh: totalKwh, cost: totalCost }
+        totalHousehold: { kwh: totalKwh, cost: totalCost },
+        sampleLogs: energyLogs.slice(0, 3).map(log => ({
+          device: (log as any).device_name,
+          assigned_users: (log as any).assigned_users,
+          created_by: log.created_by,
+          cost: (log as any).calculated_cost
+        })),
+        sampleDevices: devices.slice(0, 3).map(d => ({
+          name: d.name,
+          is_shared: d.is_shared
+        }))
       })
     }
     
