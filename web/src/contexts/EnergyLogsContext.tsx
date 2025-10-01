@@ -251,13 +251,13 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
-      // If time or date is being updated, recalculate cost
+      // If device, time, or date is being updated, recalculate cost
       let updateData = { ...updates }
-      if (updates.start_time || updates.end_time || updates.usage_date) {
+      if (updates.device_id || updates.start_time || updates.end_time || updates.usage_date) {
         const currentLog = energyLogs.find(log => log.id === id)
         if (currentLog) {
           const { cost, kwh } = await calculateEnergyCost(
-            currentLog.device_id,
+            updates.device_id || currentLog.device_id,
             updates.start_time || currentLog.start_time,
             updates.end_time || currentLog.end_time,
             updates.usage_date || currentLog.usage_date

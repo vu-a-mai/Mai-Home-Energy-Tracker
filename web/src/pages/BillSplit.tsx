@@ -3,6 +3,7 @@ import { useEnergyLogs } from '../hooks/useEnergyLogs'
 import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
 import { useDemoMode } from '../contexts/DemoContext'
+import { useBillSplits } from '../contexts/BillSplitContext'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card'
@@ -37,6 +38,7 @@ export default function BillSplit() {
   const { devices, refreshDevices } = useDevices()
   const { users: householdUsers } = useHouseholdUsers()
   const { isDemoMode } = useDemoMode()
+  const { billSplits: savedBillSplits, saveBillSplit, deleteBillSplit, loading: billSplitsLoading } = useBillSplits()
   
   // State for period-specific data
   const [periodLogs, setPeriodLogs] = useState<any[]>([])
@@ -61,8 +63,8 @@ export default function BillSplit() {
     totalAmount: isDemoMode ? 555 : 0 // Demo mode shows 555, live mode starts at 0
   })
   const [formErrors, setFormErrors] = useState<Partial<BillFormData>>({})
-  const [billSplits, setBillSplits] = useState<BillSplitData[]>([])
   const [showResults, setShowResults] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   // Auto-show results in demo mode only
   useEffect(() => {
@@ -108,6 +110,7 @@ export default function BillSplit() {
     // Calculate personal costs for each user (only from personal devices)
     const personalCosts: { [userId: string]: number } = {}
     let totalTrackedCosts = 0
+    let totalSharedDeviceCosts = 0
 
     // Initialize personal costs
     householdUsers.forEach(user => {
@@ -131,7 +134,8 @@ export default function BillSplit() {
         isSharedDevice,
         isPersonalDevice,
         cost: log.calculated_cost,
-        created_by: log.created_by
+        created_by: log.created_by,
+        assigned_users: log.assigned_users
       })
       
       if (device && isPersonalDevice) {
@@ -141,10 +145,25 @@ export default function BillSplit() {
         totalTrackedCosts += log.calculated_cost
         console.log('BillSplit - Added personal cost:', userId, log.calculated_cost)
       } else if (device && isSharedDevice) {
-        // Shared device - track the cost but don't assign to personal
-        // This will be part of the shared amount that gets split evenly
+        // Shared device - split cost among assigned users (or all users if no assignments)
+        const assignedUsers = log.assigned_users && log.assigned_users.length > 0 
+          ? log.assigned_users 
+          : householdUsers.map(u => u.id) // Default to all users if no assignments
+        
+        const costPerUser = log.calculated_cost / assignedUsers.length
+        
+        assignedUsers.forEach((userId: string) => {
+          personalCosts[userId] = (personalCosts[userId] || 0) + costPerUser
+        })
+        
         totalTrackedCosts += log.calculated_cost
-        console.log('BillSplit - Added shared cost:', log.calculated_cost)
+        totalSharedDeviceCosts += log.calculated_cost
+        console.log('BillSplit - Split shared device cost:', {
+          device: device.name,
+          totalCost: log.calculated_cost,
+          assignedUsers,
+          costPerUser
+        })
       }
     })
 
@@ -197,21 +216,51 @@ export default function BillSplit() {
     }
   }
 
-  const saveBillSplit = () => {
-    if (calculateBillSplit) {
-      setBillSplits(prev => [calculateBillSplit, ...prev])
+  const handleSaveBillSplit = async () => {
+    if (!calculateBillSplit) return
+    
+    setSaving(true)
+    try {
+      // Convert to database format
+      const userAllocations: any = {}
+      householdUsers.forEach(user => {
+        userAllocations[user.id] = {
+          personalCost: calculateBillSplit.personalCosts[user.id] || 0,
+          sharedCost: calculateBillSplit.sharedCost / householdUsers.length,
+          totalOwed: calculateBillSplit.finalAmounts[user.id] || 0
+        }
+      })
+      
+      await saveBillSplit({
+        billing_period_start: formData.startDate,
+        billing_period_end: formData.endDate,
+        total_bill_amount: formData.totalAmount,
+        user_allocations: userAllocations
+      })
+      
+      // Reset form
       setShowResults(false)
       setFormData({
         startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
         endDate: new Date().toISOString().split('T')[0],
         totalAmount: 0
       })
+    } catch (error) {
+      console.error('Error saving bill split:', error)
+      alert('Failed to save bill split. Please try again.')
+    } finally {
+      setSaving(false)
     }
   }
 
-  const deleteBillSplit = (index: number) => {
+  const handleDeleteBillSplit = async (id: string) => {
     if (confirm('Are you sure you want to delete this bill split?')) {
-      setBillSplits(prev => prev.filter((_, i) => i !== index))
+      try {
+        await deleteBillSplit(id)
+      } catch (error) {
+        console.error('Error deleting bill split:', error)
+        alert('Failed to delete bill split. Please try again.')
+      }
     }
   }
 
@@ -341,11 +390,12 @@ ${householdUsers.map(user =>
                     📄 Export
                   </Button>
                   <Button
-                    onClick={saveBillSplit}
+                    onClick={handleSaveBillSplit}
+                    disabled={saving}
                     size="sm"
                     className="energy-action-btn"
                   >
-                    💾 Save
+                    {saving ? '⏳ Saving...' : '💾 Save'}
                   </Button>
                 </div>
               </div>
@@ -453,7 +503,7 @@ ${householdUsers.map(user =>
       )}
 
       {/* Bill Split History */}
-      {billSplits.length > 0 && (
+      {savedBillSplits.length > 0 && (
         <section className="mb-6 slide-up">
           <Card className="energy-card">
             <CardHeader>
@@ -466,97 +516,102 @@ ${householdUsers.map(user =>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {billSplits.map((split, index) => (
-                  <Card key={index} className="bg-gradient-to-br from-muted/50 to-muted/30 border-border hover:border-primary/50 transition-all hover:shadow-lg">
-                    <CardContent className="p-5">
-                      {/* Header Section */}
-                      <div className="flex justify-between items-start mb-4 pb-4 border-b border-border/50">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-2xl">📅</span>
-                            <h4 className="font-bold text-foreground text-lg">
-                              {split.billingPeriod}
-                            </h4>
+                {savedBillSplits.map((split) => {
+                  const totalSharedCost = Object.values(split.user_allocations).reduce((sum, alloc) => sum + alloc.sharedCost, 0)
+                  
+                  return (
+                    <Card key={split.id} className="bg-gradient-to-br from-muted/50 to-muted/30 border-border hover:border-primary/50 transition-all hover:shadow-lg">
+                      <CardContent className="p-5">
+                        {/* Header Section */}
+                        <div className="flex justify-between items-start mb-4 pb-4 border-b border-border/50">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-2xl">📅</span>
+                              <h4 className="font-bold text-foreground text-lg">
+                                {split.billing_period_start} to {split.billing_period_end}
+                              </h4>
+                            </div>
+                            <p className="text-xs text-muted-foreground ml-8">
+                              Saved on {new Date(split.created_at).toLocaleDateString()}
+                            </p>
                           </div>
-                          <p className="text-xs text-muted-foreground ml-8">
-                            Saved on {new Date().toLocaleDateString()}
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <p className="text-xs text-muted-foreground mb-1">Total Bill</p>
+                              <Badge variant="off-peak" className="text-xl font-bold px-4 py-2">
+                                ${split.total_bill_amount.toFixed(2)}
+                              </Badge>
+                            </div>
+                            <Button
+                              onClick={() => handleDeleteBillSplit(split.id)}
+                              className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 px-3 py-2 h-auto text-sm transition-all hover:scale-105"
+                            >
+                              🗑️
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Shared Cost Info */}
+                        <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">🏠</span>
+                              <span className="text-sm font-semibold text-blue-400">Shared Amount</span>
+                            </div>
+                            <span className="text-lg font-bold text-blue-400">
+                              ${totalSharedCost.toFixed(2)}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1 ml-8">
+                            Base charges split equally among {householdUsers.length} members
                           </p>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground mb-1">Total Bill</p>
-                            <Badge variant="off-peak" className="text-xl font-bold px-4 py-2">
-                              ${split.totalBillAmount.toFixed(2)}
-                            </Badge>
-                          </div>
-                          <Button
-                            onClick={() => deleteBillSplit(index)}
-                            className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 px-3 py-2 h-auto text-sm transition-all hover:scale-105"
-                          >
-                            🗑️
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {/* Shared Cost Info */}
-                      <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl">🏠</span>
-                            <span className="text-sm font-semibold text-blue-400">Shared Amount</span>
-                          </div>
-                          <span className="text-lg font-bold text-blue-400">
-                            ${split.sharedCost.toFixed(2)}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1 ml-8">
-                          Base charges split equally among {householdUsers.length} members
-                        </p>
-                      </div>
-                      
-                      {/* Individual Allocations */}
-                      <div>
-                        <h5 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                          <span>👥</span>
-                          Individual Allocations
-                        </h5>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                          {householdUsers.map(user => {
-                            const userAmount = split.finalAmounts[user.id]
-                            const percentage = (userAmount / split.totalBillAmount) * 100
-                            return (
-                              <div 
-                                key={user.id} 
-                                className="bg-card/50 border border-border/50 rounded-lg p-3 hover:border-primary/50 transition-all"
-                              >
-                                <div className="flex items-center gap-2 mb-2">
-                                  <span className="text-xl">{getUserIcon(user.name)}</span>
-                                  <span className="font-semibold text-foreground text-sm">{user.name}</span>
-                                </div>
-                                <div className="space-y-1">
-                                  <div className="flex justify-between items-baseline">
-                                    <span className="text-xs text-muted-foreground">Amount:</span>
-                                    <span className="text-lg font-bold text-green-400">
-                                      ${userAmount.toFixed(2)}
-                                    </span>
+                        
+                        {/* Individual Allocations */}
+                        <div>
+                          <h5 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                            <span>👥</span>
+                            Individual Allocations
+                          </h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                            {householdUsers.map(user => {
+                              const userAllocation = split.user_allocations[user.id]
+                              if (!userAllocation) return null
+                              
+                              const percentage = (userAllocation.totalOwed / split.total_bill_amount) * 100
+                              return (
+                                <div 
+                                  key={user.id} 
+                                  className="bg-card/50 border border-border/50 rounded-lg p-3 hover:border-primary/50 transition-all"
+                                >
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-xl">{getUserIcon(user.name)}</span>
+                                    <span className="font-semibold text-foreground text-sm">{user.name}</span>
                                   </div>
-                                  <div className="flex justify-between items-baseline">
-                                    <span className="text-xs text-muted-foreground">Share:</span>
-                                    <span className="text-xs font-semibold text-yellow-400">
-                                      {percentage.toFixed(1)}%
-                                    </span>
-                                  </div>
-                                  {split.personalCosts[user.id] > 0 && (
-                                    <div className="flex justify-between items-baseline pt-1 border-t border-border/30">
-                                      <span className="text-xs text-muted-foreground">Personal:</span>
-                                      <span className="text-xs text-blue-400">
-                                        ${split.personalCosts[user.id].toFixed(2)}
+                                  <div className="space-y-1">
+                                    <div className="flex justify-between items-baseline">
+                                      <span className="text-xs text-muted-foreground">Amount:</span>
+                                      <span className="text-lg font-bold text-green-400">
+                                        ${userAllocation.totalOwed.toFixed(2)}
                                       </span>
                                     </div>
-                                  )}
+                                    <div className="flex justify-between items-baseline">
+                                      <span className="text-xs text-muted-foreground">Share:</span>
+                                      <span className="text-xs font-semibold text-yellow-400">
+                                        {percentage.toFixed(1)}%
+                                      </span>
+                                    </div>
+                                    {userAllocation.personalCost > 0 && (
+                                      <div className="flex justify-between items-baseline pt-1 border-t border-border/30">
+                                        <span className="text-xs text-muted-foreground">Personal:</span>
+                                        <span className="text-xs text-blue-400">
+                                          ${userAllocation.personalCost.toFixed(2)}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            )
+                              )
                           })}
                         </div>
                       </div>
@@ -570,7 +625,7 @@ ${householdUsers.map(user =>
       )}
 
       {/* Empty State */}
-      {!showResults && billSplits.length === 0 && (
+      {!showResults && savedBillSplits.length === 0 && (
         <section className="text-center py-20 slide-up">
           <div className="text-6xl mb-4 energy-pulse">💳</div>
           <h3 className="text-xl font-bold text-foreground mb-2">No bill splits yet</h3>
