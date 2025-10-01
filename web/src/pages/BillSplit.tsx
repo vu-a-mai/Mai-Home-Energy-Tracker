@@ -166,14 +166,6 @@ export default function BillSplit() {
       finalAmounts
     }
     
-    console.log('BillSplit - Final calculation:', {
-      totalTrackedCosts,
-      remainingAmount,
-      sharedCostPerUser,
-      personalCosts,
-      finalAmounts
-    })
-    
     return result
   }, [showResults, formData, periodLogs, devices, householdUsers])
 
