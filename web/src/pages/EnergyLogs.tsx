@@ -44,6 +44,16 @@ const getDeviceIcon = (deviceName: string): string => {
   return '🔌' // Default icon
 }
 
+// Helper function to get user icon
+const getUserIcon = (userName: string): string => {
+  const name = userName.toLowerCase()
+  if (name.includes('vu')) return '👨'
+  if (name.includes('thuy')) return '👩'
+  if (name.includes('vy')) return '👧'
+  if (name.includes('han')) return '👦'
+  return '👤'
+}
+
 export default function EnergyLogs() {
   const { energyLogs, loading, addEnergyLog, updateEnergyLog, deleteEnergyLog, getTotalUsage, refreshEnergyLogs } = useEnergyLogs()
   const { devices, refreshDevices } = useDevices()
@@ -832,6 +842,21 @@ export default function EnergyLogs() {
                     <span>({usageCalc.durationHours.toFixed(1)}h)</span>
                   </div>
                   
+                  {/* Show who used it */}
+                  {log.assigned_users && log.assigned_users.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1 mb-2">
+                      <span className="text-xs text-muted-foreground">Used by:</span>
+                      {log.assigned_users.map((userId: string) => {
+                        const assignedUser = householdUsers.find(u => u.id === userId)
+                        return assignedUser ? (
+                          <span key={userId} className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full">
+                            {getUserIcon(assignedUser.name)} {assignedUser.name}
+                          </span>
+                        ) : null
+                      })}
+                    </div>
+                  )}
+                  
                   <div className="flex flex-wrap items-center gap-1 mb-2">
                     {usageCalc.breakdown.map((period, idx) => (
                       <div key={idx} className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
@@ -888,6 +913,19 @@ export default function EnergyLogs() {
                         {getDeviceIcon(log.device_name || '')} {log.device_name || 'Unknown Device'}
                       </h4>
                       <span className="text-xs text-muted-foreground">{log.device_wattage}W</span>
+                      {/* Show who used it */}
+                      {log.assigned_users && log.assigned_users.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          {log.assigned_users.map((userId: string) => {
+                            const assignedUser = householdUsers.find(u => u.id === userId)
+                            return assignedUser ? (
+                              <span key={userId} className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full">
+                                {getUserIcon(assignedUser.name)} {assignedUser.name}
+                              </span>
+                            ) : null
+                          })}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span>📅 {new Date(log.usage_date + 'T00:00:00').toLocaleDateString()}</span>

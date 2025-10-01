@@ -137,30 +137,48 @@ export default function Dashboard() {
       return sum
     }, 0)
 
-    // Calculate per-user totals
+    // Calculate per-user totals based on assigned users and device ownership
     const userTotals: { [key: string]: { kwh: number, cost: number } } = {}
+    
     energyLogs.forEach(log => {
-      const userId = log.created_by || 'unknown'
-      if (!userTotals[userId]) {
-        userTotals[userId] = { kwh: 0, cost: 0 }
-      }
+      const device = devices.find(d => d.id === log.device_id)
       
-      // Calculate kWh
+      // Calculate kWh for this log
       let kwh = 0
       if (log.total_kwh) {
         kwh = log.total_kwh
-      } else {
-        const device = devices.find(d => d.id === log.device_id)
-        if (device) {
-          const startTime = new Date(`2000-01-01T${log.start_time}`)
-          const endTime = new Date(`2000-01-01T${log.end_time}`)
-          const hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)
-          kwh = (device.wattage / 1000) * hours
-        }
+      } else if (device) {
+        const startTime = new Date(`2000-01-01T${log.start_time}`)
+        const endTime = new Date(`2000-01-01T${log.end_time}`)
+        let hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)
+        if (hours < 0) hours += 24 // Handle overnight
+        kwh = (device.wattage / 1000) * hours
       }
       
-      userTotals[userId].kwh += kwh
-      userTotals[userId].cost += log.calculated_cost || 0
+      const cost = log.calculated_cost || 0
+      
+      // Determine who should be credited with this usage
+      if (device?.is_shared && log.assigned_users && log.assigned_users.length > 0) {
+        // Shared device with assigned users - split among them
+        const costPerUser = cost / log.assigned_users.length
+        const kwhPerUser = kwh / log.assigned_users.length
+        
+        log.assigned_users.forEach((userId: string) => {
+          if (!userTotals[userId]) {
+            userTotals[userId] = { kwh: 0, cost: 0 }
+          }
+          userTotals[userId].kwh += kwhPerUser
+          userTotals[userId].cost += costPerUser
+        })
+      } else {
+        // Personal device or no assigned users - credit to creator
+        const userId = log.created_by || 'unknown'
+        if (!userTotals[userId]) {
+          userTotals[userId] = { kwh: 0, cost: 0 }
+        }
+        userTotals[userId].kwh += kwh
+        userTotals[userId].cost += cost
+      }
     })
 
     // Map user IDs to names
@@ -237,11 +255,15 @@ export default function Dashboard() {
       }
     })
 
+    // Get current user's personal usage
+    const currentUserId = currentUser?.id || user?.id || 'unknown'
+    const personalTotal = userTotals[currentUserId] || { kwh: 0, cost: 0 }
+    
     return {
       personalUsage: {
-        daily: { kwh: totalKwh / 30, cost: totalCost / 30 },
-        weekly: { kwh: totalKwh / 4, cost: totalCost / 4 },
-        monthly: { kwh: totalKwh, cost: totalCost }
+        daily: { kwh: personalTotal.kwh / 30, cost: personalTotal.cost / 30 },
+        weekly: { kwh: personalTotal.kwh / 4, cost: personalTotal.cost / 4 },
+        monthly: { kwh: personalTotal.kwh, cost: personalTotal.cost }
       },
       householdUsage: {
         total: { kwh: totalKwh, cost: totalCost },
