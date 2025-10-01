@@ -181,13 +181,16 @@ export default function Dashboard() {
       }
     })
 
-    // Map user IDs to names
-    const userNames: { [key: string]: string } = {
-      'demo-user-vu': 'Vu',
-      'demo-user-thuy': 'Thuy',
-      'demo-user-vy': 'Vy',
-      'demo-user-han': 'Han'
-    }
+    // Map user IDs to names using household members
+    const userNames: { [key: string]: string } = {}
+    householdMembers.forEach(member => {
+      userNames[member.id] = member.name
+    })
+    // Add demo user mappings as fallback
+    userNames['demo-user-vu'] = 'Vu'
+    userNames['demo-user-thuy'] = 'Thuy'
+    userNames['demo-user-vy'] = 'Vy'
+    userNames['demo-user-han'] = 'Han'
 
     const members = Object.entries(userTotals).map(([userId, data]) => ({
       name: userNames[userId] || userId,
@@ -258,6 +261,17 @@ export default function Dashboard() {
     // Get current user's personal usage
     const currentUserId = currentUser?.id || user?.id || 'unknown'
     const personalTotal = userTotals[currentUserId] || { kwh: 0, cost: 0 }
+    
+    // Debug logging
+    if (import.meta.env.DEV) {
+      console.log('Dashboard Debug:', {
+        currentUserId,
+        currentUserName: userNames[currentUserId],
+        personalTotal,
+        allUserTotals: userTotals,
+        totalHousehold: { kwh: totalKwh, cost: totalCost }
+      })
+    }
     
     return {
       personalUsage: {
