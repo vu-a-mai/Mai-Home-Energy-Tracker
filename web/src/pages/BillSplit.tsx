@@ -124,27 +124,31 @@ export default function BillSplit() {
       
       // Check both is_shared (boolean) and sharing_type (text) for compatibility
       const isSharedDevice = device?.is_shared === true || (device as any)?.sharing_type === 'shared'
-      const isPersonalDevice = device?.is_shared === false || (device as any)?.sharing_type === 'personal'
       
-      if (device && isPersonalDevice) {
-        // Personal device - assign full cost to creator
-        const userId = log.created_by || householdUsers[0]?.id || 'unknown'
-        personalCosts[userId] = (personalCosts[userId] || 0) + log.calculated_cost
-        totalTrackedCosts += log.calculated_cost
-      } else if (device && isSharedDevice) {
-        // Shared device - split cost among assigned users (or all users if no assignments)
-        const assignedUsers = log.assigned_users && log.assigned_users.length > 0 
-          ? log.assigned_users 
-          : householdUsers.map(u => u.id) // Default to all users if no assignments
+      // If device is shared AND has assigned users, split among them
+      if (device && isSharedDevice && log.assigned_users && log.assigned_users.length > 0) {
+        const costPerUser = log.calculated_cost / log.assigned_users.length
         
-        const costPerUser = log.calculated_cost / assignedUsers.length
-        
-        assignedUsers.forEach((userId: string) => {
+        log.assigned_users.forEach((userId: string) => {
           personalCosts[userId] = (personalCosts[userId] || 0) + costPerUser
         })
         
         totalTrackedCosts += log.calculated_cost
         totalSharedDeviceCosts += log.calculated_cost
+      } else if (log.assigned_users && log.assigned_users.length > 0) {
+        // Has assigned users (personal device) - credit to assigned user(s)
+        const costPerUser = log.calculated_cost / log.assigned_users.length
+        
+        log.assigned_users.forEach((userId: string) => {
+          personalCosts[userId] = (personalCosts[userId] || 0) + costPerUser
+        })
+        
+        totalTrackedCosts += log.calculated_cost
+      } else {
+        // Fallback: no assigned users - credit to creator
+        const userId = log.created_by || householdUsers[0]?.id || 'unknown'
+        personalCosts[userId] = (personalCosts[userId] || 0) + log.calculated_cost
+        totalTrackedCosts += log.calculated_cost
       }
     })
 
