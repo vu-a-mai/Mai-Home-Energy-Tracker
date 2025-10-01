@@ -33,10 +33,14 @@ const getUserIcon = (userName: string): string => {
 }
 
 export default function BillSplit() {
-  const { energyLogs, getLogsByDateRange } = useEnergyLogs()
-  const { devices } = useDevices()
+  const { getLogsByDateRange } = useEnergyLogs()
+  const { devices, refreshDevices } = useDevices()
   const { users: householdUsers } = useHouseholdUsers()
   const { isDemoMode } = useDemoMode()
+  
+  // State for period-specific data
+  const [periodLogs, setPeriodLogs] = useState<any[]>([])
+  const [loadingLogs, setLoadingLogs] = useState(false)
   
   // Get current month's date range
   const getCurrentMonthRange = () => {
@@ -63,9 +67,11 @@ export default function BillSplit() {
   // Auto-show results in demo mode only
   useEffect(() => {
     if (isDemoMode && !showResults) {
+      const logs = getLogsByDateRange(formData.startDate, formData.endDate)
+      setPeriodLogs(logs)
       setShowResults(true)
     }
-  }, [isDemoMode])
+  }, [isDemoMode, formData.startDate, formData.endDate, getLogsByDateRange])
 
   const validateForm = (): boolean => {
     const errors: Partial<BillFormData> = {}
@@ -86,13 +92,22 @@ export default function BillSplit() {
 
   const calculateBillSplit = useMemo((): BillSplitData | null => {
     if (!showResults) return null
-
-    // Get logs for the billing period
-    const periodLogs = getLogsByDateRange(formData.startDate, formData.endDate)
     
-    // Calculate personal costs for each user
+    console.log('BillSplit - Calculating with:', {
+      periodLogsCount: periodLogs.length,
+      devicesCount: devices.length,
+      householdUsersCount: householdUsers.length,
+      devicesData: devices.map(d => ({
+        id: d.id,
+        name: d.name,
+        is_shared: d.is_shared,
+        sharing_type: (d as any).sharing_type
+      }))
+    })
+    
+    // Calculate personal costs for each user (only from personal devices)
     const personalCosts: { [userId: string]: number } = {}
-    let totalPersonalCosts = 0
+    let totalTrackedCosts = 0
 
     // Initialize personal costs
     householdUsers.forEach(user => {
@@ -103,25 +118,38 @@ export default function BillSplit() {
     periodLogs.forEach(log => {
       const device = devices.find(d => d.id === log.device_id)
       
-      if (device && !device.is_shared) {
+      // Check both is_shared (boolean) and sharing_type (text) for compatibility
+      const isSharedDevice = device?.is_shared === true || (device as any)?.sharing_type === 'shared'
+      const isPersonalDevice = device?.is_shared === false || (device as any)?.sharing_type === 'personal'
+      
+      // Debug logging
+      console.log('BillSplit - Processing log:', {
+        device_id: log.device_id,
+        device_name: device?.name,
+        is_shared: device?.is_shared,
+        sharing_type: (device as any)?.sharing_type,
+        isSharedDevice,
+        isPersonalDevice,
+        cost: log.calculated_cost,
+        created_by: log.created_by
+      })
+      
+      if (device && isPersonalDevice) {
         // Personal device - assign full cost to creator
         const userId = log.created_by || householdUsers[0]?.id || 'unknown'
         personalCosts[userId] = (personalCosts[userId] || 0) + log.calculated_cost
-        totalPersonalCosts += log.calculated_cost
-      } else if (device && device.is_shared) {
-        // Shared device - split cost among users who actually used it
-        const assignedUsers = log.assigned_users || [log.created_by]
-        const costPerUser = log.calculated_cost / assignedUsers.length
-        
-        assignedUsers.forEach(userId => {
-          personalCosts[userId] = (personalCosts[userId] || 0) + costPerUser
-          totalPersonalCosts += costPerUser
-        })
+        totalTrackedCosts += log.calculated_cost
+        console.log('BillSplit - Added personal cost:', userId, log.calculated_cost)
+      } else if (device && isSharedDevice) {
+        // Shared device - track the cost but don't assign to personal
+        // This will be part of the shared amount that gets split evenly
+        totalTrackedCosts += log.calculated_cost
+        console.log('BillSplit - Added shared cost:', log.calculated_cost)
       }
     })
 
     // Remaining amount after all logged usage is split evenly (base charges, taxes, etc.)
-    const remainingAmount = Math.max(0, formData.totalAmount - totalPersonalCosts)
+    const remainingAmount = Math.max(0, formData.totalAmount - totalTrackedCosts)
     const sharedCostPerUser = remainingAmount / householdUsers.length
 
     // Calculate final amounts owed by each user
@@ -130,19 +158,43 @@ export default function BillSplit() {
       finalAmounts[user.id] = personalCosts[user.id] + sharedCostPerUser
     })
 
-    return {
+    const result = {
       billingPeriod: `${formData.startDate} to ${formData.endDate}`,
       totalBillAmount: formData.totalAmount,
       personalCosts,
       sharedCost: remainingAmount,
       finalAmounts
     }
-  }, [showResults, formData, energyLogs, devices, householdUsers, getLogsByDateRange])
+    
+    console.log('BillSplit - Final calculation:', {
+      totalTrackedCosts,
+      remainingAmount,
+      sharedCostPerUser,
+      personalCosts,
+      finalAmounts
+    })
+    
+    return result
+  }, [showResults, formData, periodLogs, devices, householdUsers])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateForm()) return
-    setShowResults(true)
+    
+    // Force refresh devices to clear cache and get latest data
+    await refreshDevices(false) // false = bypass cache
+    
+    // Fetch logs for the billing period
+    setLoadingLogs(true)
+    try {
+      const logs = getLogsByDateRange(formData.startDate, formData.endDate)
+      setPeriodLogs(logs)
+      setShowResults(true)
+    } catch (error) {
+      console.error('Error fetching logs:', error)
+    } finally {
+      setLoadingLogs(false)
+    }
   }
 
   const saveBillSplit = () => {

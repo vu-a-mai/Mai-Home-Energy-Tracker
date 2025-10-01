@@ -29,7 +29,7 @@ interface DeviceContextType {
   addDevice: (device: Omit<Device, 'id' | 'kwh_per_hour' | 'household_id' | 'created_by' | 'created_at'>) => Promise<void>
   updateDevice: (id: string, updates: Partial<Device>) => Promise<void>
   deleteDevice: (id: string) => Promise<void>
-  refreshDevices: () => Promise<void>
+  refreshDevices: (useCache?: boolean) => Promise<void>
 }
 
 const DeviceContext = createContext<DeviceContextType | undefined>(undefined)
@@ -50,13 +50,6 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
       // Use demo data if in demo mode
       if (isDemoMode) {
         const deviceData = demoDevices.map(device => {
-          // Determine if device is personal based on name
-          const isPersonal = device.name.includes("'s") || 
-                            device.name.includes("Vu's") ||
-                            device.name.includes("Thuy's") ||
-                            device.name.includes("Vy's") ||
-                            device.name.includes("Han's")
-          
           // Determine owner based on device name
           let owner = 'demo-user-vu'
           if (device.name.includes("Thuy's")) owner = 'demo-user-thuy'
@@ -65,10 +58,8 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
           
           return {
             ...device,
-            device_type: 'Other',
-            location: 'Living Room',
             kwh_per_hour: device.wattage / 1000,
-            is_shared: !isPersonal,
+            // Use is_shared from demo data (already correctly set)
             created_by: owner
           }
         })
