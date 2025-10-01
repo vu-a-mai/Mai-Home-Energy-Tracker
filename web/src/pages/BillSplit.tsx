@@ -612,12 +612,13 @@ ${householdUsers.map(user =>
                                   </div>
                                 </div>
                               )
-                          })}
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             </CardContent>
           </Card>
