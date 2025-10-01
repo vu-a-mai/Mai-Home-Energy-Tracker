@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { useDemoMode } from './contexts/DemoContext'
+import { Toaster } from 'sonner'
 import NavBar from './components/NavBar'
 import LandingPage from './pages/LandingPage'
 import Dashboard from './pages/Dashboard'
@@ -37,6 +38,7 @@ function App() {
   // Show Dashboard and protected routes for authenticated users OR demo mode
   return (
     <div className="bg-background min-h-screen text-foreground">
+      <Toaster position="top-right" richColors closeButton />
       <NavBar />
       <main className="p-4">
         <Routes>

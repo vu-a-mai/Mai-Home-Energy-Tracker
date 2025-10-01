@@ -4,10 +4,12 @@ import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
 import { useDemoMode } from '../contexts/DemoContext'
 import { useBillSplits } from '../contexts/BillSplitContext'
+import { toast } from 'sonner'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card'
 import { Badge } from '../components/ui/badge'
+import { validateAmount, validateDateRange } from '../utils/validation'
 
 interface BillSplitData {
   billingPeriod: string
@@ -78,14 +80,25 @@ export default function BillSplit() {
   const validateForm = (): boolean => {
     const errors: Partial<BillFormData> = {}
     
-    if (!formData.startDate) errors.startDate = 'Start date is required'
-    if (!formData.endDate) errors.endDate = 'End date is required'
-    if (formData.totalAmount <= 0) errors.totalAmount = 'Total amount must be greater than 0' as any
+    if (!formData.startDate) {
+      errors.startDate = 'Start date is required'
+    }
+    if (!formData.endDate) {
+      errors.endDate = 'End date is required'
+    }
     
+    // Validate date range
     if (formData.startDate && formData.endDate) {
-      if (new Date(formData.endDate) <= new Date(formData.startDate)) {
-        errors.endDate = 'End date must be after start date'
+      const dateRangeValidation = validateDateRange(formData.startDate, formData.endDate)
+      if (!dateRangeValidation.valid) {
+        errors.endDate = dateRangeValidation.error
       }
+    }
+    
+    // Validate amount
+    const amountValidation = validateAmount(formData.totalAmount)
+    if (!amountValidation.valid) {
+      errors.totalAmount = amountValidation.error as any
     }
     
     setFormErrors(errors)
@@ -206,6 +219,8 @@ export default function BillSplit() {
         user_allocations: userAllocations
       })
       
+      toast.success('Bill split saved successfully!')
+      
       // Reset form
       setShowResults(false)
       setFormData({
@@ -215,7 +230,7 @@ export default function BillSplit() {
       })
     } catch (error) {
       console.error('Error saving bill split:', error)
-      alert('Failed to save bill split. Please try again.')
+      toast.error('Failed to save bill split. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -225,9 +240,10 @@ export default function BillSplit() {
     if (confirm('Are you sure you want to delete this bill split?')) {
       try {
         await deleteBillSplit(id)
+        toast.success('Bill split deleted successfully!')
       } catch (error) {
         console.error('Error deleting bill split:', error)
-        alert('Failed to delete bill split. Please try again.')
+        toast.error('Failed to delete bill split. Please try again.')
       }
     }
   }

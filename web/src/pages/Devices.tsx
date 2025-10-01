@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useDevices } from '../hooks/useDevices'
+import { toast } from 'sonner'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card'
 import { Badge } from '../components/ui/badge'
+import { validateDeviceName, validateWattage } from '../utils/validation'
 
 // Helper function to get device-specific icon
 const getDeviceIcon = (deviceName: string, deviceType: string): string => {
@@ -126,10 +128,14 @@ export default function Devices() {
   const validateForm = (): boolean => {
     const errors: Partial<DeviceFormData> = {}
     
-    if (!formData.name.trim()) errors.name = 'Device name is required'
+    const nameValidation = validateDeviceName(formData.name)
+    if (!nameValidation.valid) errors.name = nameValidation.error
+    
     if (!formData.device_type) errors.device_type = 'Device type is required'
     if (!formData.location) errors.location = 'Location is required'
-    if (formData.wattage <= 0) errors.wattage = 'Wattage must be greater than 0' as any
+    
+    const wattageValidation = validateWattage(formData.wattage)
+    if (!wattageValidation.valid) errors.wattage = wattageValidation.error as any
     
     setFormErrors(errors)
     return Object.keys(errors).length === 0
@@ -149,9 +155,11 @@ export default function Devices() {
       } else {
         await addDevice(finalData)
       }
+      toast.success(editingDevice ? 'Device updated successfully!' : 'Device added successfully!')
       resetForm()
     } catch (err) {
       console.error('Error saving device:', err)
+      toast.error('Failed to save device. Please try again.')
     }
   }
 
