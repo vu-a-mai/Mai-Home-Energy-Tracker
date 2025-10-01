@@ -39,7 +39,7 @@ const getDeviceIcon = (deviceName: string): string => {
 }
 
 export default function EnergyLogs() {
-  const { energyLogs, loading, addEnergyLog, deleteEnergyLog, getTotalUsage } = useEnergyLogs()
+  const { energyLogs, loading, addEnergyLog, updateEnergyLog, deleteEnergyLog, getTotalUsage } = useEnergyLogs()
   const { devices } = useDevices()
   const { users: householdUsers } = useHouseholdUsers()
   const [showForm, setShowForm] = useState(false)
@@ -96,14 +96,23 @@ export default function EnergyLogs() {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      await addEnergyLog({
-        ...formData,
-        assigned_users: formData.assigned_users.length > 0 ? formData.assigned_users : undefined
-      })
+      if (editingLog) {
+        // Update existing log
+        await updateEnergyLog(editingLog, {
+          ...formData,
+          assigned_users: formData.assigned_users.length > 0 ? formData.assigned_users : undefined
+        })
+      } else {
+        // Add new log
+        await addEnergyLog({
+          ...formData,
+          assigned_users: formData.assigned_users.length > 0 ? formData.assigned_users : undefined
+        })
+      }
       resetForm()
     } catch (err) {
-      console.error('Error adding energy log:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Failed to add energy log. Please try again.'
+      console.error(editingLog ? 'Error updating energy log:' : 'Error adding energy log:', err)
+      const errorMessage = err instanceof Error ? err.message : `Failed to ${editingLog ? 'update' : 'add'} energy log. Please try again.`
       setSubmitError(errorMessage)
       // Don't close the form on error
     } finally {
@@ -122,6 +131,7 @@ export default function EnergyLogs() {
     setFormErrors({})
     setSubmitError(null)
     setShowForm(false)
+    setEditingLog(null)
   }
 
   const toggleUserAssignment = (userId: string) => {
@@ -678,7 +688,10 @@ export default function EnergyLogs() {
                     disabled={submitting}
                     className="energy-action-btn px-4 py-2 text-sm w-full sm:w-auto order-1 sm:order-2"
                   >
-                    {submitting ? '⏳ Logging...' : '✓ Log Usage'}
+                    {submitting 
+                      ? (editingLog ? '⏳ Updating...' : '⏳ Logging...') 
+                      : (editingLog ? '✓ Update Log' : '✓ Log Usage')
+                    }
                   </Button>
                 </div>
               </form>
@@ -724,7 +737,7 @@ export default function EnergyLogs() {
                   </div>
                   
                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-2">
-                    <span>📅 {new Date(log.usage_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    <span>📅 {new Date(log.usage_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                     <span>⏰ {formatTime12Hour(log.start_time)} - {formatTime12Hour(log.end_time)}</span>
                     <span>({usageCalc.durationHours.toFixed(1)}h)</span>
                   </div>
@@ -787,7 +800,7 @@ export default function EnergyLogs() {
                       <span className="text-xs text-muted-foreground">{log.device_wattage}W</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>📅 {new Date(log.usage_date).toLocaleDateString()}</span>
+                      <span>📅 {new Date(log.usage_date + 'T00:00:00').toLocaleDateString()}</span>
                       <span>⏰ {formatTime12Hour(log.start_time)} - {formatTime12Hour(log.end_time)}</span>
                       <span>({usageCalc.durationHours.toFixed(1)}h)</span>
                     </div>
