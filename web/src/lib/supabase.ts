@@ -27,6 +27,8 @@ export interface Device {
   location: string
   is_shared: boolean
   household_id: string
+  created_by?: string
+  kwh_per_hour?: number
   created_at: string
   updated_at: string
 }
@@ -38,7 +40,7 @@ export interface EnergyLog {
   end_time: string
   usage_date: string
   calculated_cost: number
-  calculated_kwh?: number
+  total_kwh?: number  // Database column is total_kwh
   rate_breakdown?: any
   household_id: string
   created_by: string

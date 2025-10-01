@@ -56,6 +56,7 @@ export default function EnergyLogs() {
   })
   const [formErrors, setFormErrors] = useState<Partial<EnergyLogFormData>>({})
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [filters, setFilters] = useState({
     device: '',
     startDate: '',
@@ -64,6 +65,7 @@ export default function EnergyLogs() {
     sortBy: 'date'
   })
   const [showUserFilter, setShowUserFilter] = useState(false)
+  const [showRateBreakdown, setShowRateBreakdown] = useState(false)
 
   const validateForm = (): boolean => {
     const errors: Partial<EnergyLogFormData> = {}
@@ -76,8 +78,10 @@ export default function EnergyLogs() {
     if (formData.start_time && formData.end_time) {
       const start = new Date(`2000-01-01T${formData.start_time}`)
       const end = new Date(`2000-01-01T${formData.end_time}`)
-      if (end <= start) {
-        errors.end_time = 'End time must be after start time'
+      // Allow overnight usage (end time can be before start time if it crosses midnight)
+      // Only validate that they're not exactly the same
+      if (formData.start_time === formData.end_time) {
+        errors.end_time = 'End time must be different from start time'
       }
     }
     
@@ -90,6 +94,7 @@ export default function EnergyLogs() {
     if (!validateForm()) return
 
     setSubmitting(true)
+    setSubmitError(null)
     try {
       await addEnergyLog({
         ...formData,
@@ -98,6 +103,9 @@ export default function EnergyLogs() {
       resetForm()
     } catch (err) {
       console.error('Error adding energy log:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Failed to add energy log. Please try again.'
+      setSubmitError(errorMessage)
+      // Don't close the form on error
     } finally {
       setSubmitting(false)
     }
@@ -112,6 +120,7 @@ export default function EnergyLogs() {
       assigned_users: []
     })
     setFormErrors({})
+    setSubmitError(null)
     setShowForm(false)
   }
 
@@ -203,18 +212,18 @@ export default function EnergyLogs() {
   return (
     <div className="max-w-7xl mx-auto p-3 md:p-5 min-h-screen bg-background text-foreground font-sans fade-in">
       {/* Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 md:mb-8 p-4 md:p-6 energy-header-gradient rounded-2xl text-white shadow-xl energy-glow">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-2 energy-pulse">
+      <header className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mb-6 md:mb-8 p-4 md:p-6 energy-header-gradient rounded-2xl text-white shadow-xl energy-glow">
+        <div className="flex-1">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 md:mb-2 energy-pulse">
             📝 Energy Logs
           </h1>
-          <p className="opacity-90 text-sm md:text-base">
+          <p className="opacity-90 text-xs sm:text-sm md:text-base">
             Track and analyze device usage sessions
           </p>
         </div>
         <Button
           onClick={() => setShowForm(true)}
-          className="energy-action-btn px-4 md:px-6 py-2 md:py-3 text-base md:text-lg font-semibold w-full md:w-auto"
+          className="energy-action-btn px-4 sm:px-5 md:px-6 py-2.5 md:py-3 text-sm sm:text-base md:text-lg font-semibold whitespace-nowrap shrink-0"
         >
           + Log Usage
         </Button>
@@ -259,11 +268,100 @@ export default function EnergyLogs() {
         </Card>
       </section>
 
-      {/* Filters - Compact Design */}
+      {/* Filters - Responsive Design */}
       <section className="mb-4 slide-up">
         <Card className="energy-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4 flex-wrap">
+          <CardContent className="p-3 sm:p-4">
+            {/* Mobile: Stacked Layout */}
+            <div className="lg:hidden space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-foreground font-semibold">
+                  <span className="text-lg">🔍</span>
+                  <span className="text-sm">Filters</span>
+                </div>
+                <Button
+                  onClick={() => {
+                    setFilters({ device: '', startDate: '', endDate: '', users: [], sortBy: 'date' })
+                    setShowUserFilter(false)
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="px-3 py-1.5 text-xs border-red-300 text-red-500 hover:bg-red-500/10 hover:border-red-400"
+                >
+                  ✕ Clear
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2">
+                {/* User Filter */}
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="text-xs text-muted-foreground mb-1 block">👤 Users</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowUserFilter(true)}
+                    className="w-full px-3 py-2 text-sm border rounded-lg bg-background text-foreground border-border hover:border-primary/50"
+                  >
+                    {filters.users.length === 0 ? 'All' : 
+                     filters.users.length === householdUsers.length ? 'All' :
+                     `${filters.users.length} selected`}
+                  </button>
+                </div>
+                
+                {/* Device Filter */}
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="text-xs text-muted-foreground mb-1 block">🔌 Device</label>
+                  <select
+                    value={filters.device}
+                    onChange={(e) => setFilters({...filters, device: e.target.value})}
+                    className="w-full px-3 py-2 text-sm border rounded-lg bg-background text-foreground border-border"
+                  >
+                    <option value="">All Devices</option>
+                    {devices.map(device => (
+                      <option key={device.id} value={device.id}>{device.name}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* Date Range */}
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="text-xs text-muted-foreground mb-1 block">📅 From</label>
+                  <Input
+                    type="date"
+                    value={filters.startDate}
+                    onChange={(e) => setFilters({...filters, startDate: e.target.value})}
+                    className="px-3 py-2 text-sm h-auto w-full"
+                  />
+                </div>
+                
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="text-xs text-muted-foreground mb-1 block">📅 To</label>
+                  <Input
+                    type="date"
+                    value={filters.endDate}
+                    onChange={(e) => setFilters({...filters, endDate: e.target.value})}
+                    className="px-3 py-2 text-sm h-auto w-full"
+                  />
+                </div>
+                
+                {/* Sort By */}
+                <div className="col-span-2">
+                  <label className="text-xs text-muted-foreground mb-1 block">⬇️ Sort By</label>
+                  <select
+                    value={filters.sortBy}
+                    onChange={(e) => setFilters({...filters, sortBy: e.target.value})}
+                    className="w-full px-3 py-2 text-sm border rounded-lg bg-background text-foreground border-border"
+                  >
+                    <option value="date">Newest First</option>
+                    <option value="cost">Highest Cost</option>
+                    <option value="duration">Longest Duration</option>
+                    <option value="device">Device Name</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            {/* Desktop: Horizontal Layout */}
+            <div className="hidden lg:flex items-center gap-4 flex-wrap">
               {/* Filter Icon & Title */}
               <div className="flex items-center gap-2 text-foreground font-semibold">
                 <span className="text-lg">🔍</span>
@@ -354,37 +452,54 @@ export default function EnergyLogs() {
 
       {/* Add Energy Log Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="energy-card w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <CardTitle className="text-2xl text-foreground flex items-center justify-between">
-                <span>{editingLog ? '✏️ Edit Energy Log' : '📝 Log Energy Usage'}</span>
-                <Button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                >
-                  Close
-                </Button>
-              </CardTitle>
-              <CardDescription>
-                Record a device usage session to track energy consumption and costs
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+        <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 overflow-y-auto p-0 sm:p-4">
+          <div className="w-full min-h-screen sm:min-h-0 sm:max-h-[90vh] flex items-start sm:items-center justify-center py-4 sm:py-0">
+            <Card className="energy-card w-full max-w-4xl mx-2 sm:mx-0 my-auto">
+              <div className="max-h-[calc(100vh-2rem)] sm:max-h-[85vh] overflow-y-auto">
+                <CardHeader className="p-3 sm:p-4 md:p-6 sticky top-0 bg-card z-10 border-b border-border">
+                  <CardTitle className="text-base sm:text-lg md:text-xl text-foreground flex items-center justify-between gap-2">
+                    <span className="truncate">{editingLog ? '✏️ Edit Log' : '📝 Log Usage'}</span>
+                    <Button
+                      type="button"
+                      onClick={() => setShowForm(false)}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs shrink-0 h-8"
+                    >
+                      ✕
+                    </Button>
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm hidden sm:block">
+                    Record device usage to track energy consumption
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-3 sm:p-4 md:p-6">
             
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+                {/* Error Message */}
+                {submitError && (
+                  <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-lg text-sm">
+                    <div className="font-semibold mb-1">⚠️ Error</div>
+                    <div>{submitError}</div>
+                  </div>
+                )}
+                
+                {/* Warning if no household users */}
+                {householdUsers.length === 0 && (
+                  <div className="bg-yellow-500/10 border border-yellow-500/50 text-yellow-400 p-3 rounded-lg text-sm">
+                    <div className="font-semibold mb-1">⚠️ No Household Members Found</div>
+                    <div>You may not be assigned to a household. Contact your administrator.</div>
+                  </div>
+                )}
                 {/* Device Selection */}
                 <div>
-                  <label className="block mb-2 font-semibold text-foreground">
+                  <label className="block mb-2 text-sm sm:text-base font-semibold text-foreground">
                     Device *
                   </label>
                   <select
                     value={formData.device_id}
                     onChange={(e) => setFormData({...formData, device_id: e.target.value})}
-                    className={`w-full p-3 border rounded-lg bg-background text-foreground ${formErrors.device_id ? 'border-red-500' : 'border-border'}`}
+                    className={`w-full p-2 sm:p-3 text-sm sm:text-base border rounded-lg bg-background text-foreground ${formErrors.device_id ? 'border-red-500' : 'border-border'}`}
                   >
                     <option value="">Select a device</option>
                     {devices.map(device => (
@@ -394,7 +509,7 @@ export default function EnergyLogs() {
                     ))}
                   </select>
                   {formErrors.device_id && (
-                    <div className="text-red-500 text-sm mt-1">
+                    <div className="text-red-500 text-xs sm:text-sm mt-1">
                       {formErrors.device_id}
                     </div>
                   )}
@@ -402,60 +517,60 @@ export default function EnergyLogs() {
 
                 {/* Usage Date */}
                 <div>
-                  <label className="block mb-2 font-semibold text-foreground">
+                  <label className="block mb-2 text-sm sm:text-base font-semibold text-foreground">
                     Usage Date *
                   </label>
                   <Input
                     type="date"
                     value={formData.usage_date}
                     onChange={(e) => setFormData({...formData, usage_date: e.target.value})}
-                    className={formErrors.usage_date ? 'border-red-500' : ''}
+                    className={`text-sm sm:text-base ${formErrors.usage_date ? 'border-red-500' : ''}`}
                   />
                   {formErrors.usage_date && (
-                    <div className="text-red-500 text-sm mt-1">
+                    <div className="text-red-500 text-xs sm:text-sm mt-1">
                       {formErrors.usage_date}
                     </div>
                   )}
                 </div>
 
                 {/* Time Range */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <label className="block mb-2 font-semibold text-foreground">
+                    <label className="block mb-2 text-sm sm:text-base font-semibold text-foreground">
                       Start Time *
                     </label>
                     <Input
                       type="time"
                       value={formData.start_time}
                       onChange={(e) => setFormData({...formData, start_time: e.target.value})}
-                      className={formErrors.start_time ? 'border-red-500' : ''}
+                      className={`text-sm sm:text-base ${formErrors.start_time ? 'border-red-500' : ''}`}
                     />
                     {formErrors.start_time && (
-                      <div className="text-red-500 text-sm mt-1">
+                      <div className="text-red-500 text-xs sm:text-sm mt-1">
                         {formErrors.start_time}
                       </div>
                     )}
                   </div>
                   
                   <div>
-                    <label className="block mb-2 font-semibold text-foreground">
+                    <label className="block mb-2 text-sm sm:text-base font-semibold text-foreground">
                       End Time *
                     </label>
                     <Input
                       type="time"
                       value={formData.end_time}
                       onChange={(e) => setFormData({...formData, end_time: e.target.value})}
-                      className={formErrors.end_time ? 'border-red-500' : ''}
+                      className={`text-sm sm:text-base ${formErrors.end_time ? 'border-red-500' : ''}`}
                     />
                     {formErrors.end_time && (
-                      <div className="text-red-500 text-sm mt-1">
+                      <div className="text-red-500 text-xs sm:text-sm mt-1">
                         {formErrors.end_time}
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Cost Calculation Preview */}
+                {/* Cost Calculation Preview - Compact */}
                 {formData.device_id && formData.start_time && formData.end_time && formData.usage_date && (() => {
                   const selectedDevice = devices.find(d => d.id === formData.device_id)
                   if (!selectedDevice) return null
@@ -471,40 +586,35 @@ export default function EnergyLogs() {
                     const season = getSeason(new Date(formData.usage_date))
                     
                     return (
-                      <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-2 border-green-500/50 p-4 rounded-lg">
-                        <div className="text-lg font-bold text-green-400 mb-3">
-                          💰 Rate Calculation
+                      <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/50 p-2 sm:p-3 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-sm sm:text-base font-bold text-green-400">
+                            💰 Cost: ${calculation.totalCost.toFixed(2)}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowRateBreakdown(!showRateBreakdown)}
+                            className="text-xs text-blue-400 hover:text-blue-300 underline"
+                          >
+                            {showRateBreakdown ? '▲ Hide' : '▼ Details'}
+                          </button>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-3 mb-3">
-                          <div className="bg-card/50 p-3 rounded">
-                            <div className="text-sm text-muted-foreground">Duration</div>
-                            <div className="text-xl font-bold text-foreground">{calculation.durationHours.toFixed(1)} hours</div>
-                          </div>
-                          <div className="bg-card/50 p-3 rounded">
-                            <div className="text-sm text-muted-foreground">Season</div>
-                            <div className="text-xl font-bold text-foreground capitalize">{season}</div>
-                          </div>
-                          <div className="bg-card/50 p-3 rounded">
-                            <div className="text-sm text-muted-foreground">Total kWh</div>
-                            <div className="text-xl font-bold text-blue-400">{calculation.totalKwh.toFixed(2)} kWh</div>
-                          </div>
-                          <div className="bg-card/50 p-3 rounded">
-                            <div className="text-sm text-muted-foreground">Total Cost</div>
-                            <div className="text-xl font-bold text-green-400">${calculation.totalCost.toFixed(2)}</div>
-                          </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span>⚡ {calculation.totalKwh.toFixed(2)} kWh</span>
+                          <span>⏱️ {calculation.durationHours.toFixed(1)}h</span>
+                          <span>🌡️ {season}</span>
                         </div>
                         
-                        {calculation.breakdown.length > 0 && (
-                          <div className="bg-card/30 p-3 rounded">
-                            <div className="text-sm font-semibold text-foreground mb-2">Rate Period Breakdown:</div>
+                        {showRateBreakdown && calculation.breakdown.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-green-500/30 space-y-1">
                             {calculation.breakdown.map((period, idx) => (
-                              <div key={idx} className="flex justify-between items-center py-1 text-sm">
+                              <div key={idx} className="flex justify-between items-center text-xs">
                                 <span className="text-muted-foreground">
-                                  {period.ratePeriod} ({period.hours.toFixed(1)}h × ${period.rate}/kWh)
+                                  {period.ratePeriod} ({period.hours.toFixed(1)}h)
                                 </span>
                                 <span className="font-semibold text-foreground">
-                                  {period.kwh.toFixed(2)} kWh = ${period.cost.toFixed(2)}
+                                  ${period.cost.toFixed(2)}
                                 </span>
                               </div>
                             ))}
@@ -517,67 +627,65 @@ export default function EnergyLogs() {
                   }
                 })()}
 
-                {/* User Assignment */}
-                <div>
-                  <label className="block mb-3 font-semibold text-foreground">
-                    Assign to Users (optional)
-                  </label>
-                  <div className="bg-muted/50 p-4 rounded-lg border border-border">
-                    <div className="mb-3 text-sm text-muted-foreground">
-                      Select users who used this device. Leave empty to assign to yourself only.
+                {/* User Assignment - Compact */}
+                {householdUsers.length > 0 && (
+                  <div>
+                    <label className="block mb-1.5 text-xs sm:text-sm font-semibold text-foreground">
+                      👤 Assign to Users (optional)
+                    </label>
+                    <div className="bg-muted/50 p-2 sm:p-3 rounded-lg border border-border">
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {householdUsers.map(user => (
+                          <label key={user.id} className={`flex items-center cursor-pointer px-2 py-1 rounded border transition-colors text-xs ${
+                            formData.assigned_users.includes(user.id) 
+                              ? 'bg-blue-100 border-blue-300 text-blue-800' 
+                              : 'bg-background border-border hover:bg-muted/30'
+                          }`}>
+                            <input
+                              type="checkbox"
+                              checked={formData.assigned_users.includes(user.id)}
+                              onChange={() => toggleUserAssignment(user.id)}
+                              className="mr-1.5 w-3 h-3"
+                            />
+                            <span>{user.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({...formData, assigned_users: householdUsers.map(u => u.id)})}
+                        className="text-xs text-blue-400 hover:text-blue-300 underline"
+                      >
+                        Select All
+                      </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 mb-3">
-                      {householdUsers.map(user => (
-                        <label key={user.id} className={`flex items-center cursor-pointer p-2 rounded-lg border transition-colors ${
-                          formData.assigned_users.includes(user.id) 
-                            ? 'bg-blue-100 border-blue-300 text-blue-800' 
-                            : 'bg-background border-border hover:bg-muted/30'
-                        }`}>
-                          <input
-                            type="checkbox"
-                            checked={formData.assigned_users.includes(user.id)}
-                            onChange={() => toggleUserAssignment(user.id)}
-                            className="mr-2"
-                          />
-                          <span className="text-sm">{user.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                    
-                    <Button
-                      type="button"
-                      onClick={() => setFormData({...formData, assigned_users: householdUsers.map(u => u.id)})}
-                      variant="outline"
-                      size="sm"
-                      className="text-xs"
-                    >
-                      Select All
-                    </Button>
                   </div>
-                </div>
+                )}
 
-                {/* Form Actions */}
-                <div className="flex gap-3 justify-end pt-4">
+                {/* Form Actions - Sticky on mobile */}
+                <div className="flex flex-col sm:flex-row gap-2 justify-end pt-2 sm:pt-3 sticky bottom-0 bg-card pb-2 sm:pb-0 sm:static border-t sm:border-t-0 border-border -mx-3 sm:mx-0 px-3 sm:px-0 mt-2">
                   <Button
                     type="button"
                     onClick={resetForm}
                     disabled={submitting}
                     variant="outline"
-                    className="px-6 py-2"
+                    className="px-4 py-2 text-sm w-full sm:w-auto order-2 sm:order-1"
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
                     disabled={submitting}
-                    className="energy-action-btn px-6 py-2"
+                    className="energy-action-btn px-4 py-2 text-sm w-full sm:w-auto order-1 sm:order-2"
                   >
-                    {submitting ? 'Logging...' : 'Log Usage'}
+                    {submitting ? '⏳ Logging...' : '✓ Log Usage'}
                   </Button>
                 </div>
               </form>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </div>
+            </Card>
+          </div>
         </div>
       )}
 
@@ -595,9 +703,81 @@ export default function EnergyLogs() {
           
           return (
             <Card key={log.id} className="energy-card hover:border-primary/50 transition-all">
-              <CardContent className="p-4">
-                {/* Compact View */}
-                <div className="flex items-center justify-between gap-4">
+              <CardContent className="p-3 sm:p-4">
+                {/* Mobile View */}
+                <div className="lg:hidden">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-sm text-foreground truncate">
+                        {getDeviceIcon(log.device_name || '')} {log.device_name || 'Unknown Device'}
+                      </h4>
+                      <div className="text-xs text-muted-foreground">{log.device_wattage}W</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-xs font-bold text-green-400">
+                        ⚡ {usageCalc.totalKwh.toFixed(2)} kWh
+                      </div>
+                      <div className="text-sm font-bold text-red-400">
+                        ${usageCalc.totalCost.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-2">
+                    <span>📅 {new Date(log.usage_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    <span>⏰ {formatTime12Hour(log.start_time)} - {formatTime12Hour(log.end_time)}</span>
+                    <span>({usageCalc.durationHours.toFixed(1)}h)</span>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-1 mb-2">
+                    {usageCalc.breakdown.map((period, idx) => (
+                      <div key={idx} className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
+                        period.ratePeriod === 'Off-Peak' ? 'bg-green-500/20 text-green-400' :
+                        period.ratePeriod === 'Mid-Peak' ? 'bg-yellow-500/20 text-yellow-400' :
+                        period.ratePeriod === 'On-Peak' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'
+                      }`}>
+                        {period.ratePeriod === 'Off-Peak' && '🟢'}
+                        {period.ratePeriod === 'Mid-Peak' && '🟡'}
+                        {period.ratePeriod === 'On-Peak' && '🔴'}
+                        {period.ratePeriod === 'Super Off-Peak' && '🔵'}
+                        {' '}{period.hours.toFixed(1)}h
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="flex gap-1">
+                    <Button
+                      onClick={() => setExpandedLog(isExpanded ? null : log.id)}
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 p-2 h-8 text-xs"
+                      title={isExpanded ? "Hide details" : "View details"}
+                    >
+                      {isExpanded ? '▲ Hide' : '▼ Details'}
+                    </Button>
+                    <Button
+                      onClick={() => handleEdit(log)}
+                      variant="outline"
+                      size="sm"
+                      className="p-2 h-8 w-8 border-blue-300 text-blue-500 hover:bg-blue-500/10"
+                      title="Edit log"
+                    >
+                      ✏️
+                    </Button>
+                    <Button
+                      onClick={() => deleteEnergyLog(log.id)}
+                      variant="outline"
+                      size="sm"
+                      className="p-2 h-8 w-8 border-red-300 text-red-500 hover:bg-red-500/10"
+                      title="Delete log"
+                    >
+                      🗑️
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Desktop View */}
+                <div className="hidden lg:flex items-center justify-between gap-4">
                   {/* Left: Device & Basic Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -718,8 +898,8 @@ export default function EnergyLogs() {
 
       {/* Pagination Controls */}
       {filteredLogs.length > logsPerPage && (
-        <div className="flex items-center justify-between mt-6 slide-up">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-6 slide-up">
+          <div className="text-xs sm:text-sm text-muted-foreground">
             Showing {((currentPage - 1) * logsPerPage) + 1} to {Math.min(currentPage * logsPerPage, filteredLogs.length)} of {filteredLogs.length} logs
           </div>
           <div className="flex gap-2">
@@ -728,31 +908,44 @@ export default function EnergyLogs() {
               disabled={currentPage === 1}
               variant="outline"
               size="sm"
-              className="px-3 py-2"
+              className="px-2 sm:px-3 py-2 text-xs sm:text-sm"
             >
-              ← Previous
+              ← <span className="hidden sm:inline">Previous</span>
             </Button>
             <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <Button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  variant={currentPage === page ? "default" : "outline"}
-                  size="sm"
-                  className={`px-3 py-2 ${currentPage === page ? 'energy-action-btn' : ''}`}
-                >
-                  {page}
-                </Button>
-              ))}
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                // Show first page, last page, current page, and pages around current
+                let page;
+                if (totalPages <= 5) {
+                  page = i + 1;
+                } else if (currentPage <= 3) {
+                  page = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  page = totalPages - 4 + i;
+                } else {
+                  page = currentPage - 2 + i;
+                }
+                return (
+                  <Button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    className={`px-2 sm:px-3 py-2 text-xs sm:text-sm ${currentPage === page ? 'energy-action-btn' : ''}`}
+                  >
+                    {page}
+                  </Button>
+                );
+              })}
             </div>
             <Button
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
               variant="outline"
               size="sm"
-              className="px-3 py-2"
+              className="px-2 sm:px-3 py-2 text-xs sm:text-sm"
             >
-              Next →
+              <span className="hidden sm:inline">Next</span> →
             </Button>
           </div>
         </div>

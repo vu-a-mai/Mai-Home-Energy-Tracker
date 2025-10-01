@@ -127,7 +127,10 @@ export const calculateUsageCost = (
   endTime: string,
   usageDate: string
 ): UsageCalculation => {
-  const date = new Date(usageDate)
+  // Parse date in local timezone to avoid timezone issues
+  const [year, month, day] = usageDate.split('-').map(Number)
+  const date = new Date(year, month - 1, day) // month is 0-indexed
+  const season = getSeason(date)
   const ratePeriods = getRatePeriods(date)
   const startMinutes = timeToMinutes(startTime)
   let endMinutes = timeToMinutes(endTime)

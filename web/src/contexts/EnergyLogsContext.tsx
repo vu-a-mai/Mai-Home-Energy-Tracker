@@ -18,7 +18,7 @@ export interface EnergyLog {
   end_time: string
   usage_date: string
   calculated_cost: number
-  calculated_kwh: number
+  total_kwh: number  // Database column is total_kwh
   household_id: string
   created_by: string
   created_at: string
@@ -29,7 +29,7 @@ interface EnergyLogsContextType {
   energyLogs: EnergyLog[]
   loading: boolean
   error: string | null
-  addEnergyLog: (log: Omit<EnergyLog, 'id' | 'calculated_cost' | 'calculated_kwh' | 'household_id' | 'created_by' | 'created_at'>) => Promise<void>
+  addEnergyLog: (log: Omit<EnergyLog, 'id' | 'calculated_cost' | 'total_kwh' | 'household_id' | 'created_by' | 'created_at'>) => Promise<void>
   updateEnergyLog: (id: string, updates: Partial<EnergyLog>) => Promise<void>
   deleteEnergyLog: (id: string) => Promise<void>
   refreshEnergyLogs: () => Promise<void>
@@ -61,7 +61,7 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
             device_name: device?.name,
             device_wattage: device?.wattage,
             // Use actual calculated_kwh from demo data, or calculate it if missing
-            calculated_kwh: log.calculated_kwh || ((device?.wattage || 0) / 1000) * 
+            total_kwh: log.total_kwh || ((device?.wattage || 0) / 1000) * 
               ((new Date(`2000-01-01T${log.end_time}`).getTime() - new Date(`2000-01-01T${log.start_time}`).getTime()) / (1000 * 60 * 60))
           }
         })
@@ -129,9 +129,15 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error
 
-      // Calculate kWh
+      // Calculate kWh - handle overnight usage
       const startDateTime = new Date(`${usageDate}T${startTime}`)
-      const endDateTime = new Date(`${usageDate}T${endTime}`)
+      let endDateTime = new Date(`${usageDate}T${endTime}`)
+      
+      // If end time is before start time, it crosses midnight (add 24 hours)
+      if (endDateTime <= startDateTime) {
+        endDateTime = new Date(endDateTime.getTime() + 24 * 60 * 60 * 1000)
+      }
+      
       const durationHours = (endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60 * 60)
       const kwh = (device.wattage / 1000) * durationHours
 
@@ -150,7 +156,13 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
 
       if (device) {
         const startDateTime = new Date(`${usageDate}T${startTime}`)
-        const endDateTime = new Date(`${usageDate}T${endTime}`)
+        let endDateTime = new Date(`${usageDate}T${endTime}`)
+        
+        // If end time is before start time, it crosses midnight (add 24 hours)
+        if (endDateTime <= startDateTime) {
+          endDateTime = new Date(endDateTime.getTime() + 24 * 60 * 60 * 1000)
+        }
+        
         const durationHours = (endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60 * 60)
         const kwh = (device.wattage / 1000) * durationHours
         const cost = kwh * 0.30 // Fallback average rate
@@ -160,7 +172,7 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const addEnergyLog = async (logData: Omit<EnergyLog, 'id' | 'calculated_cost' | 'calculated_kwh' | 'household_id' | 'created_by' | 'created_at'>) => {
+  const addEnergyLog = async (logData: Omit<EnergyLog, 'id' | 'calculated_cost' | 'total_kwh' | 'household_id' | 'created_by' | 'created_at'>) => {
     if (!user) throw new Error('User not authenticated')
 
     try {
@@ -183,10 +195,13 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
         logData.usage_date
       )
 
+      // Extract assigned_users before creating the log entry
+      const { assigned_users, ...logDataWithoutUsers } = logData
+
       const newLog = {
-        ...logData,
+        ...logDataWithoutUsers,
         calculated_cost: cost,
-        calculated_kwh: kwh,
+        total_kwh: kwh,  // Column is named total_kwh, not calculated_kwh
         household_id: userData.household_id,
         created_by: user.id
       }
@@ -206,8 +221,8 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
       if (error) throw error
 
       // Add assigned users if provided
-      if (logData.assigned_users && logData.assigned_users.length > 0) {
-        const userAssignments = logData.assigned_users.map(userId => ({
+      if (assigned_users && assigned_users.length > 0) {
+        const userAssignments = assigned_users.map(userId => ({
           energy_log_id: data.id,
           user_id: userId
         }))
@@ -221,7 +236,7 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
         ...data,
         device_name: data.devices?.name,
         device_wattage: data.devices?.wattage,
-        assigned_users: logData.assigned_users
+        assigned_users: assigned_users
       }
 
       setEnergyLogs(prev => [transformedLog, ...prev])
@@ -248,7 +263,7 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
             updates.usage_date || currentLog.usage_date
           )
           updateData.calculated_cost = cost
-          updateData.calculated_kwh = kwh
+          updateData.total_kwh = kwh
         }
       }
 
@@ -322,8 +337,8 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
   const getTotalUsage = () => {
     return energyLogs.reduce(
       (totals, log) => ({
-        totalKwh: totals.totalKwh + log.calculated_kwh,
-        totalCost: totals.totalCost + log.calculated_cost
+        totalKwh: totals.totalKwh + (log.total_kwh || 0),
+        totalCost: totals.totalCost + (log.calculated_cost || 0)
       }),
       { totalKwh: 0, totalCost: 0 }
     )

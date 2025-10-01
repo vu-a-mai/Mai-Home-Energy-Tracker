@@ -122,8 +122,8 @@ export default function Dashboard() {
     
     // Calculate kWh from device wattage and duration
     const totalKwh = energyLogs.reduce((sum, log) => {
-      if (log.calculated_kwh) {
-        return sum + log.calculated_kwh
+      if (log.total_kwh) {
+        return sum + log.total_kwh
       }
       // Calculate from device wattage and time if not provided
       const device = devices.find(d => d.id === log.device_id)
@@ -147,8 +147,8 @@ export default function Dashboard() {
       
       // Calculate kWh
       let kwh = 0
-      if (log.calculated_kwh) {
-        kwh = log.calculated_kwh
+      if (log.total_kwh) {
+        kwh = log.total_kwh
       } else {
         const device = devices.find(d => d.id === log.device_id)
         if (device) {
@@ -192,9 +192,9 @@ export default function Dashboard() {
             type: isShared ? 'shared' : 'personal'
           }
         }
-        // Estimate kWh from cost
+        // Use actual kWh from log
+        const kwh = log.total_kwh || 0
         const cost = log.calculated_cost || 0
-        const kwh = cost / 0.25
         deviceTotals[deviceId].kwh += kwh
         deviceTotals[deviceId].cost += cost
       }
@@ -313,7 +313,7 @@ export default function Dashboard() {
       // Calculate per-user usage for this day
       householdMembers.forEach(member => {
         const memberLogs = dayLogs.filter(log => log.created_by === member.id)
-        const memberKwh = memberLogs.reduce((sum, log) => sum + (log.calculated_kwh || 0), 0)
+        const memberKwh = memberLogs.reduce((sum, log) => sum + (log.total_kwh || 0), 0)
         dayData[member.name] = Number(memberKwh.toFixed(1))
       })
       
