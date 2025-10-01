@@ -9,21 +9,24 @@ import { DeviceProvider } from './contexts/DeviceContext'
 import { EnergyLogsProvider } from './contexts/EnergyLogsContext'
 import { BillSplitProvider } from './contexts/BillSplitContext'
 import { DemoProvider } from './contexts/DemoContext'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <DemoProvider>
-      <AuthProvider>
-        <DeviceProvider>
-          <EnergyLogsProvider>
-            <BillSplitProvider>
-              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <App />
-              </BrowserRouter>
-            </BillSplitProvider>
-          </EnergyLogsProvider>
-        </DeviceProvider>
-      </AuthProvider>
-    </DemoProvider>
+    <ErrorBoundary>
+      <DemoProvider>
+        <AuthProvider>
+          <DeviceProvider>
+            <EnergyLogsProvider>
+              <BillSplitProvider>
+                <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                  <App />
+                </BrowserRouter>
+              </BillSplitProvider>
+            </EnergyLogsProvider>
+          </DeviceProvider>
+        </AuthProvider>
+      </DemoProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )
