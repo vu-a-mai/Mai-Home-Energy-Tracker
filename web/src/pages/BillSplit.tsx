@@ -95,18 +95,6 @@ export default function BillSplit() {
   const calculateBillSplit = useMemo((): BillSplitData | null => {
     if (!showResults) return null
     
-    console.log('BillSplit - Calculating with:', {
-      periodLogsCount: periodLogs.length,
-      devicesCount: devices.length,
-      householdUsersCount: householdUsers.length,
-      devicesData: devices.map(d => ({
-        id: d.id,
-        name: d.name,
-        is_shared: d.is_shared,
-        sharing_type: (d as any).sharing_type
-      }))
-    })
-    
     // Calculate personal costs for each user (only from personal devices)
     const personalCosts: { [userId: string]: number } = {}
     let totalTrackedCosts = 0
@@ -125,25 +113,11 @@ export default function BillSplit() {
       const isSharedDevice = device?.is_shared === true || (device as any)?.sharing_type === 'shared'
       const isPersonalDevice = device?.is_shared === false || (device as any)?.sharing_type === 'personal'
       
-      // Debug logging
-      console.log('BillSplit - Processing log:', {
-        device_id: log.device_id,
-        device_name: device?.name,
-        is_shared: device?.is_shared,
-        sharing_type: (device as any)?.sharing_type,
-        isSharedDevice,
-        isPersonalDevice,
-        cost: log.calculated_cost,
-        created_by: log.created_by,
-        assigned_users: log.assigned_users
-      })
-      
       if (device && isPersonalDevice) {
         // Personal device - assign full cost to creator
         const userId = log.created_by || householdUsers[0]?.id || 'unknown'
         personalCosts[userId] = (personalCosts[userId] || 0) + log.calculated_cost
         totalTrackedCosts += log.calculated_cost
-        console.log('BillSplit - Added personal cost:', userId, log.calculated_cost)
       } else if (device && isSharedDevice) {
         // Shared device - split cost among assigned users (or all users if no assignments)
         const assignedUsers = log.assigned_users && log.assigned_users.length > 0 
@@ -158,12 +132,6 @@ export default function BillSplit() {
         
         totalTrackedCosts += log.calculated_cost
         totalSharedDeviceCosts += log.calculated_cost
-        console.log('BillSplit - Split shared device cost:', {
-          device: device.name,
-          totalCost: log.calculated_cost,
-          assignedUsers,
-          costPerUser
-        })
       }
     })
 
