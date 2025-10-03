@@ -21,7 +21,9 @@ import {
   LightBulbIcon,
   HomeModernIcon,
   FireIcon,
-  WifiIcon
+  WifiIcon,
+  HomeIcon,
+  UserIcon
 } from '@heroicons/react/24/outline'
 
 // Helper function to get device-specific icon
@@ -348,7 +350,7 @@ export default function Devices() {
                     {LOCATIONS.map(location => (
                       <option key={location} value={location}>{location}</option>
                     ))}
-                    <option value="Custom">✏️ Custom Location...</option>
+                    <option value="Custom">Custom Location...</option>
                   </select>
                   {formErrors.location && (
                     <div className="text-red-500 text-sm mt-1">
@@ -506,7 +508,7 @@ export default function Devices() {
                       className="p-2 h-8 w-8 border-blue-300 text-blue-500 hover:bg-blue-500/10"
                       title="Edit device"
                     >
-                      ✏️
+                      <PencilIcon className="w-4 h-4" />
                     </Button>
                     <Button
                       onClick={() => setDeleteConfirm(device.id)}
@@ -515,15 +517,25 @@ export default function Devices() {
                       className="p-2 h-8 w-8 border-red-300 text-red-500 hover:bg-red-500/10"
                       title="Delete device"
                     >
-                      🗑️
+                      <TrashIcon className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
                 <Badge 
                   variant={device.is_shared ? 'info' : 'warning'}
-                  className="text-xs"
+                  className="text-xs flex items-center gap-1"
                 >
-                  {device.is_shared ? '🏠 Shared' : '👤 Personal'}
+                  {device.is_shared ? (
+                    <>
+                      <HomeIcon className="w-3 h-3" />
+                      Shared
+                    </>
+                  ) : (
+                    <>
+                      <UserIcon className="w-3 h-3" />
+                      Personal
+                    </>
+                  )}
                 </Badge>
               </div>
 
@@ -542,7 +554,10 @@ export default function Devices() {
               {/* Power Consumption - Highlighted */}
               <div className="bg-gradient-to-r from-blue-500/10 to-green-500/10 p-3 rounded-lg border border-border">
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs text-muted-foreground">⚡ Power</span>
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <BoltIcon className="w-3 h-3 text-orange-400" />
+                    Power
+                  </span>
                   <span className="font-bold text-blue-400 text-lg">
                     {device.wattage}W
                   </span>
@@ -567,7 +582,7 @@ export default function Devices() {
       {/* Empty State */}
       {devices.length === 0 && !loading && (
         <section className="text-center py-20 slide-up">
-          <div className="text-6xl mb-4 energy-pulse">🔌</div>
+          <CpuChipIcon className="w-24 h-24 md:w-32 md:h-32 mx-auto mb-4 energy-pulse text-cyan-400 opacity-50" />
           <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">No devices yet</h3>
           <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6">
             Add your first household device to start tracking energy usage
