@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom'
+import { BoltIcon, CpuChipIcon, ClockIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline'
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
       {/* Navigation */}
       <nav className="flex justify-between items-center p-3 sm:p-4 md:p-6 energy-header-gradient rounded-b-2xl shadow-xl energy-glow mb-6 md:mb-8">
-        <div className="text-lg sm:text-xl md:text-2xl font-bold text-white energy-pulse">
-          ⚡ Mai Energy Tracker
+        <div className="text-lg sm:text-xl md:text-2xl font-bold text-white energy-pulse flex items-center gap-2">
+          <BoltIcon className="w-6 h-6 sm:w-7 sm:h-7 text-orange-400" />
+          Mai Energy Tracker
         </div>
         <Link 
           to="/login"
@@ -49,7 +51,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 items-stretch">
             {/* Feature 1 */}
             <div className="energy-card text-center p-4 md:p-6 hover:scale-105 transition-transform flex flex-col h-full">
-              <div className="text-4xl md:text-5xl mb-3 md:mb-4 energy-pulse">🔌</div>
+              <CpuChipIcon className="w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 energy-pulse text-cyan-400 mx-auto" />
               <h3 className="text-base md:text-lg font-semibold mb-2 md:mb-3 text-foreground">
                 Device Management
               </h3>
@@ -60,7 +62,7 @@ export default function LandingPage() {
 
             {/* Feature 2 */}
             <div className="energy-card text-center p-4 md:p-6 hover:scale-105 transition-transform flex flex-col h-full">
-              <div className="text-4xl md:text-5xl mb-3 md:mb-4 energy-pulse">⏰</div>
+              <ClockIcon className="w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 energy-pulse text-blue-400 mx-auto" />
               <h3 className="text-base md:text-lg font-semibold mb-2 md:mb-3 text-foreground">
                 Smart Rate Calculation
               </h3>
@@ -71,7 +73,7 @@ export default function LandingPage() {
 
             {/* Feature 3 */}
             <div className="energy-card text-center p-4 md:p-6 hover:scale-105 transition-transform flex flex-col h-full">
-              <div className="text-4xl md:text-5xl mb-3 md:mb-4 energy-pulse">💳</div>
+              <CurrencyDollarIcon className="w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 energy-pulse text-green-400 mx-auto" />
               <h3 className="text-base md:text-lg font-semibold mb-2 md:mb-3 text-foreground">
                 Fair Bill Splitting
               </h3>
@@ -98,28 +100,28 @@ export default function LandingPage() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch justify-items-center max-w-5xl mx-auto">
             <div className="energy-gradient-green p-5 rounded-lg text-center rate-indicator text-white flex flex-col justify-center items-center h-full w-full">
-              <div className="text-3xl mb-2">🟢</div>
+              <div className="w-10 h-10 rounded-full bg-green-500 mb-2"></div>
               <h4 className="text-base font-bold mb-1">Off-Peak</h4>
               <p className="text-xl font-bold mb-1">$0.25/kWh</p>
               <p className="text-xs opacity-90">Nights & Early Morning</p>
             </div>
             
             <div className="energy-gradient-yellow p-5 rounded-lg text-center rate-indicator text-white flex flex-col justify-center items-center h-full w-full">
-              <div className="text-3xl mb-2">🟡</div>
+              <div className="w-10 h-10 rounded-full bg-yellow-500 mb-2"></div>
               <h4 className="text-base font-bold mb-1">Mid-Peak</h4>
               <p className="text-xl font-bold mb-1">$0.37-0.52/kWh</p>
               <p className="text-xs opacity-90">Afternoon Hours</p>
             </div>
             
             <div className="energy-gradient-red p-5 rounded-lg text-center rate-indicator text-white flex flex-col justify-center items-center h-full w-full">
-              <div className="text-3xl mb-2">🔴</div>
+              <div className="w-10 h-10 rounded-full bg-red-500 mb-2"></div>
               <h4 className="text-base font-bold mb-1">On-Peak</h4>
               <p className="text-xl font-bold mb-1">$0.55/kWh</p>
               <p className="text-xs opacity-90">4PM - 9PM Summer</p>
             </div>
             
             <div className="energy-gradient-blue p-5 rounded-lg text-center rate-indicator text-white flex flex-col justify-center items-center h-full w-full">
-              <div className="text-3xl mb-2">🔵</div>
+              <div className="w-10 h-10 rounded-full bg-blue-500 mb-2"></div>
               <h4 className="text-base font-bold mb-1">Super Off-Peak</h4>
               <p className="text-xl font-bold mb-1">$0.24/kWh</p>
               <p className="text-xs opacity-90">8AM - 4PM Winter</p>
