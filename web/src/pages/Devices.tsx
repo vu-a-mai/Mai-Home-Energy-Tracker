@@ -62,7 +62,7 @@ const getDeviceIcon = (deviceName: string, deviceType: string): JSX.Element => {
     return <BoltIcon className={`${iconClass} text-green-400`} />
   
   // Default
-  return <CpuChipIcon className={`${iconClass} text-primary`} />
+  return <CpuChipIcon className={`${iconClass} text-cyan-400`} />
 }
 
 interface DeviceFormData {

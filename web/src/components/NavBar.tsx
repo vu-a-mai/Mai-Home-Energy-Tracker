@@ -80,23 +80,23 @@ export default function NavBar() {
         {/* Desktop Navigation Links */}
         <div className="hidden lg:flex items-center gap-2">
           <NavLink to="/" className={({ isActive }) => navLinkClass(isActive)}>
-            <ChartBarIcon className="w-5 h-5 inline-block mr-1.5" />
+            <ChartBarIcon className="w-5 h-5 inline-block mr-1.5 text-blue-400" />
             Dashboard
           </NavLink>
           <NavLink to="/devices" className={({ isActive }) => navLinkClass(isActive)}>
-            <CpuChipIcon className="w-5 h-5 inline-block mr-1.5" />
+            <CpuChipIcon className="w-5 h-5 inline-block mr-1.5 text-cyan-400" />
             Devices
           </NavLink>
           <NavLink to="/logs" className={({ isActive }) => navLinkClass(isActive)}>
-            <ClipboardDocumentListIcon className="w-5 h-5 inline-block mr-1.5" />
+            <ClipboardDocumentListIcon className="w-5 h-5 inline-block mr-1.5 text-orange-400" />
             Logs
           </NavLink>
           <NavLink to="/bill-split" className={({ isActive }) => navLinkClass(isActive)}>
-            <CurrencyDollarIcon className="w-5 h-5 inline-block mr-1.5" />
+            <CurrencyDollarIcon className="w-5 h-5 inline-block mr-1.5 text-green-400" />
             Bill Split
           </NavLink>
           <NavLink to="/settings" className={({ isActive }) => navLinkClass(isActive)}>
-            <Cog6ToothIcon className="w-5 h-5 inline-block mr-1.5" />
+            <Cog6ToothIcon className="w-5 h-5 inline-block mr-1.5 text-purple-400" />
             Settings
           </NavLink>
         </div>

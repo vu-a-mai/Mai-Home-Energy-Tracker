@@ -63,7 +63,7 @@ const getUserIcon = (userName: string): JSX.Element => {
   if (name.includes('thuy')) return <UserIcon className={`${iconClass} text-purple-400`} />
   if (name.includes('vy')) return <UserIcon className={`${iconClass} text-pink-400`} />
   if (name.includes('han')) return <UserIcon className={`${iconClass} text-blue-400`} />
-  return <UserIcon className={`${iconClass} text-primary`} /> // Default icon
+  return <UserIcon className={`${iconClass} text-slate-400`} /> // Default icon
 }
 
 export default function BillSplit() {

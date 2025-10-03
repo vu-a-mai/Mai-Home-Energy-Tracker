@@ -75,7 +75,7 @@ const getDeviceIcon = (deviceName: string): JSX.Element => {
   if (name.includes('hair dryer') || name.includes('dryer')) return <BoltIcon className={`${iconClass} text-orange-400`} />
   if (name.includes('tablet') || name.includes('ipad')) return <ComputerDesktopIcon className={`${iconClass} text-gray-400`} />
   if (name.includes('work computer')) return <ComputerDesktopIcon className={`${iconClass} text-slate-400`} />
-  return <BoltIcon className={`${iconClass} text-primary`} /> // Default icon
+  return <BoltIcon className={`${iconClass} text-orange-400`} /> // Default icon
 }
 
 // Helper function to get user icon
@@ -87,7 +87,7 @@ const getUserIcon = (userName: string): JSX.Element => {
   if (name.includes('thuy')) return <UserIcon className={`${iconClass} text-purple-400`} />
   if (name.includes('vy')) return <UserIcon className={`${iconClass} text-pink-400`} />
   if (name.includes('han')) return <UserIcon className={`${iconClass} text-blue-400`} />
-  return <UserIcon className={`${iconClass} text-primary`} />
+  return <UserIcon className={`${iconClass} text-slate-400`} />
 }
 
 export default function EnergyLogs() {
@@ -413,7 +413,7 @@ export default function EnergyLogs() {
                        filters.users.length === householdUsers.length ? 'All Users' :
                        `${filters.users.length} selected`}
                     </span>
-                    <ChevronDownIcon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <ChevronDownIcon className="w-4 h-4 text-cyan-400 group-hover:text-blue-400 transition-colors" />
                   </button>
                 </div>
                 
@@ -507,7 +507,7 @@ export default function EnergyLogs() {
                      filters.users.length === householdUsers.length ? 'All Users' :
                      `${filters.users.length} selected`}
                   </span>
-                  <ChevronDownIcon className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ChevronDownIcon className="w-3 h-3 text-orange-400 group-hover:text-yellow-400 transition-colors" />
                 </button>
               </div>
               
