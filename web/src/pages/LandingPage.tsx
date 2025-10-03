@@ -1,5 +1,17 @@
 import { Link } from 'react-router-dom'
-import { BoltIcon, CpuChipIcon, ClockIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline'
+import {
+  BoltIcon,
+  CpuChipIcon,
+  ClockIcon,
+  CurrencyDollarIcon,
+  CodeBracketSquareIcon,
+  ServerStackIcon,
+  PaintBrushIcon,
+  RocketLaunchIcon,
+  ChartPieIcon,
+  Squares2X2Icon,
+  CircleStackIcon
+} from '@heroicons/react/24/outline'
 
 export default function LandingPage() {
   return (
@@ -156,35 +168,59 @@ export default function LandingPage() {
             <h3 className="text-lg font-bold text-foreground mb-4">Built With Modern Technology</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
               <div className="bg-card border border-border rounded-lg p-4">
-                <p className="font-semibold text-foreground">React</p>
+                <div className="flex items-center gap-2">
+                  <BoltIcon className="w-5 h-5 text-cyan-400" />
+                  <p className="font-semibold text-foreground">React</p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Frontend Framework</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-4">
-                <p className="font-semibold text-foreground">TypeScript</p>
+                <div className="flex items-center gap-2">
+                  <CodeBracketSquareIcon className="w-5 h-5 text-blue-400" />
+                  <p className="font-semibold text-foreground">TypeScript</p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Type Safety</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-4">
-                <p className="font-semibold text-foreground">Supabase</p>
+                <div className="flex items-center gap-2">
+                  <ServerStackIcon className="w-5 h-5 text-emerald-400" />
+                  <p className="font-semibold text-foreground">Supabase</p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Database & Auth</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-4">
-                <p className="font-semibold text-foreground">Tailwind CSS</p>
+                <div className="flex items-center gap-2">
+                  <PaintBrushIcon className="w-5 h-5 text-sky-400" />
+                  <p className="font-semibold text-foreground">Tailwind CSS</p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Styling</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-4">
-                <p className="font-semibold text-foreground">Vite</p>
+                <div className="flex items-center gap-2">
+                  <RocketLaunchIcon className="w-5 h-5 text-purple-400" />
+                  <p className="font-semibold text-foreground">Vite</p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Build Tool</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-4">
-                <p className="font-semibold text-foreground">Recharts</p>
+                <div className="flex items-center gap-2">
+                  <ChartPieIcon className="w-5 h-5 text-pink-400" />
+                  <p className="font-semibold text-foreground">Recharts</p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Data Visualization</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-4">
-                <p className="font-semibold text-foreground">Heroicons</p>
+                <div className="flex items-center gap-2">
+                  <Squares2X2Icon className="w-5 h-5 text-indigo-400" />
+                  <p className="font-semibold text-foreground">Heroicons</p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Icon System</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-4">
-                <p className="font-semibold text-foreground">PostgreSQL</p>
+                <div className="flex items-center gap-2">
+                  <CircleStackIcon className="w-5 h-5 text-blue-500" />
+                  <p className="font-semibold text-foreground">PostgreSQL</p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Database</p>
               </div>
             </div>
