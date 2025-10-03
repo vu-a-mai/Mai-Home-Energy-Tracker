@@ -1090,12 +1090,12 @@ export default function EnergyLogs() {
                         return (
                           <div key={idx} className={`${bgColor} rounded-lg p-3 space-y-1`}>
                             <div className="flex items-center justify-between">
-                              <span className={`font-bold text-sm ${textColor}`}>
-                                {period.ratePeriod === 'Off-Peak' && '🟢'}
-                                {period.ratePeriod === 'Mid-Peak' && '🟡'}
-                                {period.ratePeriod === 'On-Peak' && '🔴'}
-                                {period.ratePeriod === 'Super Off-Peak' && '🔵'}
-                                {' '}{period.ratePeriod}
+                              <span className={`font-bold text-sm ${textColor} flex items-center gap-1`}>
+                                {period.ratePeriod === 'Off-Peak' && <div className="w-2 h-2 rounded-full bg-green-500"></div>}
+                                {period.ratePeriod === 'Mid-Peak' && <div className="w-2 h-2 rounded-full bg-yellow-500"></div>}
+                                {period.ratePeriod === 'On-Peak' && <div className="w-2 h-2 rounded-full bg-red-500"></div>}
+                                {period.ratePeriod === 'Super Off-Peak' && <div className="w-2 h-2 rounded-full bg-blue-500"></div>}
+                                {period.ratePeriod}
                               </span>
                               <span className="text-xs text-muted-foreground font-semibold">
                                 @ ${period.rate.toFixed(2)}/kWh
@@ -1204,7 +1204,10 @@ export default function EnergyLogs() {
           <div className="energy-card w-full max-w-md bg-card border border-border rounded-lg shadow-xl">
             <div className="p-6 border-b border-border">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xl font-bold text-foreground">👤 Filter by Users</h3>
+                <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                  <UsersIcon className="w-6 h-6 text-cyan-400" />
+                  Filter by Users
+                </h3>
                 <button
                   onClick={() => setShowUserFilter(false)}
                   className="p-2 h-8 w-8 border border-border rounded hover:bg-muted"

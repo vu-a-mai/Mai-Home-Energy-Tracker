@@ -897,7 +897,7 @@ ${householdUsers.map(user =>
             {/* Empty State */}
             {savedBillSplits.length === 0 && (
               <div className="text-center py-8 md:py-12 px-4">
-                <div className="text-4xl md:text-5xl mb-3 md:mb-4 energy-pulse">📅</div>
+                <CalendarIcon className="w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 energy-pulse text-blue-400 mx-auto opacity-50" />
                 <h3 className="text-base md:text-lg font-bold text-foreground mb-2">No saved bill splits yet</h3>
                 <p className="text-xs md:text-sm text-muted-foreground">
                   Calculate and save your first bill split above to see it here
@@ -934,7 +934,7 @@ ${householdUsers.map(user =>
                     <Card className="energy-card bg-gradient-to-br from-slate-500/10 to-gray-500/10 border-slate-500/30">
                       <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl">📅</span>
+                          <CalendarIcon className="w-7 h-7 text-blue-400" />
                           <span className="text-xs text-muted-foreground font-semibold">Billing Period</span>
                         </div>
                         <div className="font-bold text-slate-300 text-sm">
