@@ -60,7 +60,7 @@ export default function Login() {
     <div className="min-h-screen bg-background text-foreground font-sans flex items-center justify-center p-3 md:p-5 fade-in">
       <Card className="energy-card w-full max-w-lg shadow-2xl energy-glow">
         <CardHeader className="text-center pb-4 md:pb-6">
-          <div className="text-4xl md:text-5xl mb-3 md:mb-4 energy-pulse">⚡</div>
+          <BoltIcon className="w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 energy-pulse text-orange-400 mx-auto" />
           <CardTitle className="text-2xl md:text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
             Welcome Back
           </CardTitle>
@@ -134,7 +134,8 @@ export default function Login() {
           {/* Quick Email Selection */}
           <div className="bg-muted/50 p-4 md:p-6 rounded-lg border border-border">
             <h3 className="text-base md:text-lg font-semibold text-foreground mb-2 md:mb-3 flex items-center gap-2">
-              🏠 Mai Family Accounts
+              <HomeIcon className="w-5 h-5 text-cyan-400" />
+              Mai Family Accounts
             </h3>
             <p className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4">
               Click on a family member to auto-fill their email:
@@ -172,7 +173,7 @@ export default function Login() {
               className="w-full border-2 border-primary/50 hover:bg-primary/10 transition-all duration-300 py-3 md:py-4"
             >
               <span className="flex items-center justify-center gap-2 text-sm md:text-base">
-                <span className="text-xl md:text-2xl">👁️</span>
+                <EyeIcon className="w-5 h-5 md:w-6 md:h-6" />
                 <span>View Demo (No Login Required)</span>
               </span>
             </Button>
