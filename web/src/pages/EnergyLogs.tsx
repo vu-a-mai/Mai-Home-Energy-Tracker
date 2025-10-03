@@ -1261,7 +1261,8 @@ export default function EnergyLogs() {
                   onClick={() => setFilters({...filters, users: []})}
                   className="flex-1 px-3 py-2 text-sm bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded font-medium"
                 >
-                  ✕ Clear All
+                  <XMarkIcon className="w-4 h-4 inline-block mr-1" />
+                  Clear All
                 </button>
                 <button
                   onClick={() => setShowUserFilter(false)}
