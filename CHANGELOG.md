@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security fixes SQL script (`lib/14-fix-security-warnings.sql`)
 - Option 3 navigation design (Bold Indicator Bar) with glowing accent
 - SQL migrations archive folder for historical debugging files
+- Professional Heroicon system replacing all emojis (~315 icons)
+- Comprehensive color-coding system for icons (by function)
+- Icon reference guide in `utils/iconReference.ts`
 
 ### Changed
 - **BREAKING**: Removed `supabaseService.ts` (179 lines) - functionality moved to contexts
@@ -25,6 +28,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reorganized SQL migrations (moved scripts 2-13 to `migrations-archive/`)
 - Improved navigation tab styling with multiple design iterations
 - Enhanced Dashboard data accuracy by using shared hooks and consistent calculations
+- Replaced all emojis with professional Heroicons across all pages
+- Implemented consistent color-coding system for icons:
+  - 🟦 Blue/Cyan: Information, Data, Users, Filters
+  - 🟩 Green: Money, Success, Export, Growth
+  - 🟠 Orange: Energy, Power, Logs, Activity
+  - 🟣 Purple: Account, Settings, User-specific
+  - 🟡 Yellow: Warnings, Folders, Alerts
+  - 🔴 Red: Delete, Errors, Critical Actions
 
 ### Removed
 - Unused `button-new.tsx` component (never imported)
