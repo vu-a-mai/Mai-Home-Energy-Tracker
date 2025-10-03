@@ -402,7 +402,7 @@ export default function Dashboard() {
     return (
       <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-5 min-h-screen bg-background text-foreground font-sans fade-in flex items-center justify-center">
         <div className="text-center">
-          <BoltIcon className="w-16 h-16 md:w-24 md:h-24 mb-4 energy-pulse text-primary mx-auto" />
+          <BoltIcon className="w-16 h-16 md:w-24 md:h-24 mb-4 energy-pulse text-orange-400 mx-auto" />
           <h2 className="text-xl md:text-2xl font-bold mb-2">Loading Dashboard...</h2>
           <p className="text-sm md:text-base text-muted-foreground">Fetching your energy data</p>
         </div>
@@ -439,7 +439,7 @@ export default function Dashboard() {
       <header className="mb-6 md:mb-8 p-4 md:p-8 energy-header-gradient rounded-2xl text-white shadow-xl energy-glow">
         <div className="flex items-center justify-between mb-4 md:mb-6">
           <h1 className="text-2xl md:text-3xl font-bold energy-pulse flex items-center gap-2">
-            <BoltIcon className="w-7 h-7 md:w-8 md:h-8" />
+            <BoltIcon className="w-7 h-7 md:w-8 md:h-8 text-orange-400" />
             Energy Dashboard
           </h1>
         </div>
@@ -494,7 +494,7 @@ export default function Dashboard() {
       {/* Quick Actions */}
       <section className="mb-6 slide-up">
         <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
-          <RocketLaunchIcon className="w-6 h-6 text-primary" />
+          <RocketLaunchIcon className="w-6 h-6 text-purple-400" />
           Quick Actions
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
@@ -502,7 +502,7 @@ export default function Dashboard() {
             onClick={handleManageDevices}
             className="quick-actions-card p-4 md:p-5 rounded-lg text-left flex items-center gap-3 md:gap-4 hover:scale-105 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-300 text-foreground group"
           >
-            <CpuChipIcon className="w-8 h-8 md:w-10 md:h-10 text-primary group-hover:scale-110 transition-transform" />
+            <CpuChipIcon className="w-8 h-8 md:w-10 md:h-10 text-cyan-400 group-hover:scale-110 transition-transform" />
             <div>
               <div className="font-bold text-sm md:text-base mb-1">Manage Devices</div>
               <div className="text-xs text-muted-foreground">Add or edit devices</div>
@@ -513,7 +513,7 @@ export default function Dashboard() {
             onClick={handleLogEnergyUsage}
             className="quick-actions-card p-4 md:p-5 rounded-lg text-left flex items-center gap-3 md:gap-4 hover:scale-105 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-300 text-foreground group"
           >
-            <PencilSquareIcon className="w-8 h-8 md:w-10 md:h-10 text-primary group-hover:scale-110 transition-transform" />
+            <PencilSquareIcon className="w-8 h-8 md:w-10 md:h-10 text-blue-400 group-hover:scale-110 transition-transform" />
             <div>
               <div className="font-bold text-sm md:text-base mb-1">Log Energy Usage</div>
               <div className="text-xs text-muted-foreground">Record usage sessions</div>
@@ -524,7 +524,7 @@ export default function Dashboard() {
             onClick={handleSplitBill}
             className="quick-actions-card p-4 md:p-5 rounded-lg text-left flex items-center gap-3 md:gap-4 hover:scale-105 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-300 text-foreground group"
           >
-            <CurrencyDollarIcon className="w-8 h-8 md:w-10 md:h-10 text-primary group-hover:scale-110 transition-transform" />
+            <CurrencyDollarIcon className="w-8 h-8 md:w-10 md:h-10 text-green-400 group-hover:scale-110 transition-transform" />
             <div>
               <div className="font-bold text-sm md:text-base mb-1">Split Monthly Bill</div>
               <div className="text-xs text-muted-foreground">Calculate cost allocation</div>
@@ -536,7 +536,7 @@ export default function Dashboard() {
       {/* Rate Period Breakdown */}
       <section className="mb-6 slide-up">
         <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
-          <ClockIcon className="w-6 h-6 text-primary" />
+          <ClockIcon className="w-6 h-6 text-blue-400" />
           Rate Period Breakdown
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
@@ -574,11 +574,13 @@ export default function Dashboard() {
             <ExclamationTriangleIcon className="w-10 h-10 text-yellow-400 animate-pulse" />
             <div className="text-center">
               <div className="text-red-400 font-bold text-lg mb-1 flex items-center justify-center gap-2">
-                <BoltIcon className="w-5 h-5" />
+                <BoltIcon className="w-5 h-5 text-orange-400" />
                 Peak Usage Time Alert
               </div>
-              <div className="text-white font-semibold text-base">
-                🕓 4:00 PM - 9:00 PM 🕘
+              <div className="text-white font-semibold text-base flex items-center justify-center gap-2">
+                <ClockIcon className="w-4 h-4" />
+                4:00 PM - 9:00 PM
+                <ClockIcon className="w-4 h-4" />
               </div>
               <div className="text-red-300 text-sm mt-1">
                 On-Peak Period - Highest Rates ($0.55/kWh)
@@ -789,7 +791,7 @@ export default function Dashboard() {
                   {/* Device List - Scrollable if many devices */}
                   <div className="flex flex-col">
                     <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                      <ClipboardDocumentListIcon className="w-4 h-4" />
+                      <ClipboardDocumentListIcon className="w-4 h-4 text-cyan-400" />
                       Device Breakdown {dashboardData.topDevices.length > 5 && `(Top ${Math.min(10, dashboardData.topDevices.length)})`}
                     </h3>
                     <div className="space-y-2.5 max-h-[240px] overflow-y-auto pr-2 custom-scrollbar">
@@ -844,7 +846,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="text-center text-muted-foreground text-sm py-12">
-                  <CpuChipIcon className="w-16 h-16 mx-auto mb-3 text-muted-foreground" />
+                  <CpuChipIcon className="w-16 h-16 mx-auto mb-3 text-cyan-400 opacity-50" />
                   <p className="text-base font-medium">No device usage data available</p>
                   <p className="text-xs mt-1">Start logging energy usage to see device breakdown</p>
                 </div>
@@ -903,7 +905,7 @@ export default function Dashboard() {
               ) : (
                 <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
-                    <ChartBarIcon className="w-16 h-16 mx-auto mb-2 text-muted-foreground" />
+                    <ChartBarIcon className="w-16 h-16 mx-auto mb-2 text-blue-400 opacity-50" />
                     <p className="text-sm">No energy logs in the past 7 days</p>
                     <p className="text-xs mt-1">Start logging usage to see trends</p>
                   </div>
