@@ -1183,7 +1183,7 @@ export default function EnergyLogs() {
       {/* Empty State */}
       {filteredLogs.length === 0 && !loading && (
         <section className="text-center py-20 slide-up">
-          <div className="text-6xl mb-4 energy-pulse">📝</div>
+          <ClipboardDocumentListIcon className="w-24 h-24 md:w-32 md:h-32 mb-4 energy-pulse text-orange-400 mx-auto opacity-50" />
           <h3 className="text-xl font-bold text-foreground mb-2">No energy logs yet</h3>
           <p className="text-muted-foreground mb-6">
             Start logging device usage to track energy consumption

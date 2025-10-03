@@ -33,7 +33,8 @@ import {
   ArrowTrendingUpIcon,
   DocumentArrowDownIcon,
   CloudArrowDownIcon,
-  FolderIcon
+  FolderIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline'
 
 interface BillSplitData {
@@ -620,7 +621,7 @@ ${householdUsers.map(user =>
                 <Card className="energy-card bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-2xl">👥</span>
+                      <UsersIcon className="w-7 h-7 text-cyan-400" />
                       <span className="text-xs text-muted-foreground font-semibold">Per Person (Shared)</span>
                     </div>
                     <div className="font-bold text-xl text-green-400">
@@ -885,7 +886,7 @@ ${householdUsers.map(user =>
                                   </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center py-4 md:py-6 opacity-50">
-                        <div className="text-2xl md:text-3xl mb-1 text-slate-600">📄</div>
+                        <DocumentTextIcon className="w-10 h-10 md:w-12 md:h-12 mb-1 text-slate-500" />
                         <div className="text-[9px] md:text-[10px] text-slate-500 font-medium">No data</div>
                       </div>
                     )}
@@ -973,7 +974,7 @@ ${householdUsers.map(user =>
                     <Card className="energy-card bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30">
                       <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl">👥</span>
+                          <UsersIcon className="w-7 h-7 text-cyan-400" />
                           <span className="text-xs text-muted-foreground font-semibold">Per Person (Shared)</span>
                         </div>
                         <div className="font-bold text-xl text-green-400">
