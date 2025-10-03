@@ -1,41 +1,43 @@
 # 📁 SQL Scripts - Database Setup
 
-This folder contains all SQL scripts needed to set up your Mai Home Energy Tracker database.
+This folder contains SQL scripts for Mai Home Energy Tracker database setup and maintenance.
 
 ---
 
-## 🗂️ Files Overview
+## 🗂️ Current Structure
 
-### Core Setup Scripts (Run in Order)
+### Active Scripts
 
-| # | File | Purpose | When to Use |
-|---|------|---------|-------------|
-| 1 | `1-fresh-database-schema.sql` | Creates all tables, triggers, RLS policies | **Always run first** on empty database |
-| 2 | `2-sync-auth-users.sql` | Links Supabase Auth users to database | **Always run second** after creating auth users |
-| 3 | `3-add-sample-data.sql` | Adds 8 sample devices + 6 energy logs | Optional: Use for testing/demo |
-| 4 | `4-verify-and-troubleshoot.sql` | Health checks and diagnostics | Run anytime to verify database |
-| 5 | `5-restore-backup-data.sql` | Restores your 12 devices + 4 energy logs | **Use this to restore your backup** |
+| File | Purpose | When to Use |
+|------|---------|-------------|
+| `1-fresh-database-schema.sql` | Complete database schema (tables, triggers, RLS policies, indexes) | **Always run first** on new/empty database |
+| `14-fix-security-warnings.sql` | Security fixes for functions (search_path) | Run on existing database to fix security warnings |
+
+### Archived Scripts
+
+The `migrations-archive/` folder contains historical debugging and migration files (scripts 2-13). These were used during development and troubleshooting but are not needed for normal setup or maintenance.
 
 ---
 
 ## 🚀 Quick Setup Guide
 
-### For Fresh Start with Your Backup Data:
+### For New Database:
 
-```
+```bash
 1. Run: 1-fresh-database-schema.sql
-2. Run: 2-sync-auth-users.sql
-3. Run: 5-restore-backup-data.sql ⭐
-4. Run: 4-verify-and-troubleshoot.sql
+   - Creates all tables, functions, triggers
+   - Sets up RLS policies
+   - Configures time-of-use rate calculation
+
+2. Optional: Run 14-fix-security-warnings.sql
+   - Fixes Supabase security warnings
+   - Adds search_path to functions
 ```
 
-### For Fresh Start with Sample Data:
+### For Existing Database with Security Warnings:
 
-```
-1. Run: 1-fresh-database-schema.sql
-2. Run: 2-sync-auth-users.sql
-3. Run: 3-add-sample-data.sql
-4. Run: 4-verify-and-troubleshoot.sql
+```bash
+Run: 14-fix-security-warnings.sql
 ```
 
 ---
@@ -45,175 +47,184 @@ This folder contains all SQL scripts needed to set up your Mai Home Energy Track
 ### 1️⃣ `1-fresh-database-schema.sql`
 
 **Creates:**
-- Tables: `users`, `devices`, `energy_logs`, `bill_splits`
-- Function: `calculate_energy_cost()` - Auto-calculates costs with time-of-use rates
-- Triggers: Auto-calculate costs on insert/update
-- RLS Policies: Secure access control
-- Indexes: Performance optimization
-- View: `data_health_check` - Monitor data integrity
+- **Tables:** `users`, `devices`, `energy_logs`, `bill_splits`
+- **Function:** `calculate_energy_cost()` - Auto-calculates costs with time-of-use rates
+- **Triggers:** Auto-calculate costs on insert/update
+- **RLS Policies:** Secure access control (users only see their household data)
+- **Indexes:** Performance optimization
+- **View:** `data_health_check` - Monitor data integrity
 
 **Time-of-Use Rates:**
-- Off-Peak: $0.082/kWh (weekends, weekday 7pm-7am)
-- Mid-Peak: $0.113/kWh (weekday 11am-5pm)
-- On-Peak: $0.151/kWh (weekday 7-11am, 5-7pm)
+- **Summer (June-September):**
+  - Weekday: Off-Peak $0.25/kWh, On-Peak $0.55/kWh (4pm-9pm)
+  - Weekend: Off-Peak $0.25/kWh, Mid-Peak $0.37/kWh (4pm-9pm)
+- **Winter (October-May):**
+  - Off-Peak: $0.24/kWh (9pm-8am)
+  - Super Off-Peak: $0.24/kWh (8am-4pm)
+  - Mid-Peak: $0.52/kWh (4pm-9pm)
 
 ---
 
-### 2️⃣ `2-sync-auth-users.sql`
+### 1️⃣4️⃣ `14-fix-security-warnings.sql`
 
-**Links:**
-- Your 4 Supabase Auth users to the database
-- Creates a shared household for all users
-- Maps auth user IDs to database user records
+**Fixes:**
+- Adds `SET search_path = public, pg_temp` to:
+  - `calculate_energy_cost()`
+  - `trigger_calculate_energy_cost()`
+  - `trigger_set_updated_at()`
+- Addresses Supabase "role mutable search_path" security warnings
+- No data changes, only function definitions
 
-**Users:**
-- vu@maihome.com → Vu Mai
-- vy@maihome.com → Vy Mai
-- thuy@maihome.com → Thuy Mai
-- han@maihome.com → Han Mai
-
----
-
-### 3️⃣ `3-add-sample-data.sql`
-
-**Creates:**
-- 8 devices (2 Teslas, 2 laptops, 4 appliances)
-- 6 energy logs with various usage patterns
-- Demonstrates different rate periods
-
-**Use Case:**
-- Testing the app
-- Demo purposes
-- Learning how the system works
-
----
-
-### 4️⃣ `4-verify-and-troubleshoot.sql`
-
-**Checks:**
-- User counts and details
-- Device counts (shared vs personal)
-- Energy log counts and costs
-- Data health (orphaned records)
-- RLS policy status
-- Recent activity
-- Cost breakdown by rate period
-
-**Use Case:**
-- After setup to verify everything works
-- Troubleshooting issues
-- Monitoring database health
-
----
-
-### 5️⃣ `5-restore-backup-data.sql` ⭐
-
-**Restores from backup:**
-- 12 devices from your previous database
-- 4 energy logs with your actual usage data
-- Preserves device IDs for consistency
-- Maps old user IDs to new auth user IDs
-- Recalculates all costs with new rates
-
-**Your Devices:**
-- 2 Tesla EV Chargers (Vu's Model Y, Vy's Model 3)
-- 5 Han's devices (Macbook, Monitor, Lamp, Chargers)
-- 3 Thuy's devices (Zenbook, Monitor, Oven)
-- 2 Shared devices (Samsung TV, Lasko Fan)
-
-**Your Energy Logs:**
-- Han Macbook Pro: Oct 1, 2025
-- Vu Tesla: Sep 29, 2025 (overnight)
-- Thuy Zenbook: Sep 29, 2025 (22 hours)
-- Vy Tesla: Sep 29, 2025 (evening)
-
----
-
-## 🎯 Recommended Setup Path
-
-Since you have a backup file, **use this path:**
-
-1. ✅ Create schema (script #1)
-2. ✅ Link auth users (script #2)
-3. ⭐ **Restore your backup (script #5)**
-4. ✅ Verify everything (script #4)
-
-This gives you all your real devices and data back!
+**When to Run:**
+- After seeing security warnings in Supabase Dashboard
+- Safe to run multiple times (uses `CREATE OR REPLACE`)
+- Does not affect existing data
 
 ---
 
 ## 🔧 Common Tasks
 
 ### Check Database Status
+
 ```sql
--- Run script #4 or just this query:
 SELECT 
   (SELECT COUNT(*) FROM users) as users,
   (SELECT COUNT(*) FROM devices) as devices,
   (SELECT COUNT(*) FROM energy_logs) as logs,
-  (SELECT COALESCE(SUM(count), 0) FROM data_health_check) as issues;
+  (SELECT COUNT(*) FROM bill_splits) as bill_splits;
 ```
 
-### Recalculate All Costs
+### View Data Health
+
+```sql
+SELECT * FROM data_health_check;
+```
+
+### Recalculate All Energy Log Costs
+
 ```sql
 -- Trigger will auto-run on update:
 UPDATE energy_logs SET updated_at = NOW();
 ```
 
-### View Cost Summary
+### View Cost Summary by User
+
 ```sql
 SELECT 
   u.name,
-  COUNT(el.id) as logs,
-  ROUND(SUM(el.total_kwh), 2) as kwh,
-  ROUND(SUM(el.calculated_cost), 2) as cost
+  u.email,
+  COUNT(el.id) as total_logs,
+  ROUND(SUM(el.total_kwh), 2) as total_kwh,
+  ROUND(SUM(el.calculated_cost), 2) as total_cost
 FROM users u
 LEFT JOIN energy_logs el ON u.id = ANY(el.assigned_users)
-GROUP BY u.name
-ORDER BY cost DESC;
+GROUP BY u.name, u.email
+ORDER BY total_cost DESC;
 ```
 
 ---
 
-## 📚 Additional Resources
+## 🛡️ Security Features
 
-- **SETUP_INSTRUCTIONS.md** - Detailed step-by-step guide
-- **QUICK_START.md** - Fast setup reference
-- **FRESH_START_GUIDE.md** - Original setup guide
+### Row Level Security (RLS)
 
----
+- ✅ Enabled on all tables
+- ✅ Users can only access their household's data
+- ✅ Enforces user authentication
+- ✅ Automatic user filtering
 
-## 💡 Tips
+### Function Security
 
-1. **Always run scripts in order** (1 → 2 → 3 or 5 → 4)
-2. **Script #4 is your friend** - Run it anytime to check status
-3. **Costs auto-calculate** - No manual calculation needed
-4. **RLS is enabled** - Users can only see their household data
-5. **Backup your data** - The app has export functionality
+- ✅ Functions use `SECURITY DEFINER` for proper permissions
+- ✅ `search_path` set to prevent security issues
+- ✅ Cost calculation isolated from user input
 
 ---
 
 ## 🆘 Troubleshooting
 
 ### "Permission denied" errors
-- Check RLS policies are enabled
-- Verify you're logged in as one of the 4 users
-- Run script #4 to diagnose
 
-### Costs not calculating
-- Check device has valid wattage
-- Verify trigger exists: `SELECT * FROM pg_trigger WHERE tgname = 'energy_logs_calculate_cost';`
-- Try updating the log: `UPDATE energy_logs SET updated_at = NOW() WHERE id = 'LOG_ID';`
+- Verify RLS policies exist: 
+  ```sql
+  SELECT * FROM pg_policies WHERE tablename IN ('users', 'devices', 'energy_logs', 'bill_splits');
+  ```
+- Ensure user is authenticated
+- Check user has `household_id` set
 
-### Need to start over
+### Costs not calculating automatically
+
+- Verify trigger exists:
+  ```sql
+  SELECT * FROM pg_trigger WHERE tgname = 'energy_logs_calculate_cost';
+  ```
+- Check device has valid wattage > 0
+- Manually trigger recalculation:
+  ```sql
+  UPDATE energy_logs SET updated_at = NOW() WHERE id = 'LOG_ID';
+  ```
+
+### Security warnings in Supabase
+
+- Run `14-fix-security-warnings.sql`
+- Enable HaveIBeenPwned in Auth settings
+- Enable additional MFA options in Auth settings
+
+### Need to start completely over
+
 ```sql
+-- Drop all tables (WARNING: Deletes all data!)
 DROP TABLE IF EXISTS bill_splits CASCADE;
 DROP TABLE IF EXISTS energy_logs CASCADE;
 DROP TABLE IF EXISTS devices CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
--- Then run scripts 1, 2, and 5 again
+DROP VIEW IF EXISTS data_health_check CASCADE;
+
+-- Then run: 1-fresh-database-schema.sql
 ```
 
 ---
 
-**Questions?** Check the main documentation files or run script #4 for diagnostics.
+## 📚 Additional Features
+
+### Auto-Backup
+
+The app includes browser-based auto-backup:
+- Saves to `localStorage` every 10 minutes
+- Includes devices, energy logs, and bill splits
+- Access from Settings page
+
+### Export/Import
+
+Settings page provides:
+- Export all data (JSON)
+- Export devices only (CSV/JSON)
+- Export energy logs (CSV/JSON)
+- Export bill splits (JSON)
+- Import from backup file
+
+---
+
+## 💡 Best Practices
+
+1. **Always run script #1 first** on new database
+2. **Run script #14** if you see security warnings
+3. **Use app's export feature** for regular backups
+4. **Test RLS policies** with different users
+5. **Monitor** `data_health_check` view periodically
+6. **Keep archived scripts** for historical reference
+
+---
+
+## 📦 Archived Migrations
+
+The `migrations-archive/` folder contains:
+- Scripts 2-13: Historical fixes and debugging
+- Old sample data generators
+- Development troubleshooting scripts
+
+These are kept for reference but not needed for normal operation.
+
+---
+
+**Questions?** Check the main documentation in `/docs` or use the app's built-in help features.

@@ -1,5 +1,11 @@
-// Simplified and accurate rate calculator
+// Accurate rate calculator for Mai Home Energy Tracker
 import type { RatePeriod } from '../types'
+
+// Determine if a date is in summer or winter
+export const getSeason = (date: Date): 'summer' | 'winter' => {
+  const month = date.getMonth() + 1 // getMonth() is zero-indexed
+  return (month >= 6 && month <= 9) ? 'summer' : 'winter'
+}
 
 export const WINTER_RATES: RatePeriod[] = [
   { name: 'Off-Peak', start: '21:00', end: '07:59', rate: 0.24, color: '🟢' },
