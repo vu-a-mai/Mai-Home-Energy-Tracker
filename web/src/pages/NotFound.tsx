@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 
 export default function NotFound() {
   return (
     <div className="max-w-7xl mx-auto min-h-[calc(100vh-200px)] bg-background text-foreground font-sans flex items-center justify-center p-3 md:p-5">
       <div className="text-center max-w-md">
-        <div className="text-6xl md:text-8xl mb-4 md:mb-6 energy-pulse">⚠️</div>
+        <ExclamationTriangleIcon className="w-24 h-24 md:w-32 md:h-32 mb-4 md:mb-6 energy-pulse text-yellow-400 mx-auto" />
         <h1 className="text-3xl md:text-4xl font-bold mb-3 md:mb-4 text-foreground">
           404 - Page Not Found
         </h1>
