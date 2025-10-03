@@ -12,6 +12,7 @@ import {
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
   CircleStackIcon,
+    BoltIcon,
   ArrowPathIcon,
   ExclamationTriangleIcon,
   UserCircleIcon,
