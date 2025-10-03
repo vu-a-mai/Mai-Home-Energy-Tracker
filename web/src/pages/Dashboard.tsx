@@ -151,18 +151,23 @@ export default function Dashboard() {
         cost: device.cost
       }))
 
-    // Calculate personal usage for current user
+    // Calculate personal usage for current user (current month only)
     const now = new Date()
     const today = now.toISOString().split('T')[0]
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    
+    // Get first day of current month
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+    
+    // Get first day of current week (Sunday)
+    const currentDay = now.getDay()
+    const firstDayOfWeek = new Date(now.getTime() - currentDay * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-    const calculatePersonalUsage = (startDate: string) => {
+    const calculatePersonalUsage = (startDate: string, endDate: string = today) => {
       let kwh = 0
       let cost = 0
       
       energyLogs
-        .filter(log => log.usage_date >= startDate)
+        .filter(log => log.usage_date >= startDate && log.usage_date <= endDate)
         .forEach(log => {
           const device = devices.find(d => d.id === log.device_id)
           if (!device) return
@@ -190,9 +195,9 @@ export default function Dashboard() {
     
     return {
       personalUsage: {
-        daily: calculatePersonalUsage(today),
-        weekly: calculatePersonalUsage(weekAgo),
-        monthly: calculatePersonalUsage(monthAgo)
+        daily: calculatePersonalUsage(today, today), // Today only
+        weekly: calculatePersonalUsage(firstDayOfWeek), // This week (from Sunday)
+        monthly: calculatePersonalUsage(firstDayOfMonth) // This month (from 1st)
       },
       householdUsage: {
         total: { kwh: totalKwh, cost: totalCost },
