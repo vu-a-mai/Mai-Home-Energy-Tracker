@@ -94,11 +94,13 @@ Comprehensive documentation is available in the `docs/` folder:
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack (with Heroicons)
 
-- **Frontend**: React 18, TypeScript, Vite, TailwindCSS, Recharts
-- **Backend**: Supabase (PostgreSQL + Authentication)
-- **Deployment**: Vercel
+- <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style="color:#06b6d4; vertical-align:text-bottom;"> <path fill-rule="evenodd" d="M14.615 2.576a.75.75 0 01.104 1.055L9.802 9h4.448a.75.75 0 01.576 1.232l-6.5 7.5A.75.75 0 017 17.5L10.698 13H6.75a.75.75 0 01-.576-1.232l7-8.25a.75.75 0 011.055-.104z" clip-rule="evenodd"/></svg> **Frontend**: React 18, TypeScript, Vite, TailwindCSS, Recharts
+- <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16" style="color:#10b981; vertical-align:text-bottom;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7.5l9-4.5 9 4.5M4.5 8.25v7.5l7.5 3.75 7.5-3.75v-7.5"/></svg> **Backend**: Supabase (PostgreSQL + Authentication)
+- <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16" style="color:#8b5cf6; vertical-align:text-bottom;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.59 14.37a9 9 0 10-7.18 3.38h8.18M16.5 21l3-3m0 0l3 3m-3-3v6"/></svg> **Deployment**: Vercel
+
+Icon set: [Heroicons](https://heroicons.com/) — used consistently throughout the app and docs.
 
 ---
 
