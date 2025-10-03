@@ -240,7 +240,7 @@ export default function Devices() {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 md:mb-8 p-4 md:p-6 energy-header-gradient rounded-2xl text-white shadow-xl energy-glow">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold mb-2 energy-pulse flex items-center gap-3">
-            <CpuChipIcon className="w-8 h-8" />
+            <CpuChipIcon className="w-8 h-8 text-cyan-400" />
             Device Management
           </h1>
           <p className="opacity-90 text-sm md:text-base">
