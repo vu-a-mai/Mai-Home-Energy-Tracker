@@ -344,6 +344,32 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
     }
   }, [user, isDemoMode])
 
+  // Set up realtime subscription for energy logs
+  useEffect(() => {
+    if (!user || isDemoMode) return
+
+    const channel = supabase
+      .channel('energy_logs_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'energy_logs'
+        },
+        (payload) => {
+          console.log('Energy log change detected:', payload)
+          // Refresh logs when any change occurs
+          refreshEnergyLogs()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user, isDemoMode])
+
   const value = {
     energyLogs,
     loading,
