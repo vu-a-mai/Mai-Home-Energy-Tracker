@@ -902,7 +902,8 @@ ${householdUsers.map(user =>
               <>
                 <DialogHeader className="pb-2">
                   <DialogTitle className="text-lg md:text-xl flex items-center gap-2 text-white">
-                    📊 {monthNames[viewingBillSplit.month - 1]} {viewingBillSplit.year}
+                    <ChartBarIcon className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
+                    {monthNames[viewingBillSplit.month - 1]} {viewingBillSplit.year}
                   </DialogTitle>
                   <DialogDescription className="text-slate-400">
                     Billing Period: {viewingBillSplit.billing_period_start} to {viewingBillSplit.billing_period_end}
@@ -976,7 +977,8 @@ ${householdUsers.map(user =>
                     return (
                       <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 p-4 rounded-lg border border-slate-600/50">
                         <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-                          📊 Usage Summary
+                          <ChartBarIcon className="w-5 h-5 text-blue-400" />
+                          Usage Summary
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                           <div className="text-center">
