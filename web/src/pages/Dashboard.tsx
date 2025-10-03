@@ -10,6 +10,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Badge } from '../components/ui/badge'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts'
 import { calculateUsageCost } from '../utils/rateCalculatorFixed'
+import {
+  BoltIcon,
+  HomeIcon,
+  CpuChipIcon,
+  ChartBarIcon,
+  ChartPieIcon,
+  ArrowTrendingUpIcon,
+  CalendarDaysIcon,
+  ClockIcon,
+  SunIcon,
+  MoonIcon,
+  UserGroupIcon
+} from '@heroicons/react/24/outline'
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -560,12 +573,15 @@ export default function Dashboard() {
 
       {/* Personal Usage Stats - Color Coded */}
       <section className="mb-6 slide-up">
-        <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground">📊 Personal Usage Analytics</h2>
+        <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
+          <UserGroupIcon className="w-6 h-6 text-primary" />
+          Personal Usage Analytics
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           <Card className="energy-card bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30 hover:border-green-500/50 transition-all">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">📅</span>
+                <SunIcon className="w-6 h-6 text-green-400" />
                 <span className="text-xs text-muted-foreground font-semibold">Current Daily Usage</span>
               </div>
               <div className="text-2xl font-bold text-green-400 mb-1">
@@ -583,7 +599,7 @@ export default function Dashboard() {
           <Card className="energy-card bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/30 hover:border-blue-500/50 transition-all">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">📈</span>
+                <CalendarDaysIcon className="w-6 h-6 text-blue-400" />
                 <span className="text-xs text-muted-foreground font-semibold">Current Weekly Usage</span>
               </div>
               <div className="text-2xl font-bold text-blue-400 mb-1">
@@ -601,7 +617,7 @@ export default function Dashboard() {
           <Card className="energy-card bg-gradient-to-br from-red-500/10 to-orange-500/10 border-red-500/30 hover:border-red-500/50 transition-all">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">📊</span>
+                <MoonIcon className="w-6 h-6 text-red-400" />
                 <span className="text-xs text-muted-foreground font-semibold">Current Monthly Usage</span>
               </div>
               <div className="text-2xl font-bold text-red-400 mb-1">
@@ -620,20 +636,24 @@ export default function Dashboard() {
 
       {/* Household Summary & Device Analysis */}
       <section className="mb-6 slide-up">
-        <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground">🏠 Household Summary & Device Analysis</h2>
+        <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
+          <HomeIcon className="w-6 h-6 text-primary" />
+          Household Summary & Device Analysis
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Total Household Usage - Enhanced */}
           <Card className="energy-card bg-gradient-to-br from-primary/15 via-emerald-500/10 to-cyan-500/15 border-primary/40 hover:border-primary/60 transition-all shadow-lg hover:shadow-primary/20">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                💡 Total Household Usage
+                <HomeIcon className="w-5 h-5 text-primary" />
+                Total Household Usage
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="mb-4 p-4 bg-gradient-to-r from-primary/20 to-emerald-500/20 rounded-xl border border-primary/40">
                 <div className="text-4xl font-bold text-orange-400 mb-1">
                   {dashboardData.householdUsage.total.kwh.toFixed(1)} kWh
-                </div>
+              </div>
                 <div className="text-sm text-foreground/80">
                   Total Cost: <strong className="text-xl text-green-400 ml-1">${dashboardData.householdUsage.total.cost.toFixed(2)}</strong>
                 </div>
@@ -677,7 +697,7 @@ export default function Dashboard() {
                         <span className={`text-sm font-bold ${getUserColor(member.name)}`}>
                           {member.kwh.toFixed(1)} kWh
                         </span>
-                      </div>
+                        </div>
                       <div className="w-full bg-muted/30 rounded-full h-1.5 overflow-hidden">
                         <div 
                           className={`h-1.5 rounded-full transition-all duration-500 ${getUserColor(member.name).replace('text-', 'bg-')}`}
@@ -695,7 +715,8 @@ export default function Dashboard() {
           <Card className="energy-card lg:col-span-2">
             <CardHeader>
               <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                🔌 Device Usage Analysis
+                <CpuChipIcon className="w-5 h-5 text-primary" />
+                Device Usage Analysis
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -704,26 +725,26 @@ export default function Dashboard() {
                   {/* Pie Chart */}
                   <div>
                     <ResponsiveContainer width="100%" height={280}>
-                      <PieChart>
-                        <Pie
-                          data={deviceUsageData}
-                          cx="50%"
-                          cy="50%"
+                <PieChart>
+                  <Pie
+                    data={deviceUsageData}
+                    cx="50%"
+                    cy="50%"
                           outerRadius={90}
-                          fill="#8884d8"
+                    fill="#8884d8"
                           dataKey="value"
                           label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                           labelLine={{ stroke: 'hsl(var(--color-foreground))', strokeWidth: 1 }}
-                        >
-                          {deviceUsageData.map((entry, index) => (
-                            <Cell key={`cell-${index}-${entry.name}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: 'hsl(var(--color-card))', 
+                  >
+                    {deviceUsageData.map((entry, index) => (
+                      <Cell key={`cell-${index}-${entry.name}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--color-card))', 
                             border: '2px solid hsl(var(--color-primary))',
-                            borderRadius: '8px',
+                      borderRadius: '8px',
                             color: 'hsl(var(--color-foreground))',
                             fontSize: '13px',
                             fontWeight: '600'
@@ -739,9 +760,9 @@ export default function Dashboard() {
                             `${Number(value).toFixed(2)} kWh ($${props.payload.cost.toFixed(2)})`,
                             name
                           ]}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
+                  />
+                </PieChart>
+              </ResponsiveContainer>
                   </div>
                   
                   {/* Device List - Scrollable if many devices */}
@@ -752,17 +773,17 @@ export default function Dashboard() {
                     </h3>
                     <div className="space-y-2.5 max-h-[240px] overflow-y-auto pr-2 custom-scrollbar">
                       {dashboardData.topDevices.slice(0, 10).map((device, index) => {
-                        const getCostColor = (cost: number) => {
-                          if (cost > 100) return 'text-red-400'
-                          if (cost > 20) return 'text-yellow-400'
-                          return 'text-green-400'
-                        }
-                        
+                  const getCostColor = (cost: number) => {
+                    if (cost > 100) return 'text-red-400'
+                    if (cost > 20) return 'text-yellow-400'
+                    return 'text-green-400'
+                  }
+                  
                         const percentage = dashboardData.householdUsage.total.kwh > 0
                           ? ((device.kwh / dashboardData.householdUsage.total.kwh) * 100).toFixed(1)
                           : 0
                         
-                        return (
+                  return (
                           <div key={index} className="group p-2.5 rounded-lg hover:bg-muted/50 transition-all">
                             <div className="flex justify-between items-center mb-1.5">
                               <div className="flex items-center gap-2.5 flex-1">
@@ -775,14 +796,14 @@ export default function Dashboard() {
                                 <div className="flex-1 min-w-0">
                                   <div className="font-semibold text-foreground text-sm truncate">
                                     {device.name}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">
+                        </div>
+                        <div className="text-xs text-muted-foreground">
                                     {device.kwh.toFixed(2)} kWh • {percentage}% of total
-                                  </div>
-                                </div>
+                        </div>
+                      </div>
                               </div>
                               <div className={`text-right font-bold text-sm ml-3 ${getCostColor(device.cost)}`}>
-                                ${device.cost.toFixed(2)}
+                        ${device.cost.toFixed(2)}
                               </div>
                             </div>
                             <div className="w-full bg-muted/30 rounded-full h-1 overflow-hidden">
@@ -793,11 +814,11 @@ export default function Dashboard() {
                                   backgroundColor: COLORS[index % COLORS.length]
                                 }}
                               />
-                            </div>
-                          </div>
-                        )
-                      })}
+                      </div>
                     </div>
+                  )
+                })}
+              </div>
                   </div>
                 </div>
               ) : (
@@ -814,36 +835,40 @@ export default function Dashboard() {
 
       {/* Data Visualization Charts */}
       <section className="mb-8 slide-up">
-        <h2 className="mb-3 md:mb-5 text-lg md:text-xl font-bold text-foreground">📈 Usage Trends & Analysis</h2>
+        <h2 className="mb-3 md:mb-5 text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
+          <ChartPieIcon className="w-6 h-6 text-primary" />
+          Usage Trends & Analysis
+        </h2>
         
         {/* Top Row: Weekly Usage */}
         <div className="mb-4 md:mb-6">
           <Card className="energy-card chart-hover">
             <CardHeader>
               <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                📊 Weekly Usage by Person
+                <ChartBarIcon className="w-5 h-5 text-primary" />
+                Weekly Usage by Person
               </CardTitle>
             </CardHeader>
             <CardContent>
               {weeklyUsageData.length > 0 && weeklyUsageData.some(day => Object.keys(day).length > 2) ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={weeklyUsageData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border))" />
-                    <XAxis dataKey="day" stroke="hsl(var(--color-muted-foreground))" />
-                    <YAxis 
-                      stroke="hsl(var(--color-muted-foreground))" 
-                      label={{ value: 'Usage (kWh)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: 'hsl(var(--color-muted-foreground))' } }}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--color-card))', 
-                        border: '1px solid hsl(var(--color-border))',
-                        borderRadius: '8px',
-                        color: 'hsl(var(--color-foreground))',
-                        fontSize: '14px'
-                      }}
-                      labelStyle={{ color: 'hsl(var(--color-foreground))' }}
-                      formatter={(value, name) => [`${value} kWh`, name]}
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={weeklyUsageData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border))" />
+                  <XAxis dataKey="day" stroke="hsl(var(--color-muted-foreground))" />
+                  <YAxis 
+                    stroke="hsl(var(--color-muted-foreground))" 
+                    label={{ value: 'Usage (kWh)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: 'hsl(var(--color-muted-foreground))' } }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--color-card))', 
+                      border: '1px solid hsl(var(--color-border))',
+                      borderRadius: '8px',
+                      color: 'hsl(var(--color-foreground))',
+                      fontSize: '14px'
+                    }}
+                    labelStyle={{ color: 'hsl(var(--color-foreground))' }}
+                    formatter={(value, name) => [`${value} kWh`, name]}
                       labelFormatter={(label, payload) => {
                         const dayData = payload && payload[0] ? payload[0].payload : null
                         return `${label}${dayData?.date ? ` (${dayData.date})` : ''}`
@@ -852,8 +877,8 @@ export default function Dashboard() {
                     {householdMembers.map((member, index) => (
                       <Bar key={member.id} dataKey={member.name} fill={COLORS[index % COLORS.length]} />
                     ))}
-                  </BarChart>
-                </ResponsiveContainer>
+                </BarChart>
+              </ResponsiveContainer>
               ) : (
                 <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
@@ -868,13 +893,14 @@ export default function Dashboard() {
         </div>
 
         {/* Monthly Trend Chart - Full Width */}
-        <Card className="energy-card chart-hover">
-          <CardHeader>
-            <CardTitle className="text-lg text-foreground flex items-center gap-2">
-              📈 Monthly Usage Trend (Last 12 Months)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          <Card className="energy-card chart-hover">
+            <CardHeader>
+              <CardTitle className="text-lg text-foreground flex items-center gap-2">
+              <ArrowTrendingUpIcon className="w-5 h-5 text-primary" />
+              Monthly Usage Trend (Last 12 Months)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
             {monthlyTrendData.some(m => m.usage > 0) ? (
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={monthlyTrendData}>
@@ -925,8 +951,8 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
       </section>
 
     </div>
