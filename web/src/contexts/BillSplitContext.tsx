@@ -1,12 +1,14 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
-import { supabase } from '../lib/supabaseClient'
+import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 
 export interface BillSplit {
   id: string
   household_id: string
+  month: number
+  year: number
   billing_period_start: string
   billing_period_end: string
   total_bill_amount: number

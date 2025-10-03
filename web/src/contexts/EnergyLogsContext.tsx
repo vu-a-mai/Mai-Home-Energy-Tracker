@@ -1,35 +1,27 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { supabase } from '../lib/supabaseClient'
+import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useDemoMode } from './DemoContext'
-// import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription'
-// import { useCache } from '../hooks/useCache'
-// import { MockDataService } from '../services/mockDataService'
+import type { EnergyLog } from '../lib/supabase'
+import { calculateUsageCost } from '../utils/rateCalculatorFixed'
 import { demoEnergyLogs, demoDevices } from '../demo/demoData'
 
-export interface EnergyLog {
-  id: string
-  device_id: string
+// Re-export EnergyLog for convenience
+export type { EnergyLog }
+
+// Use EnergyLog type from supabase, extend it for display purposes
+export interface EnergyLogWithDevice extends EnergyLog {
   device_name?: string
   device_wattage?: number
-  start_time: string
-  end_time: string
-  usage_date: string
-  calculated_cost: number
-  total_kwh: number  // Database column is total_kwh
-  household_id: string
-  created_by: string
-  created_at: string
-  assigned_users?: string[]
 }
 
 interface EnergyLogsContextType {
-  energyLogs: EnergyLog[]
+  energyLogs: EnergyLogWithDevice[]
   loading: boolean
   error: string | null
-  addEnergyLog: (log: Omit<EnergyLog, 'id' | 'calculated_cost' | 'total_kwh' | 'household_id' | 'created_by' | 'created_at'>) => Promise<void>
+  addEnergyLog: (log: Omit<EnergyLog, 'id' | 'calculated_cost' | 'total_kwh' | 'household_id' | 'created_by' | 'created_at' | 'updated_at'>) => Promise<void>
   updateEnergyLog: (id: string, updates: Partial<EnergyLog>) => Promise<void>
   deleteEnergyLog: (id: string) => Promise<void>
   refreshEnergyLogs: () => Promise<void>
@@ -76,7 +68,26 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      // Fetch energy logs with device information
+      // Get user's household_id to filter logs
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('household_id')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (userError) {
+        console.error('Error fetching user data:', userError)
+        setLoading(false)
+        return
+      }
+
+      if (!userData?.household_id) {
+        console.error('User has no household_id')
+        setLoading(false)
+        return
+      }
+
+      // Fetch energy logs with device information - FILTERED BY HOUSEHOLD
       const { data, error } = await supabase
         .from('energy_logs')
         .select(`
@@ -86,6 +97,7 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
             wattage
           )
         `)
+        .eq('household_id', userData.household_id)
         .order('usage_date', { ascending: false })
         .order('start_time', { ascending: false })
 
@@ -101,78 +113,47 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
       setEnergyLogs(transformedLogs)
     } catch (err) {
       console.error('Error fetching energy logs:', err)
-      setError('Failed to load energy logs')
     } finally {
       setLoading(false)
     }
   }
 
-  const calculateEnergyCost = async (deviceId: string, startTime: string, endTime: string, usageDate: string) => {
+  const calculateEnergyCost = async (
+    deviceId: string,
+    startTime: string,
+    endTime: string,
+    usageDate: string
+  ): Promise<{ cost: number; kwh: number }> => {
     try {
       // Get device wattage
       const { data: device, error: deviceError } = await supabase
         .from('devices')
         .select('wattage')
         .eq('id', deviceId)
-        .single()
+        .maybeSingle()
 
       if (deviceError) throw deviceError
+      if (!device) throw new Error('Device not found')
 
-      // Use the rate calculation function from Supabase
-      const { data, error } = await supabase
-        .rpc('calculate_energy_cost', {
-          wattage: device.wattage,
-          start_time: startTime,
-          end_time: endTime,
-          usage_date: usageDate
-        })
-
-      if (error) throw error
-
-      // Calculate kWh - handle overnight usage
-      const startDateTime = new Date(`${usageDate}T${startTime}`)
-      let endDateTime = new Date(`${usageDate}T${endTime}`)
-      
-      // If end time is before start time, it crosses midnight (add 24 hours)
-      if (endDateTime <= startDateTime) {
-        endDateTime = new Date(endDateTime.getTime() + 24 * 60 * 60 * 1000)
-      }
-      
-      const durationHours = (endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60 * 60)
-      const kwh = (device.wattage / 1000) * durationHours
+      // Use the proper rate calculator for accurate time-of-use pricing
+      const calculation = calculateUsageCost(
+        device.wattage,
+        startTime,
+        endTime,
+        usageDate
+      )
 
       return {
-        cost: data || 0,
-        kwh: kwh
+        cost: Math.round(calculation.totalCost * 100) / 100, // Round to 2 decimal places
+        kwh: Math.round(calculation.totalKwh * 1000) / 1000  // Round to 3 decimal places
       }
     } catch (err) {
       console.error('Error calculating energy cost:', err)
-      // Fallback calculation if function fails
-      const { data: device } = await supabase
-        .from('devices')
-        .select('wattage')
-        .eq('id', deviceId)
-        .single()
-
-      if (device) {
-        const startDateTime = new Date(`${usageDate}T${startTime}`)
-        let endDateTime = new Date(`${usageDate}T${endTime}`)
-        
-        // If end time is before start time, it crosses midnight (add 24 hours)
-        if (endDateTime <= startDateTime) {
-          endDateTime = new Date(endDateTime.getTime() + 24 * 60 * 60 * 1000)
-        }
-        
-        const durationHours = (endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60 * 60)
-        const kwh = (device.wattage / 1000) * durationHours
-        const cost = kwh * 0.30 // Fallback average rate
-        return { cost, kwh }
-      }
-      return { cost: 0, kwh: 0 }
+      throw new Error('Failed to calculate energy cost')
     }
   }
 
-  const addEnergyLog = async (logData: Omit<EnergyLog, 'id' | 'calculated_cost' | 'total_kwh' | 'household_id' | 'created_by' | 'created_at'>) => {
+  const addEnergyLog = async (logData: Omit<EnergyLog, 'id' | 'calculated_cost' | 'total_kwh' | 'household_id' | 'created_by' | 'created_at' | 'updated_at'>) => {
     if (!user) throw new Error('User not authenticated')
 
     try {
@@ -183,9 +164,17 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
         .from('users')
         .select('household_id')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
 
-      if (userError) throw userError
+      if (userError) {
+        console.error('Error fetching user data:', userError)
+        throw new Error('Failed to fetch user data. Please try logging out and back in.')
+      }
+      
+      if (!userData) {
+        console.error('User not found in database. User ID:', user.id)
+        throw new Error('User profile not found. Please try logging out and back in to sync your account.')
+      }
 
       // Calculate cost and kWh
       const { cost, kwh } = await calculateEnergyCost(
@@ -201,7 +190,8 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
       const newLog = {
         ...logDataWithoutUsers,
         calculated_cost: cost,
-        total_kwh: kwh,  // Column is named total_kwh, not calculated_kwh
+        total_kwh: kwh,
+        assigned_users: assigned_users || [], // Store assigned users in the array column
         household_id: userData.household_id,
         created_by: user.id
       }
@@ -216,21 +206,10 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
             wattage
           )
         `)
-        .single()
+        .maybeSingle()
 
       if (error) throw error
-
-      // Add assigned users if provided
-      if (assigned_users && assigned_users.length > 0) {
-        const userAssignments = assigned_users.map(userId => ({
-          energy_log_id: data.id,
-          user_id: userId
-        }))
-
-        await supabase
-          .from('energy_log_users')
-          .insert(userAssignments)
-      }
+      if (!data) throw new Error('Failed to create energy log')
 
       const transformedLog = {
         ...data,
@@ -278,9 +257,10 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
             wattage
           )
         `)
-        .single()
+        .maybeSingle()
 
       if (error) throw error
+      if (!data) throw new Error('Energy log not found')
 
       const transformedLog = {
         ...data,
@@ -302,24 +282,38 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
-      // Delete associated user assignments first
-      await supabase
-        .from('energy_log_users')
-        .delete()
-        .eq('energy_log_id', id)
-
-      // Delete the energy log
-      const { error } = await supabase
+      // First, verify the log exists and user has permission to delete it
+      const { data: existingLog, error: fetchError } = await supabase
         .from('energy_logs')
-        .delete()
+        .select('id, created_by, household_id')
+        .eq('id', id)
+        .maybeSingle()
+
+      if (fetchError) throw fetchError
+      if (!existingLog) {
+        throw new Error('Energy log not found')
+      }
+
+      // Delete the energy log (assigned_users are stored in the same table, no separate junction table)
+      const { error, count } = await supabase
+        .from('energy_logs')
+        .delete({ count: 'exact' })
         .eq('id', id)
 
       if (error) throw error
 
+      // Check if deletion was actually successful (RLS might block it silently)
+      if (count === 0) {
+        console.error('Delete was blocked by RLS policy. Log details:', existingLog)
+        console.error('Current user:', user?.id)
+        throw new Error('You do not have permission to delete this energy log. It may have been created by another user. Please contact your administrator.')
+      }
+
       setEnergyLogs(prev => prev.filter(log => log.id !== id))
     } catch (err) {
       console.error('Error deleting energy log:', err)
-      setError('Failed to delete energy log')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete energy log'
+      setError(errorMessage)
       throw err
     }
   }

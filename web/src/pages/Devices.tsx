@@ -447,9 +447,9 @@ export default function Devices() {
               <div className="mb-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">{getDeviceIcon(device.name, device.device_type)}</span>
+                    <span className="text-xl md:text-2xl">{getDeviceIcon(device.name, device.device_type)}</span>
                     <h3 
-                      className="font-bold text-foreground" 
+                      className="font-bold text-sm md:text-base text-foreground" 
                       title={device.name}
                     >
                       {device.name}
@@ -507,7 +507,7 @@ export default function Devices() {
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-muted-foreground">Per Hour</span>
                   <span className="font-semibold text-green-400 text-sm">
-                    {device.kwh_per_hour.toFixed(3)} kWh/h
+                    {(device.kwh_per_hour || (device.wattage / 1000)).toFixed(3)} kWh/h
                   </span>
                 </div>
               </div>
@@ -525,8 +525,8 @@ export default function Devices() {
       {devices.length === 0 && !loading && (
         <section className="text-center py-20 slide-up">
           <div className="text-6xl mb-4 energy-pulse">🔌</div>
-          <h3 className="text-xl font-bold text-foreground mb-2">No devices yet</h3>
-          <p className="text-muted-foreground mb-6">
+          <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">No devices yet</h3>
+          <p className="text-sm md:text-base text-muted-foreground mb-4 md:mb-6">
             Add your first household device to start tracking energy usage
           </p>
           <Button

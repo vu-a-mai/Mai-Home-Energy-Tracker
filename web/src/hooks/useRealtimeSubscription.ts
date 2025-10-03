@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { supabase } from '../lib/supabaseClient'
+import { supabase } from '../lib/supabase'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
 interface UseRealtimeSubscriptionOptions {
@@ -22,10 +22,21 @@ export function useRealtimeSubscription({
   onChange
 }: UseRealtimeSubscriptionOptions) {
   const channelRef = useRef<RealtimeChannel | null>(null)
+  const callbacksRef = useRef({ onInsert, onUpdate, onDelete, onChange })
+
+  // Update callbacks ref without causing re-subscription
+  useEffect(() => {
+    callbacksRef.current = { onInsert, onUpdate, onDelete, onChange }
+  })
 
   useEffect(() => {
+    // Prevent duplicate subscriptions
+    if (channelRef.current) {
+      return
+    }
+
     // Create channel name
-    const channelName = `${table}-changes-${Date.now()}`
+    const channelName = `${table}-changes`
     
     // Create subscription
     channelRef.current = supabase
@@ -39,9 +50,9 @@ export function useRealtimeSubscription({
           ...(filter && { filter })
         } as any,
         (payload: any) => {
-          console.log(`Real-time ${payload.eventType} on ${table}:`, payload)
+          // Call specific event handlers from ref (always latest)
+          const { onInsert, onUpdate, onDelete, onChange } = callbacksRef.current
           
-          // Call specific event handlers
           switch (payload.eventType) {
             case 'INSERT':
               onInsert?.(payload)
@@ -59,7 +70,10 @@ export function useRealtimeSubscription({
         }
       )
       .subscribe((status: any) => {
-        console.log(`Subscription status for ${table}:`, status)
+        // Only log status changes, not every status check
+        if (status === 'SUBSCRIBED' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          console.log(`[Realtime] ${table}: ${status}`)
+        }
       })
 
     // Cleanup function
@@ -69,7 +83,7 @@ export function useRealtimeSubscription({
         channelRef.current = null
       }
     }
-  }, [table, event, filter, onInsert, onUpdate, onDelete, onChange])
+  }, [table, event, filter]) // Only re-subscribe if these core values change
 
   return channelRef.current
 }

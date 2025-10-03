@@ -60,9 +60,12 @@ export interface BillSplit {
   id: string
   month: number
   year: number
-  total_amount: number
-  user_allocations: Record<string, number>
+  billing_period_start: string
+  billing_period_end: string
+  total_bill_amount: number
+  user_allocations: Record<string, any>
   household_id: string
+  created_by: string
   created_at: string
-  updated_at: string
+  updated_at?: string
 }

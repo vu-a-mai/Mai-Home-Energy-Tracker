@@ -5,14 +5,14 @@
  */
 
 import type { Device } from '../contexts/DeviceContext'
-import type { EnergyLog } from '../contexts/EnergyLogsContext'
+import type { EnergyLogWithDevice } from '../contexts/EnergyLogsContext'
 
 export interface BackupData {
   version: string
   timestamp: string
   household_id: string
   devices: Device[]
-  energyLogs: EnergyLog[]
+  energyLogs: EnergyLogWithDevice[]
   metadata: {
     deviceCount: number
     energyLogCount: number
@@ -40,7 +40,7 @@ export interface ImportResult {
  */
 export function exportDataToJSON(
   devices: Device[],
-  energyLogs: EnergyLog[],
+  energyLogs: EnergyLogWithDevice[],
   householdId: string
 ): void {
   // Calculate metadata
@@ -79,7 +79,7 @@ export function exportDataToJSON(
 /**
  * Export data to CSV format
  */
-export function exportEnergyLogsToCSV(energyLogs: EnergyLog[]): void {
+export function exportEnergyLogsToCSV(energyLogs: EnergyLogWithDevice[]): void {
   const headers = [
     'Date',
     'Device Name',
@@ -104,7 +104,7 @@ export function exportEnergyLogsToCSV(energyLogs: EnergyLog[]): void {
       log.start_time,
       log.end_time,
       duration.toFixed(2),
-      log.total_kwh.toFixed(4),
+      (log.total_kwh || 0).toFixed(4),
       log.calculated_cost.toFixed(2),
       log.created_by,
       (log.assigned_users || []).join('; ')
@@ -259,7 +259,7 @@ export async function parseBackupFile(file: File): Promise<BackupData> {
  */
 export function createAutoBackup(
   devices: Device[],
-  energyLogs: EnergyLog[],
+  energyLogs: EnergyLogWithDevice[],
   householdId: string
 ): string {
   const backupData: BackupData = {
