@@ -13,43 +13,54 @@ import {
   TrashIcon,
   BoltIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  ComputerDesktopIcon,
+  DevicePhoneMobileIcon,
+  TvIcon,
+  PrinterIcon,
+  LightBulbIcon,
+  HomeModernIcon,
+  FireIcon,
+  WifiIcon
 } from '@heroicons/react/24/outline'
 
 // Helper function to get device-specific icon
-const getDeviceIcon = (deviceName: string, deviceType: string): string => {
+const getDeviceIcon = (deviceName: string, deviceType: string): JSX.Element => {
   const name = deviceName.toLowerCase()
   const type = deviceType.toLowerCase()
+  const iconClass = "w-5 h-5 md:w-6 md:h-6"
   
   // Alphabetically organized for easy maintenance
-  if (type.includes('air conditioner') || name.includes('ac')) return '❄️'
-  if (type.includes('air purifier')) return '🌬️'
-  if (type.includes('coffee maker') || name.includes('coffee')) return '☕'
-  if (type.includes('computer') || name.includes('laptop') || name.includes('pc')) return '💻'
-  if (type.includes('dehumidifier')) return '💧'
-  if (type.includes('dishwasher')) return '🍽️'
-  if (type.includes('dryer') && !name.includes('hair')) return '🧺'
-  if (type.includes('ev charger') || name.includes('tesla') || name.includes('ev')) return '🔋'
-  if (type.includes('fan')) return '🌀'
-  if (type.includes('freezer')) return '🧊'
-  if (type.includes('gaming console') || name.includes('gaming')) return '🎮'
-  if (type.includes('hair dryer') || name.includes('hair dryer')) return '💨'
-  if (type.includes('heater') || type.includes('space heater')) return '🌡️'
-  if (type.includes('humidifier')) return '💦'
-  if (type.includes('iron')) return '👔'
-  if (type.includes('kettle')) return '🫖'
-  if (type.includes('light')) return '💡'
-  if (type.includes('microwave')) return '🔥'
-  if (type.includes('oven')) return '🍳'
-  if (type.includes('printer')) return '🖨️'
-  if (type.includes('refrigerator') || name.includes('fridge')) return '🧊'
-  if (type.includes('router')) return '📡'
-  if (type.includes('toaster')) return '🍞'
-  if (type.includes('tv') || name.includes('tv')) return '📺'
-  if (type.includes('vacuum')) return '🧹'
-  if (type.includes('washing machine')) return '🧺'
-  if (type.includes('water heater')) return '🚿'
-  return '🔌'
+  // Computers & Electronics
+  if (type.includes('computer') || name.includes('laptop') || name.includes('pc')) 
+    return <ComputerDesktopIcon className={`${iconClass} text-blue-400`} />
+  if (type.includes('gaming console') || name.includes('gaming')) 
+    return <DevicePhoneMobileIcon className={`${iconClass} text-purple-400`} />
+  if (type.includes('printer')) 
+    return <PrinterIcon className={`${iconClass} text-gray-400`} />
+  if (type.includes('router') || name.includes('wifi')) 
+    return <WifiIcon className={`${iconClass} text-cyan-400`} />
+  if (type.includes('tv') || name.includes('tv')) 
+    return <TvIcon className={`${iconClass} text-indigo-400`} />
+  
+  // Lighting
+  if (type.includes('light')) 
+    return <LightBulbIcon className={`${iconClass} text-yellow-400`} />
+  
+  // Heating & Cooling
+  if (type.includes('air conditioner') || name.includes('ac')) 
+    return <HomeModernIcon className={`${iconClass} text-cyan-400`} />
+  if (type.includes('heater') || type.includes('space heater') || type.includes('water heater')) 
+    return <FireIcon className={`${iconClass} text-red-400`} />
+  if (type.includes('microwave') || type.includes('oven') || type.includes('toaster')) 
+    return <FireIcon className={`${iconClass} text-orange-400`} />
+  
+  // EV Charger
+  if (type.includes('ev charger') || name.includes('tesla') || name.includes('ev')) 
+    return <BoltIcon className={`${iconClass} text-green-400`} />
+  
+  // Default
+  return <CpuChipIcon className={`${iconClass} text-primary`} />
 }
 
 interface DeviceFormData {
@@ -479,7 +490,7 @@ export default function Devices() {
               <div className="mb-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xl md:text-2xl">{getDeviceIcon(device.name, device.device_type)}</span>
+                    {getDeviceIcon(device.name, device.device_type)}
                     <h3 
                       className="font-bold text-sm md:text-base text-foreground" 
                       title={device.name}

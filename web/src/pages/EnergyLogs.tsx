@@ -805,10 +805,14 @@ export default function EnergyLogs() {
                       <div className="text-xs text-muted-foreground">{log.device_wattage}W</div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-xs font-bold text-green-400">
-                        ⚡ {usageCalc.totalKwh.toFixed(2)} kWh
+                      <div className="text-xs font-bold text-orange-400 flex items-center justify-end gap-1">
+                        <BoltIcon className="w-3 h-3" />
+                        {usageCalc.totalKwh.toFixed(2)} kWh
                       </div>
-                      <div className="text-sm font-bold text-red-400">
+                      <div className="text-sm font-bold text-red-400 flex items-center justify-end gap-1">
+                        {usageCalc.totalCost > 10 && (
+                          <ExclamationTriangleIcon className="w-4 h-4 text-yellow-400" title="High cost!" />
+                        )}
                         ${usageCalc.totalCost.toFixed(2)}
                       </div>
                     </div>
@@ -837,16 +841,16 @@ export default function EnergyLogs() {
                   
                   <div className="flex flex-wrap items-center gap-1 mb-2">
                     {usageCalc.breakdown.map((period, idx) => (
-                      <div key={idx} className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
+                      <div key={idx} className={`px-1.5 py-0.5 rounded text-xs font-semibold flex items-center gap-1 ${
                         period.ratePeriod === 'Off-Peak' ? 'bg-green-500/20 text-green-400' :
                         period.ratePeriod === 'Mid-Peak' ? 'bg-yellow-500/20 text-yellow-400' :
                         period.ratePeriod === 'On-Peak' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'
                       }`}>
-                        {period.ratePeriod === 'Off-Peak' && '🟢'}
-                        {period.ratePeriod === 'Mid-Peak' && '🟡'}
-                        {period.ratePeriod === 'On-Peak' && '🔴'}
-                        {period.ratePeriod === 'Super Off-Peak' && '🔵'}
-                        {' '}{period.hours.toFixed(1)}h
+                        <ClockIcon className="w-3 h-3" />
+                        {period.ratePeriod === 'On-Peak' && (
+                          <ExclamationTriangleIcon className="w-3 h-3" title="Peak pricing!" />
+                        )}
+                        {period.hours.toFixed(1)}h {period.ratePeriod}
                       </div>
                     ))}
                   </div>
@@ -915,16 +919,16 @@ export default function EnergyLogs() {
                   {/* Center: Quick Rate Summary */}
                   <div className="flex items-center gap-2">
                     {usageCalc.breakdown.map((period, idx) => (
-                      <div key={idx} className={`px-2 py-1 rounded text-xs font-semibold ${
+                      <div key={idx} className={`px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 ${
                         period.ratePeriod === 'Off-Peak' ? 'bg-green-500/20 text-green-400' :
                         period.ratePeriod === 'Mid-Peak' ? 'bg-yellow-500/20 text-yellow-400' :
                         period.ratePeriod === 'On-Peak' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'
                       }`}>
-                        {period.ratePeriod === 'Off-Peak' && '🟢'}
-                        {period.ratePeriod === 'Mid-Peak' && '🟡'}
-                        {period.ratePeriod === 'On-Peak' && '🔴'}
-                        {period.ratePeriod === 'Super Off-Peak' && '🔵'}
-                        {' '}{period.hours.toFixed(1)}h
+                        <ClockIcon className="w-3 h-3" />
+                        {period.ratePeriod === 'On-Peak' && (
+                          <ExclamationTriangleIcon className="w-3 h-3" title="Peak pricing!" />
+                        )}
+                        {period.hours.toFixed(1)}h {period.ratePeriod}
                       </div>
                     ))}
                   </div>
@@ -932,11 +936,15 @@ export default function EnergyLogs() {
                   {/* Right: Total & Actions */}
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <div className="text-sm font-bold text-green-400">
-                        ⚡ {usageCalc.totalKwh.toFixed(2)} kWh
+                      <div className="text-sm font-bold text-orange-400 flex items-center justify-end gap-1">
+                        <BoltIcon className="w-4 h-4" />
+                        {usageCalc.totalKwh.toFixed(2)} kWh
                       </div>
-                      <div className="text-lg font-bold text-red-400">
-                        💰 ${usageCalc.totalCost.toFixed(2)}
+                      <div className="text-lg font-bold text-red-400 flex items-center justify-end gap-1">
+                        {usageCalc.totalCost > 10 && (
+                          <ExclamationTriangleIcon className="w-5 h-5 text-yellow-400" title="High cost!" />
+                        )}
+                        ${usageCalc.totalCost.toFixed(2)}
                       </div>
                     </div>
                     <div className="flex gap-1">
