@@ -19,6 +19,14 @@ import {
 import { validateAmount, validateDateRange } from '../utils/validation'
 import { calculateUsageCost } from '../utils/rateCalculatorFixed'
 import { logger } from '../utils/logger'
+import {
+  CurrencyDollarIcon,
+  PlusIcon,
+  TrashIcon,
+  CalendarIcon,
+  UsersIcon,
+  ChartBarIcon
+} from '@heroicons/react/24/outline'
 
 interface BillSplitData {
   billingPeriod: string

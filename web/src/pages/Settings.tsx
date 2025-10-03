@@ -7,6 +7,12 @@ import { toast } from 'sonner'
 import { Button } from '../components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card'
 import { exportDataToJSON, exportEnergyLogsToCSV, exportDevicesToCSV } from '../utils/dataBackup'
+import {
+  Cog6ToothIcon,
+  ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
+  CircleStackIcon
+} from '@heroicons/react/24/outline'
 
 export default function Settings() {
   const { user } = useAuth()
@@ -139,8 +145,9 @@ export default function Settings() {
     <div className="max-w-7xl mx-auto p-3 sm:p-4 min-h-screen bg-background text-foreground font-sans fade-in">
       {/* Header */}
       <header className="mb-4 p-3 md:p-4 energy-header-gradient rounded-xl text-white shadow-xl">
-        <h1 className="text-xl md:text-2xl font-bold energy-pulse">
-          ⚙️ Settings
+        <h1 className="text-xl md:text-2xl font-bold energy-pulse flex items-center gap-3">
+          <Cog6ToothIcon className="w-7 h-7 md:w-8 md:h-8" />
+          Settings
         </h1>
         <p className="opacity-90 text-xs md:text-sm">
           Manage your data, backups, and preferences
