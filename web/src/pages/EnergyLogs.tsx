@@ -19,7 +19,16 @@ import {
   ClockIcon,
   BoltIcon,
   CheckCircleIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  TvIcon,
+  ComputerDesktopIcon,
+  UserIcon,
+  CurrencyDollarIcon,
+  ChartBarIcon,
+  XMarkIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  ArrowsUpDownIcon
 } from '@heroicons/react/24/outline'
 
 interface EnergyLogFormData {
@@ -50,28 +59,32 @@ const formatTimeForInput = (timeString: string): string => {
 }
 
 // Helper function to get device-specific icon
-const getDeviceIcon = (deviceName: string): string => {
+const getDeviceIcon = (deviceName: string): JSX.Element => {
   const name = deviceName.toLowerCase()
-  if (name.includes('tv') || name.includes('television')) return '📺'
-  if (name.includes('refrigerator') || name.includes('fridge')) return '🧊'
-  if (name.includes('ac') || name.includes('air conditioner')) return '❄️'
-  if (name.includes('tesla') || name.includes('charger') || name.includes('ev')) return '🔋'
-  if (name.includes('gaming') || name.includes('pc') || name.includes('computer')) return '🖥️'
-  if (name.includes('laptop')) return '💻'
-  if (name.includes('hair dryer') || name.includes('dryer')) return '💨'
-  if (name.includes('tablet') || name.includes('ipad')) return '📱'
-  if (name.includes('work computer')) return '💼'
-  return '🔌' // Default icon
+  const iconClass = "w-4 h-4 inline-block"
+  
+  if (name.includes('tv') || name.includes('television')) return <TvIcon className={`${iconClass} text-indigo-400`} />
+  if (name.includes('refrigerator') || name.includes('fridge')) return <ComputerDesktopIcon className={`${iconClass} text-cyan-400`} />
+  if (name.includes('ac') || name.includes('air conditioner')) return <ComputerDesktopIcon className={`${iconClass} text-blue-400`} />
+  if (name.includes('tesla') || name.includes('charger') || name.includes('ev')) return <BoltIcon className={`${iconClass} text-green-400`} />
+  if (name.includes('gaming') || name.includes('pc') || name.includes('computer')) return <ComputerDesktopIcon className={`${iconClass} text-purple-400`} />
+  if (name.includes('laptop')) return <ComputerDesktopIcon className={`${iconClass} text-blue-400`} />
+  if (name.includes('hair dryer') || name.includes('dryer')) return <BoltIcon className={`${iconClass} text-orange-400`} />
+  if (name.includes('tablet') || name.includes('ipad')) return <ComputerDesktopIcon className={`${iconClass} text-gray-400`} />
+  if (name.includes('work computer')) return <ComputerDesktopIcon className={`${iconClass} text-slate-400`} />
+  return <BoltIcon className={`${iconClass} text-primary`} /> // Default icon
 }
 
 // Helper function to get user icon
-const getUserIcon = (userName: string): string => {
+const getUserIcon = (userName: string): JSX.Element => {
   const name = userName.toLowerCase()
-  if (name.includes('vu')) return '👨'
-  if (name.includes('thuy')) return '👩'
-  if (name.includes('vy')) return '👧'
-  if (name.includes('han')) return '👦'
-  return '👤'
+  const iconClass = "w-4 h-4 inline-block"
+  
+  if (name.includes('vu')) return <UserIcon className={`${iconClass} text-green-400`} />
+  if (name.includes('thuy')) return <UserIcon className={`${iconClass} text-purple-400`} />
+  if (name.includes('vy')) return <UserIcon className={`${iconClass} text-pink-400`} />
+  if (name.includes('han')) return <UserIcon className={`${iconClass} text-blue-400`} />
+  return <UserIcon className={`${iconClass} text-primary`} />
 }
 
 export default function EnergyLogs() {
