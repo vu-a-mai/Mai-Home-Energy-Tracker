@@ -21,7 +21,8 @@ import {
   FolderIcon,
   CpuChipIcon,
   ClipboardDocumentListIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  LightBulbIcon
 } from '@heroicons/react/24/outline'
 
 export default function Settings() {
@@ -367,6 +368,64 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
+      </section>
+
+      {/* Tech Stack & Credits Section */}
+      <section className="mt-8 border-t border-border pt-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Tech Stack */}
+          <div className="mb-8">
+            <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+              <CpuChipIcon className="w-5 h-5 text-cyan-400" />
+              Technology Stack
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
+                <p className="font-semibold text-foreground text-sm">React</p>
+                <p className="text-xs text-muted-foreground mt-1">Frontend Framework</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
+                <p className="font-semibold text-foreground text-sm">TypeScript</p>
+                <p className="text-xs text-muted-foreground mt-1">Type Safety</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
+                <p className="font-semibold text-foreground text-sm">Supabase</p>
+                <p className="text-xs text-muted-foreground mt-1">Database & Auth</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
+                <p className="font-semibold text-foreground text-sm">Tailwind CSS</p>
+                <p className="text-xs text-muted-foreground mt-1">Styling</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
+                <p className="font-semibold text-foreground text-sm">Vite</p>
+                <p className="text-xs text-muted-foreground mt-1">Build Tool</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
+                <p className="font-semibold text-foreground text-sm">Recharts</p>
+                <p className="text-xs text-muted-foreground mt-1">Data Visualization</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
+                <p className="font-semibold text-foreground text-sm">Heroicons</p>
+                <p className="text-xs text-muted-foreground mt-1">Icon System</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
+                <p className="font-semibold text-foreground text-sm">PostgreSQL</p>
+                <p className="text-xs text-muted-foreground mt-1">Database</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Credits */}
+          <div className="text-center space-y-2 pb-4">
+            <p className="text-sm text-foreground font-medium flex items-center justify-center gap-2">
+              <LightBulbIcon className="w-4 h-4 text-yellow-400" />
+              App Idea and Design by <span className="font-bold text-primary">Vu Mai</span>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              © 2025 Mai Family Energy Tracker • TOU-D-PRIME Rate Structure
+            </p>
+          </div>
+        </div>
       </section>
 
     </div>
