@@ -11,7 +11,9 @@ import {
   Cog6ToothIcon,
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
-  CircleStackIcon
+  CircleStackIcon,
+  ArrowPathIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 
 export default function Settings() {
@@ -206,7 +208,8 @@ export default function Settings() {
         <Card className="energy-card">
           <CardHeader className="pb-3">
             <CardTitle className="text-base md:text-lg text-foreground flex items-center gap-2">
-              💾 Backup & Restore
+              <CircleStackIcon className="w-5 h-5 text-blue-400" />
+              Backup & Restore
             </CardTitle>
             <CardDescription className="text-xs">
               Export your data or restore from backup
@@ -216,7 +219,8 @@ export default function Settings() {
             {/* Export Section */}
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                📤 Export
+                <ArrowDownTrayIcon className="w-4 h-4 text-green-400" />
+                Export
               </h3>
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
                 {/* Export All */}
@@ -308,7 +312,8 @@ export default function Settings() {
             {/* Import Section */}
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                📥 Restore
+                <ArrowUpTrayIcon className="w-4 h-4 text-purple-400" />
+                Restore
               </h3>
               <div className="space-y-2">
                 <div className="p-2 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/40 rounded-lg">

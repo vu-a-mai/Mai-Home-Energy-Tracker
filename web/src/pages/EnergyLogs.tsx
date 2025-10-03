@@ -23,12 +23,15 @@ import {
   TvIcon,
   ComputerDesktopIcon,
   UserIcon,
+  UsersIcon,
   CurrencyDollarIcon,
   ChartBarIcon,
   XMarkIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  ArrowsUpDownIcon
+  ArrowsUpDownIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon
 } from '@heroicons/react/24/outline'
 
 interface EnergyLogFormData {
@@ -375,7 +378,7 @@ export default function EnergyLogs() {
             <div className="lg:hidden space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-foreground font-semibold">
-                  <span className="text-lg">🔍</span>
+                  <FunnelIcon className="w-5 h-5 text-blue-400" />
                   <span className="text-sm">Filters</span>
                 </div>
                 <Button
@@ -402,11 +405,15 @@ export default function EnergyLogs() {
                   <button
                     type="button"
                     onClick={() => setShowUserFilter(true)}
-                    className="w-full px-3 py-2 text-sm border rounded-lg bg-background text-foreground border-border hover:border-primary/50"
+                    className="w-full px-3 py-2 text-sm border rounded-lg bg-background text-foreground border-border hover:border-primary/50 flex items-center justify-between gap-2 group"
                   >
-                    {filters.users.length === 0 ? 'All' : 
-                     filters.users.length === householdUsers.length ? 'All' :
-                     `${filters.users.length} selected`}
+                    <span className="flex items-center gap-2">
+                      <UsersIcon className="w-4 h-4 text-cyan-400" />
+                      {filters.users.length === 0 ? 'All Users' : 
+                       filters.users.length === householdUsers.length ? 'All Users' :
+                       `${filters.users.length} selected`}
+                    </span>
+                    <ChevronDownIcon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                   </button>
                 </div>
                 
@@ -479,7 +486,7 @@ export default function EnergyLogs() {
             <div className="hidden lg:flex items-center gap-4 flex-wrap">
               {/* Filter Icon & Title */}
               <div className="flex items-center gap-2 text-foreground font-semibold">
-                <span className="text-lg">🔍</span>
+                <FunnelIcon className="w-5 h-5 text-blue-400" />
                 <span>Filters:</span>
               </div>
               
@@ -492,11 +499,15 @@ export default function EnergyLogs() {
                 <button
                   type="button"
                   onClick={() => setShowUserFilter(true)}
-                  className="px-3 py-1.5 text-sm border rounded-lg bg-background text-foreground border-border hover:border-primary/50 min-w-[120px]"
+                  className="px-3 py-1.5 text-sm border rounded-lg bg-background text-foreground border-border hover:border-primary/50 min-w-[140px] flex items-center justify-between gap-2 group"
                 >
-                  {filters.users.length === 0 ? 'All' : 
-                   filters.users.length === householdUsers.length ? 'All' :
-                   `${filters.users.length} selected`}
+                  <span className="flex items-center gap-1">
+                    <UsersIcon className="w-4 h-4 text-cyan-400" />
+                    {filters.users.length === 0 ? 'All Users' : 
+                     filters.users.length === householdUsers.length ? 'All Users' :
+                     `${filters.users.length} selected`}
+                  </span>
+                  <ChevronDownIcon className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
                 </button>
               </div>
               
