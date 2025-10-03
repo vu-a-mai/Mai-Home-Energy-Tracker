@@ -178,7 +178,7 @@ export default function NavBar() {
               onClick={() => setShowMobileMenu(false)}
               className={({ isActive }) => navLinkClass(isActive) + ' w-full justify-start'}
             >
-              <ChartBarIcon className="w-5 h-5 inline-block mr-2" />
+              <ChartBarIcon className="w-5 h-5 inline-block mr-2 text-blue-400" />
               Dashboard
             </NavLink>
             <NavLink
@@ -186,7 +186,7 @@ export default function NavBar() {
               onClick={() => setShowMobileMenu(false)}
               className={({ isActive }) => navLinkClass(isActive) + ' w-full justify-start'}
             >
-              <CpuChipIcon className="w-5 h-5 inline-block mr-2" />
+              <CpuChipIcon className="w-5 h-5 inline-block mr-2 text-cyan-400" />
               Devices
             </NavLink>
             <NavLink
@@ -194,7 +194,7 @@ export default function NavBar() {
               onClick={() => setShowMobileMenu(false)}
               className={({ isActive }) => navLinkClass(isActive) + ' w-full justify-start'}
             >
-              <ClipboardDocumentListIcon className="w-5 h-5 inline-block mr-2" />
+              <ClipboardDocumentListIcon className="w-5 h-5 inline-block mr-2 text-orange-400" />
               Energy Logs
             </NavLink>
             <NavLink
@@ -202,7 +202,7 @@ export default function NavBar() {
               onClick={() => setShowMobileMenu(false)}
               className={({ isActive }) => navLinkClass(isActive) + ' w-full justify-start'}
             >
-              <CurrencyDollarIcon className="w-5 h-5 inline-block mr-2" />
+              <CurrencyDollarIcon className="w-5 h-5 inline-block mr-2 text-green-400" />
               Bill Split
             </NavLink>
             <NavLink
@@ -210,7 +210,7 @@ export default function NavBar() {
               onClick={() => setShowMobileMenu(false)}
               className={({ isActive }) => navLinkClass(isActive) + ' w-full justify-start'}
             >
-              <Cog6ToothIcon className="w-5 h-5 inline-block mr-2" />
+              <Cog6ToothIcon className="w-5 h-5 inline-block mr-2 text-purple-400" />
               Settings
             </NavLink>
             
