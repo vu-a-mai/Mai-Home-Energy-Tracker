@@ -333,7 +333,7 @@ export default function EnergyLogs() {
         <Card className="energy-card bg-gradient-to-br from-slate-500/10 to-gray-500/10 border-slate-500/30">
           <CardContent className="p-3 md:p-4">
             <div className="flex items-center gap-2 mb-1 md:mb-2">
-              <span className="text-xl md:text-2xl">📊</span>
+              <ChartBarIcon className="w-6 h-6 md:w-7 md:h-7 text-blue-400" />
               <span className="text-xs text-muted-foreground font-semibold">Total Entries</span>
             </div>
             <div className="text-2xl md:text-3xl font-bold text-slate-300">
@@ -345,7 +345,7 @@ export default function EnergyLogs() {
         <Card className="energy-card bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30">
           <CardContent className="p-3 md:p-4">
             <div className="flex items-center gap-2 mb-1 md:mb-2">
-              <span className="text-xl md:text-2xl">⚡</span>
+              <BoltIcon className="w-6 h-6 md:w-7 md:h-7 text-orange-400" />
               <span className="text-xs text-muted-foreground font-semibold">Total Energy</span>
             </div>
             <div className="text-2xl md:text-3xl font-bold text-green-400">
@@ -357,7 +357,7 @@ export default function EnergyLogs() {
         <Card className="energy-card bg-gradient-to-br from-red-500/10 to-orange-500/10 border-red-500/30">
           <CardContent className="p-3 md:p-4">
             <div className="flex items-center gap-2 mb-1 md:mb-2">
-              <span className="text-xl md:text-2xl">💰</span>
+              <CurrencyDollarIcon className="w-6 h-6 md:w-7 md:h-7 text-green-400" />
               <span className="text-xs text-muted-foreground font-semibold">Total Cost</span>
             </div>
             <div className="text-2xl md:text-3xl font-bold text-red-400">
@@ -387,14 +387,18 @@ export default function EnergyLogs() {
                   size="sm"
                   className="px-3 py-1.5 text-xs border-red-300 text-red-500 hover:bg-red-500/10 hover:border-red-400"
                 >
-                  ✕ Clear
+                  <XMarkIcon className="w-4 h-4 inline-block mr-1" />
+                  Clear
                 </Button>
               </div>
               
               <div className="grid grid-cols-2 gap-2">
                 {/* User Filter */}
                 <div className="col-span-2 sm:col-span-1">
-                  <label className="text-xs text-muted-foreground mb-1 block">👤 Users</label>
+                  <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                    <UserIcon className="w-3 h-3" />
+                    Users
+                  </label>
                   <button
                     type="button"
                     onClick={() => setShowUserFilter(true)}
@@ -408,7 +412,10 @@ export default function EnergyLogs() {
                 
                 {/* Device Filter */}
                 <div className="col-span-2 sm:col-span-1">
-                  <label className="text-xs text-muted-foreground mb-1 block">🔌 Device</label>
+                  <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                    <BoltIcon className="w-3 h-3" />
+                    Device
+                  </label>
                   <select
                     value={filters.device}
                     onChange={(e) => setFilters({...filters, device: e.target.value})}
@@ -423,7 +430,10 @@ export default function EnergyLogs() {
                 
                 {/* Date Range */}
                 <div className="col-span-2 sm:col-span-1">
-                  <label className="text-xs text-muted-foreground mb-1 block">📅 From</label>
+                  <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                    <CalendarIcon className="w-3 h-3" />
+                    From
+                  </label>
                   <Input
                     type="date"
                     value={filters.startDate}
@@ -433,7 +443,10 @@ export default function EnergyLogs() {
                 </div>
                 
                 <div className="col-span-2 sm:col-span-1">
-                  <label className="text-xs text-muted-foreground mb-1 block">📅 To</label>
+                  <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                    <CalendarIcon className="w-3 h-3" />
+                    To
+                  </label>
                   <Input
                     type="date"
                     value={filters.endDate}
@@ -444,7 +457,10 @@ export default function EnergyLogs() {
                 
                 {/* Sort By */}
                 <div className="col-span-2">
-                  <label className="text-xs text-muted-foreground mb-1 block">⬇️ Sort By</label>
+                  <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                    <ArrowsUpDownIcon className="w-3 h-3" />
+                    Sort By
+                  </label>
                   <select
                     value={filters.sortBy}
                     onChange={(e) => setFilters({...filters, sortBy: e.target.value})}
@@ -469,7 +485,10 @@ export default function EnergyLogs() {
               
               {/* User Filter - Modal Button */}
               <div className="flex items-center gap-2">
-                <label className="text-sm text-muted-foreground whitespace-nowrap">👤 Users:</label>
+                <label className="text-sm text-muted-foreground whitespace-nowrap flex items-center gap-1">
+                  <UserIcon className="w-4 h-4" />
+                  Users:
+                </label>
                 <button
                   type="button"
                   onClick={() => setShowUserFilter(true)}
@@ -483,7 +502,10 @@ export default function EnergyLogs() {
               
               {/* Device Filter */}
               <div className="flex items-center gap-2">
-                <label className="text-sm text-muted-foreground whitespace-nowrap">🔌 Device:</label>
+                <label className="text-sm text-muted-foreground whitespace-nowrap flex items-center gap-1">
+                  <BoltIcon className="w-4 h-4" />
+                  Device:
+                </label>
                 <select
                   value={filters.device}
                   onChange={(e) => setFilters({...filters, device: e.target.value})}
@@ -498,7 +520,10 @@ export default function EnergyLogs() {
               
               {/* Date Range */}
               <div className="flex items-center gap-2">
-                <label className="text-sm text-muted-foreground whitespace-nowrap">📅 From:</label>
+                <label className="text-sm text-muted-foreground whitespace-nowrap flex items-center gap-1">
+                  <CalendarIcon className="w-4 h-4" />
+                  From:
+                </label>
                 <Input
                   type="date"
                   value={filters.startDate}
@@ -519,7 +544,10 @@ export default function EnergyLogs() {
               
               {/* Sort By */}
               <div className="flex items-center gap-2">
-                <label className="text-sm text-muted-foreground whitespace-nowrap">⬇️ Sort:</label>
+                <label className="text-sm text-muted-foreground whitespace-nowrap flex items-center gap-1">
+                  <ArrowsUpDownIcon className="w-4 h-4" />
+                  Sort:
+                </label>
                 <select
                   value={filters.sortBy}
                   onChange={(e) => setFilters({...filters, sortBy: e.target.value})}
@@ -542,7 +570,8 @@ export default function EnergyLogs() {
                 size="sm"
                 className="ml-auto px-4 py-1.5 text-sm border-red-300 text-red-500 hover:bg-red-500/10 hover:border-red-400"
               >
-                ✕ Clear All
+                <XMarkIcon className="w-4 h-4 inline-block mr-1" />
+                Clear All
               </Button>
             </div>
           </CardContent>
@@ -557,7 +586,10 @@ export default function EnergyLogs() {
               <div className="max-h-[calc(100vh-2rem)] sm:max-h-[85vh] overflow-y-auto">
                 <CardHeader className="p-3 sm:p-4 md:p-6 sticky top-0 bg-card z-10 border-b border-border">
                   <CardTitle className="text-base sm:text-lg md:text-xl text-foreground flex items-center justify-between gap-2">
-                    <span className="truncate">{editingLog ? '✏️ Edit Log' : '📝 Log Usage'}</span>
+                    <span className="truncate flex items-center gap-2">
+                      {editingLog ? <PencilIcon className="w-5 h-5 text-blue-400" /> : <PlusIcon className="w-5 h-5 text-green-400" />}
+                      {editingLog ? 'Edit Log' : 'Log Usage'}
+                    </span>
                     <Button
                       type="button"
                       onClick={() => setShowForm(false)}
@@ -565,7 +597,7 @@ export default function EnergyLogs() {
                       size="sm"
                       className="text-xs shrink-0 h-8"
                     >
-                      ✕
+                      <XMarkIcon className="w-5 h-5" />
                     </Button>
                   </CardTitle>
                   <CardDescription className="text-xs sm:text-sm hidden sm:block">
@@ -578,7 +610,10 @@ export default function EnergyLogs() {
                 {/* Error Message */}
                 {submitError && (
                   <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-lg text-sm">
-                    <div className="font-semibold mb-1">⚠️ Error</div>
+                    <div className="font-semibold mb-1 flex items-center gap-1">
+                      <ExclamationTriangleIcon className="w-4 h-4" />
+                      Error
+                    </div>
                     <div>{submitError}</div>
                   </div>
                 )}
@@ -586,7 +621,10 @@ export default function EnergyLogs() {
                 {/* Warning if no household users */}
                 {householdUsers.length === 0 && (
                   <div className="bg-yellow-500/10 border border-yellow-500/50 text-yellow-400 p-3 rounded-lg text-sm">
-                    <div className="font-semibold mb-1">⚠️ No Household Members Found</div>
+                    <div className="font-semibold mb-1 flex items-center gap-1">
+                      <ExclamationTriangleIcon className="w-4 h-4" />
+                      No Household Members Found
+                    </div>
                     <div>You may not be assigned to a household. Contact your administrator.</div>
                   </div>
                 )}
@@ -687,22 +725,39 @@ export default function EnergyLogs() {
                     return (
                       <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/50 p-2 sm:p-3 rounded-lg">
                         <div className="flex items-center justify-between mb-2">
-                          <div className="text-sm sm:text-base font-bold text-green-400">
-                            💰 Cost: ${calculation.totalCost.toFixed(2)}
+                          <div className="text-sm sm:text-base font-bold text-green-400 flex items-center gap-1">
+                            <CurrencyDollarIcon className="w-4 h-4" />
+                            Cost: ${calculation.totalCost.toFixed(2)}
                           </div>
                           <button
                             type="button"
                             onClick={() => setShowRateBreakdown(!showRateBreakdown)}
                             className="text-xs text-blue-400 hover:text-blue-300 underline"
                           >
-                            {showRateBreakdown ? '▲ Hide' : '▼ Details'}
+                            {showRateBreakdown ? (
+                              <>
+                                <ChevronUpIcon className="w-4 h-4 inline-block" />
+                                Hide
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDownIcon className="w-4 h-4 inline-block" />
+                                Details
+                              </>
+                            )}
                           </button>
                         </div>
                         
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span>⚡ {calculation.totalKwh.toFixed(2)} kWh</span>
-                          <span>⏱️ {calculation.durationHours.toFixed(1)}h</span>
-                          <span>🌡️ {season}</span>
+                          <span className="flex items-center gap-1">
+                            <BoltIcon className="w-3 h-3" />
+                            {calculation.totalKwh.toFixed(2)} kWh
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <ClockIcon className="w-3 h-3" />
+                            {calculation.durationHours.toFixed(1)}h
+                          </span>
+                          <span>{season}</span>
                         </div>
                         
                         {showRateBreakdown && calculation.breakdown.length > 0 && (
@@ -729,8 +784,9 @@ export default function EnergyLogs() {
                 {/* User Assignment - Compact */}
                 {householdUsers.length > 0 && (
                   <div>
-                    <label className="block mb-1.5 text-xs sm:text-sm font-semibold text-foreground">
-                      👤 Assign to Users (optional)
+                    <label className="block mb-1.5 text-xs sm:text-sm font-semibold text-foreground flex items-center gap-1">
+                      <UserIcon className="w-4 h-4" />
+                      Assign to Users (optional)
                     </label>
                     <div className="bg-muted/50 p-2 sm:p-3 rounded-lg border border-border">
                       <div className="flex flex-wrap gap-1.5 mb-2">
@@ -832,8 +888,14 @@ export default function EnergyLogs() {
                   </div>
                   
                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-2">
-                    <span>📅 {new Date(log.usage_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                    <span>⏰ {formatTime12Hour(log.start_time)} - {formatTime12Hour(log.end_time)}</span>
+                    <span className="flex items-center gap-1">
+                      <CalendarIcon className="w-3 h-3" />
+                      {new Date(log.usage_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <ClockIcon className="w-3 h-3" />
+                      {formatTime12Hour(log.start_time)} - {formatTime12Hour(log.end_time)}
+                    </span>
                     <span>({usageCalc.durationHours.toFixed(1)}h)</span>
                   </div>
                   
@@ -876,7 +938,17 @@ export default function EnergyLogs() {
                       className="flex-1 p-2 h-8 text-xs"
                       title={isExpanded ? "Hide details" : "View details"}
                     >
-                      {isExpanded ? '▲ Hide' : '▼ Details'}
+                      {isExpanded ? (
+                        <>
+                          <ChevronUpIcon className="w-4 h-4 inline-block mr-1" />
+                          Hide
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDownIcon className="w-4 h-4 inline-block mr-1" />
+                          Details
+                        </>
+                      )}
                     </Button>
                     <Button
                       onClick={() => handleEdit(log)}
@@ -885,7 +957,7 @@ export default function EnergyLogs() {
                       className="p-2 h-8 w-8 border-blue-300 text-blue-500 hover:bg-blue-500/10"
                       title="Edit log"
                     >
-                      ✏️
+                      <PencilIcon className="w-4 h-4" />
                     </Button>
                     <Button
                       onClick={() => deleteEnergyLog(log.id)}
@@ -894,7 +966,7 @@ export default function EnergyLogs() {
                       className="p-2 h-8 w-8 border-red-300 text-red-500 hover:bg-red-500/10"
                       title="Delete log"
                     >
-                      🗑️
+                      <TrashIcon className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
