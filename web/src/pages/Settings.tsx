@@ -318,7 +318,7 @@ export default function Settings() {
               <div className="space-y-2">
                 <div className="p-2 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/40 rounded-lg">
                   <div className="flex items-start gap-2 text-xs">
-                    <span className="text-base">⚠️</span>
+                    <ExclamationTriangleIcon className="w-5 h-5 text-yellow-400 shrink-0 mt-0.5" />
                     <div>
                       <span className="font-semibold text-yellow-400">Warning:</span>
                       <span className="text-muted-foreground ml-1">Restoring replaces current data</span>
