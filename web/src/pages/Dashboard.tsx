@@ -17,6 +17,7 @@ import {
   ChartBarIcon,
   ChartPieIcon,
   ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
   CalendarDaysIcon,
   ClockIcon,
   SunIcon,
@@ -590,8 +591,9 @@ export default function Dashboard() {
               <div className="text-sm text-muted-foreground mb-2">
                 Cost: <strong className="text-green-400">${dashboardData.personalUsage.daily.cost.toFixed(2)}</strong>
               </div>
-              <Badge variant="off-peak" className="text-xs">
-                ↓ 12% from yesterday
+              <Badge variant="off-peak" className="text-xs flex items-center gap-1 w-fit">
+                <ArrowTrendingDownIcon className="w-3 h-3" />
+                12% from yesterday
               </Badge>
             </CardContent>
           </Card>
@@ -608,8 +610,9 @@ export default function Dashboard() {
               <div className="text-sm text-muted-foreground mb-2">
                 Cost: <strong className="text-blue-400">${dashboardData.personalUsage.weekly.cost.toFixed(2)}</strong>
               </div>
-              <Badge variant="mid-peak" className="text-xs">
-                ↑ 5% from last week
+              <Badge variant="mid-peak" className="text-xs flex items-center gap-1 w-fit">
+                <ArrowTrendingUpIcon className="w-3 h-3" />
+                5% from last week
               </Badge>
             </CardContent>
           </Card>
@@ -626,8 +629,9 @@ export default function Dashboard() {
               <div className="text-sm text-muted-foreground mb-2">
                 Cost: <strong className="text-red-400">${dashboardData.personalUsage.monthly.cost.toFixed(2)}</strong>
               </div>
-              <Badge variant="off-peak" className="text-xs">
-                ↓ 8% from last month
+              <Badge variant="off-peak" className="text-xs flex items-center gap-1 w-fit">
+                <ArrowTrendingDownIcon className="w-3 h-3" />
+                8% from last month
               </Badge>
             </CardContent>
           </Card>
