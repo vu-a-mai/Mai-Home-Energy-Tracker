@@ -1,97 +1,37 @@
 import { useAuth } from '../hooks/useAuth'
 import { useDemoMode } from '../contexts/DemoContext'
-import { useState, useEffect } from 'react'
+import { useEnergyLogs } from '../hooks/useEnergyLogs'
+import { useDevices } from '../hooks/useDevices'
+import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Badge } from '../components/ui/badge'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts'
-import { userService, deviceService, energyLogService } from '../services/database'
-import { demoUserService, demoDeviceService, demoEnergyLogService } from '../demo/demoService'
-import type { User, Device, EnergyLog } from '../lib/supabase'
+import { calculateUsageCost } from '../utils/rateCalculatorFixed'
 
 export default function Dashboard() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const { isDemoMode, disableDemoMode } = useDemoMode()
   const navigate = useNavigate()
   const [currentTime, setCurrentTime] = useState(new Date())
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const [householdMembers, setHouseholdMembers] = useState<User[]>([])
-  const [devices, setDevices] = useState<Device[]>([])
-  const [energyLogs, setEnergyLogs] = useState<EnergyLog[]>([])
-  const [monthlyData, setMonthlyData] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showUserMenu, setShowUserMenu] = useState(false)
+  
+  // Use the same hooks as other pages for consistency
+  const { energyLogs, loading: logsLoading } = useEnergyLogs()
+  const { devices, loading: devicesLoading } = useDevices()
+  const { users: householdMembers } = useHouseholdUsers()
+
+  const loading = logsLoading || devicesLoading
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true)
-        
-        // Use demo services if in demo mode, otherwise use real services
-        if (isDemoMode) {
-          const userData = await demoUserService.getCurrentUser()
-          setCurrentUser(userData)
-          
-          if (userData?.household_id) {
-            const [members, householdDevices, logs, monthly] = await Promise.all([
-              demoUserService.getHouseholdMembers(userData.household_id),
-              demoDeviceService.getHouseholdDevices(userData.household_id),
-              demoEnergyLogService.getHouseholdLogs(userData.household_id, 50),
-              demoEnergyLogService.getMonthlyUsage(userData.household_id, new Date().getFullYear())
-            ])
-            
-            setHouseholdMembers(members)
-            setDevices(householdDevices)
-            setEnergyLogs(logs)
-            setMonthlyData(monthly)
-          }
-        } else if (user) {
-          // Fetch real data from Supabase
-          const userData = await userService.getCurrentUser()
-          setCurrentUser(userData)
-          
-          if (userData?.household_id) {
-            const [members, householdDevices, logs, monthly] = await Promise.all([
-              userService.getHouseholdMembers(userData.household_id),
-              deviceService.getHouseholdDevices(userData.household_id),
-              energyLogService.getHouseholdLogs(userData.household_id, 50),
-              energyLogService.getMonthlyUsage(userData.household_id, new Date().getFullYear())
-            ])
-            
-            setHouseholdMembers(members)
-            setDevices(householdDevices)
-            setEnergyLogs(logs)
-            setMonthlyData(monthly)
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    
-    fetchDashboardData()
-  }, [user, isDemoMode])
-
-  const handleLogout = async () => {
-    try {
-      await logout()
-    } catch (error) {
-      console.error('Logout error:', error)
-    }
-  }
-
-  // Calculate data from actual energy logs
-  const calculateDashboardData = () => {
+  // Calculate data from actual energy logs using the same logic as Energy Logs page
+  const calculateDashboardData = useMemo(() => {
     if (energyLogs.length === 0) {
-      // Fallback mock data when no logs available
       return {
         personalUsage: {
           daily: { kwh: 0, cost: 0 },
@@ -100,12 +40,11 @@ export default function Dashboard() {
         },
         householdUsage: {
           total: { kwh: 0, cost: 0 },
-          members: [
-            { name: 'Vu', kwh: 0, cost: 0 },
-            { name: 'Thuy', kwh: 0, cost: 0 },
-            { name: 'Vy', kwh: 0, cost: 0 },
-            { name: 'Han', kwh: 0, cost: 0 }
-          ]
+          members: householdMembers.map(member => ({
+            name: member.name,
+            kwh: 0,
+            cost: 0
+          }))
         },
         topDevices: [],
         ratePeriods: {
@@ -117,115 +56,16 @@ export default function Dashboard() {
       }
     }
 
-    // Calculate total household usage from energy logs
-    const totalCost = energyLogs.reduce((sum, log) => sum + (log.calculated_cost || 0), 0)
-    
-    // Calculate kWh from device wattage and duration
-    const totalKwh = energyLogs.reduce((sum, log) => {
-      if (log.total_kwh) {
-        return sum + log.total_kwh
-      }
-      // Calculate from device wattage and time if not provided
-      const device = devices.find(d => d.id === log.device_id)
-      if (device) {
-        const startTime = new Date(`2000-01-01T${log.start_time}`)
-        const endTime = new Date(`2000-01-01T${log.end_time}`)
-        const hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)
-        const kwh = (device.wattage / 1000) * hours
-        return sum + kwh
-      }
-      return sum
-    }, 0)
-
-    // Calculate per-user totals based on assigned users and device ownership
+    // Initialize user totals
     const userTotals: { [key: string]: { kwh: number, cost: number } } = {}
-    
-    energyLogs.forEach(log => {
-      const device = devices.find(d => d.id === log.device_id)
-      
-      // Calculate kWh for this log
-      let kwh = 0
-      if (log.total_kwh) {
-        kwh = log.total_kwh
-      } else if (device) {
-        const startTime = new Date(`2000-01-01T${log.start_time}`)
-        const endTime = new Date(`2000-01-01T${log.end_time}`)
-        let hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)
-        if (hours < 0) hours += 24 // Handle overnight
-        kwh = (device.wattage / 1000) * hours
-      }
-      
-      const cost = log.calculated_cost || 0
-      
-      // Determine who should be credited with this usage
-      if (device?.is_shared && log.assigned_users && log.assigned_users.length > 0) {
-        // Shared device with assigned users - split among them
-        const costPerUser = cost / log.assigned_users.length
-        const kwhPerUser = kwh / log.assigned_users.length
-        
-        log.assigned_users.forEach((userId: string) => {
-          if (!userTotals[userId]) {
-            userTotals[userId] = { kwh: 0, cost: 0 }
-          }
-          userTotals[userId].kwh += kwhPerUser
-          userTotals[userId].cost += costPerUser
-        })
-      } else {
-        // Personal device or no assigned users - credit to creator
-        const userId = log.created_by || 'unknown'
-        if (!userTotals[userId]) {
-          userTotals[userId] = { kwh: 0, cost: 0 }
-        }
-        userTotals[userId].kwh += kwh
-        userTotals[userId].cost += cost
-      }
-    })
-
-    // Map user IDs to names using household members
-    const userNames: { [key: string]: string } = {}
     householdMembers.forEach(member => {
-      userNames[member.id] = member.name
-    })
-    // Add demo user mappings as fallback
-    userNames['demo-user-vu'] = 'Vu'
-    userNames['demo-user-thuy'] = 'Thuy'
-    userNames['demo-user-vy'] = 'Vy'
-    userNames['demo-user-han'] = 'Han'
-
-    const members = Object.entries(userTotals).map(([userId, data]) => ({
-      name: userNames[userId] || userId,
-      kwh: data.kwh,
-      cost: data.cost
-    }))
-
-    // Calculate top devices
-    const deviceTotals: { [key: string]: { kwh: number, cost: number, name: string, type: string } } = {}
-    energyLogs.forEach(log => {
-      const deviceId = log.device_id
-      const device = devices.find(d => d.id === deviceId)
-      if (device) {
-        if (!deviceTotals[deviceId]) {
-          const isShared = (device as any).is_shared !== false // Default to shared if not specified
-          deviceTotals[deviceId] = {
-            name: device.name,
-            kwh: 0,
-            cost: 0,
-            type: isShared ? 'shared' : 'personal'
-          }
-        }
-        // Use actual kWh from log
-        const kwh = log.total_kwh || 0
-        const cost = log.calculated_cost || 0
-        deviceTotals[deviceId].kwh += kwh
-        deviceTotals[deviceId].cost += cost
-      }
+      userTotals[member.id] = { kwh: 0, cost: 0 }
     })
 
-    const topDevices = Object.values(deviceTotals)
-      .sort((a, b) => b.cost - a.cost)
-      .slice(0, 4)
-
-    // Calculate rate period breakdown from energy logs
+    // Initialize device totals
+    const deviceTotals: { [key: string]: { kwh: number, cost: number, name: string } } = {}
+    
+    // Initialize rate period totals
     const ratePeriods = {
       offPeak: { kwh: 0, cost: 0 },
       midPeak: { kwh: 0, cost: 0 },
@@ -233,61 +73,126 @@ export default function Dashboard() {
       superOffPeak: { kwh: 0, cost: 0 }
     }
 
+    // Process each energy log
     energyLogs.forEach(log => {
-      if (log.rate_breakdown) {
-        const breakdown = typeof log.rate_breakdown === 'string' 
-          ? JSON.parse(log.rate_breakdown) 
-          : log.rate_breakdown
+      const device = devices.find(d => d.id === log.device_id)
+      if (!device) return
 
-        if (breakdown.off_peak) {
-          ratePeriods.offPeak.kwh += breakdown.off_peak.kwh || 0
-          ratePeriods.offPeak.cost += breakdown.off_peak.cost || 0
+      // Calculate usage using the rate calculator (same as Energy Logs page)
+      const calculation = calculateUsageCost(
+        device.wattage,
+        log.start_time,
+        log.end_time,
+        log.usage_date
+      )
+
+      // Determine assigned users (same logic as Bill Split)
+      const assignedUsers = log.assigned_users && log.assigned_users.length > 0 
+        ? log.assigned_users 
+        : [log.created_by]
+
+      const splitCount = assignedUsers.length
+
+      // Distribute usage among assigned users
+      assignedUsers.forEach((userId: string) => {
+        if (userTotals[userId]) {
+          userTotals[userId].kwh += calculation.totalKwh / splitCount
+          userTotals[userId].cost += calculation.totalCost / splitCount
         }
-        if (breakdown.mid_peak) {
-          ratePeriods.midPeak.kwh += breakdown.mid_peak.kwh || 0
-          ratePeriods.midPeak.cost += breakdown.mid_peak.cost || 0
-        }
-        if (breakdown.on_peak) {
-          ratePeriods.onPeak.kwh += breakdown.on_peak.kwh || 0
-          ratePeriods.onPeak.cost += breakdown.on_peak.cost || 0
-        }
-        if (breakdown.super_off_peak) {
-          ratePeriods.superOffPeak.kwh += breakdown.super_off_peak.kwh || 0
-          ratePeriods.superOffPeak.cost += breakdown.super_off_peak.cost || 0
+      })
+
+      // Track device totals
+      if (!deviceTotals[log.device_id]) {
+        deviceTotals[log.device_id] = {
+            name: device.name,
+            kwh: 0,
+          cost: 0
         }
       }
+      deviceTotals[log.device_id].kwh += calculation.totalKwh
+      deviceTotals[log.device_id].cost += calculation.totalCost
+
+      // Track rate period totals
+      calculation.breakdown.forEach(period => {
+        if (period.ratePeriod === 'Off-Peak') {
+          ratePeriods.offPeak.kwh += period.kwh
+          ratePeriods.offPeak.cost += period.cost
+        } else if (period.ratePeriod === 'On-Peak') {
+          ratePeriods.onPeak.kwh += period.kwh
+          ratePeriods.onPeak.cost += period.cost
+        } else if (period.ratePeriod === 'Mid-Peak') {
+          ratePeriods.midPeak.kwh += period.kwh
+          ratePeriods.midPeak.cost += period.cost
+        } else if (period.ratePeriod === 'Super Off-Peak') {
+          ratePeriods.superOffPeak.kwh += period.kwh
+          ratePeriods.superOffPeak.cost += period.cost
+        }
+      })
     })
 
-    // Get current user's personal usage
-    const currentUserId = currentUser?.id || user?.id || 'unknown'
-    const personalTotal = userTotals[currentUserId] || { kwh: 0, cost: 0 }
-    
-    // Debug logging
-    if (import.meta.env.DEV) {
-      console.log('Dashboard Debug:', {
-        currentUserId,
-        currentUserName: userNames[currentUserId],
-        personalTotal,
-        allUserTotals: userTotals,
-        totalHousehold: { kwh: totalKwh, cost: totalCost },
-        sampleLogs: energyLogs.slice(0, 3).map(log => ({
-          device: (log as any).device_name,
-          assigned_users: (log as any).assigned_users,
-          created_by: log.created_by,
-          cost: (log as any).calculated_cost
-        })),
-        sampleDevices: devices.slice(0, 3).map(d => ({
-          name: d.name,
-          is_shared: d.is_shared
-        }))
-      })
+    // Calculate totals
+    const totalKwh = Object.values(userTotals).reduce((sum, user) => sum + user.kwh, 0)
+    const totalCost = Object.values(userTotals).reduce((sum, user) => sum + user.cost, 0)
+
+    // Convert to member array
+    const members = householdMembers.map(member => ({
+      name: member.name,
+      kwh: userTotals[member.id]?.kwh || 0,
+      cost: userTotals[member.id]?.cost || 0
+    }))
+
+    // Get top devices
+    const topDevices = Object.values(deviceTotals)
+      .sort((a, b) => b.cost - a.cost)
+      .slice(0, 5)
+      .map(device => ({
+        name: device.name,
+        kwh: device.kwh,
+        cost: device.cost
+      }))
+
+    // Calculate personal usage for current user
+    const now = new Date()
+    const today = now.toISOString().split('T')[0]
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+    const calculatePersonalUsage = (startDate: string) => {
+      let kwh = 0
+      let cost = 0
+      
+      energyLogs
+        .filter(log => log.usage_date >= startDate)
+        .forEach(log => {
+          const device = devices.find(d => d.id === log.device_id)
+          if (!device) return
+
+          const calculation = calculateUsageCost(
+            device.wattage,
+            log.start_time,
+            log.end_time,
+            log.usage_date
+          )
+
+          const assignedUsers = log.assigned_users && log.assigned_users.length > 0 
+            ? log.assigned_users 
+            : [log.created_by]
+
+          if (assignedUsers.includes(user?.id || '')) {
+            const splitCount = assignedUsers.length
+            kwh += calculation.totalKwh / splitCount
+            cost += calculation.totalCost / splitCount
+          }
+        })
+
+      return { kwh, cost }
     }
     
     return {
       personalUsage: {
-        daily: { kwh: personalTotal.kwh / 30, cost: personalTotal.cost / 30 },
-        weekly: { kwh: personalTotal.kwh / 4, cost: personalTotal.cost / 4 },
-        monthly: { kwh: personalTotal.kwh, cost: personalTotal.cost }
+        daily: calculatePersonalUsage(today),
+        weekly: calculatePersonalUsage(weekAgo),
+        monthly: calculatePersonalUsage(monthAgo)
       },
       householdUsage: {
         total: { kwh: totalKwh, cost: totalCost },
@@ -296,9 +201,24 @@ export default function Dashboard() {
       topDevices,
       ratePeriods
     }
-  }
+  }, [energyLogs, devices, householdMembers, user])
 
-  const mockData = calculateDashboardData()
+  const dashboardData = calculateDashboardData
+
+  // Debug logging for troubleshooting
+  useEffect(() => {
+    if (import.meta.env.DEV && energyLogs.length > 0) {
+      console.log('📊 Dashboard Data Summary:', {
+        totalLogs: energyLogs.length,
+        totalDevices: devices.length,
+        householdMembers: householdMembers.length,
+        personalUsage: dashboardData.personalUsage,
+        householdTotal: dashboardData.householdUsage.total,
+        topDevices: dashboardData.topDevices,
+        ratePeriods: dashboardData.ratePeriods
+      })
+    }
+  }, [energyLogs, devices, householdMembers, dashboardData])
 
   const getCurrentRatePeriod = () => {
     const hour = currentTime.getHours()
@@ -338,8 +258,8 @@ export default function Dashboard() {
     navigate('/bill-split')
   }
 
-  // Calculate weekly usage data from real energy logs
-  const calculateWeeklyUsageData = () => {
+  // Calculate weekly usage data from real energy logs (with proper assigned_users support)
+  const weeklyUsageData = useMemo(() => {
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const weeklyData: any[] = []
     
@@ -354,48 +274,102 @@ export default function Dashboard() {
       
       const dayLogs = energyLogs.filter(log => log.usage_date === dateStr)
       
-      const dayData: any = { day: dayName }
+      const dayData: any = { day: dayName, date: dateStr }
       
-      // Calculate per-user usage for this day
+      // Initialize all members to 0
       householdMembers.forEach(member => {
-        const memberLogs = dayLogs.filter(log => log.created_by === member.id)
-        const memberKwh = memberLogs.reduce((sum, log) => sum + (log.total_kwh || 0), 0)
-        dayData[member.name] = Number(memberKwh.toFixed(1))
+        dayData[member.name] = 0
+      })
+      
+      // Calculate per-user usage for this day using proper assigned_users logic
+      dayLogs.forEach(log => {
+        const device = devices.find(d => d.id === log.device_id)
+        if (!device) return
+
+        const calculation = calculateUsageCost(
+          device.wattage,
+          log.start_time,
+          log.end_time,
+          log.usage_date
+        )
+
+        const assignedUsers = log.assigned_users && log.assigned_users.length > 0 
+          ? log.assigned_users 
+          : [log.created_by]
+
+        const splitCount = assignedUsers.length
+
+        assignedUsers.forEach((userId: string) => {
+          const member = householdMembers.find(m => m.id === userId)
+          if (member) {
+            dayData[member.name] = Number((dayData[member.name] + (calculation.totalKwh / splitCount)).toFixed(2))
+          }
+        })
       })
       
       weeklyData.push(dayData)
     }
     
-    return weeklyData.length > 0 ? weeklyData : [
-      { day: 'Mon', Vu: 0, Thuy: 0, Vy: 0, Han: 0 },
-      { day: 'Tue', Vu: 0, Thuy: 0, Vy: 0, Han: 0 },
-      { day: 'Wed', Vu: 0, Thuy: 0, Vy: 0, Han: 0 },
-      { day: 'Thu', Vu: 0, Thuy: 0, Vy: 0, Han: 0 },
-      { day: 'Fri', Vu: 0, Thuy: 0, Vy: 0, Han: 0 },
-      { day: 'Sat', Vu: 0, Thuy: 0, Vy: 0, Han: 0 },
-      { day: 'Sun', Vu: 0, Thuy: 0, Vy: 0, Han: 0 }
-    ]
-  }
-  
-  const weeklyUsageData = calculateWeeklyUsageData()
+    // Return data or empty array if no logs
+    return weeklyData
+  }, [energyLogs, devices, householdMembers])
 
-  // Use real monthly data if available, otherwise show empty
-  const monthlyTrendData = monthlyData.length > 0 ? 
-    monthlyData.map(data => ({
-      month: new Date(2024, data.month - 1).toLocaleDateString('en', { month: 'short' }),
-      usage: data.usage,
-      cost: data.cost
-    })) : []
+  // Calculate monthly trend data from energy logs (last 12 months)
+  const monthlyTrendData = useMemo(() => {
+    const months: any[] = []
+    const now = new Date()
+    
+    // Generate last 12 months
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      const monthName = date.toLocaleDateString('en', { month: 'short', year: 'numeric' })
+      
+      // Filter logs for this month
+      const monthLogs = energyLogs.filter(log => {
+        const logDate = new Date(log.usage_date)
+        return logDate.getFullYear() === date.getFullYear() && 
+               logDate.getMonth() === date.getMonth()
+      })
+      
+      // Calculate total usage for the month
+      let totalKwh = 0
+      let totalCost = 0
+      
+      monthLogs.forEach(log => {
+        const device = devices.find(d => d.id === log.device_id)
+        if (device) {
+          const calculation = calculateUsageCost(
+            device.wattage,
+            log.start_time,
+            log.end_time,
+            log.usage_date
+          )
+          totalKwh += calculation.totalKwh
+          totalCost += calculation.totalCost
+        }
+      })
+      
+      months.push({
+        month: monthName,
+        monthKey,
+        usage: Number(totalKwh.toFixed(2)),
+        cost: Number(totalCost.toFixed(2)),
+        logs: monthLogs.length
+      })
+    }
+    
+    return months
+  }, [energyLogs, devices])
 
-  // Use real device data from calculated top devices
-  const deviceUsageData = mockData.topDevices.length > 0 ?
-    mockData.topDevices.map(device => ({
-      name: device.name.split(' ').slice(-1)[0],
-      usage: device.kwh,
+  // Device usage data for pie chart
+  const deviceUsageData = dashboardData.topDevices.map(device => ({
+    name: device.name,
+    value: device.kwh,
       cost: device.cost
-    })) : []
+  }))
 
-  const COLORS = ['#22c55e', '#eab308', '#ef4444', '#3b82f6']
+  const COLORS = ['#22c55e', '#eab308', '#ef4444', '#3b82f6', '#8b5cf6']
 
   // Show loading state
   if (loading) {
@@ -536,29 +510,29 @@ export default function Dashboard() {
           <div className="energy-gradient-green p-4 rounded-lg text-center rate-indicator hover:scale-105 transition-transform shadow-lg">
             <div className="text-3xl mb-2">🟢</div>
             <div className="font-bold text-white text-base mb-2">Off-Peak</div>
-            <div className="text-sm text-white font-semibold">{mockData.ratePeriods.offPeak.kwh.toFixed(1)} kWh</div>
-            <div className="text-xs text-white/80">${mockData.ratePeriods.offPeak.cost.toFixed(2)}</div>
+            <div className="text-sm text-white font-semibold">{dashboardData.ratePeriods.offPeak.kwh.toFixed(1)} kWh</div>
+            <div className="text-xs text-white/80">${dashboardData.ratePeriods.offPeak.cost.toFixed(2)}</div>
           </div>
         
           <div className="energy-gradient-yellow p-4 rounded-lg text-center rate-indicator hover:scale-105 transition-transform shadow-lg">
             <div className="text-3xl mb-2">🟡</div>
             <div className="font-bold text-white text-base mb-2">Mid-Peak</div>
-            <div className="text-sm text-white font-semibold">{mockData.ratePeriods.midPeak.kwh.toFixed(1)} kWh</div>
-            <div className="text-xs text-white/80">${mockData.ratePeriods.midPeak.cost.toFixed(2)}</div>
+            <div className="text-sm text-white font-semibold">{dashboardData.ratePeriods.midPeak.kwh.toFixed(1)} kWh</div>
+            <div className="text-xs text-white/80">${dashboardData.ratePeriods.midPeak.cost.toFixed(2)}</div>
           </div>
         
           <div className="energy-gradient-red p-4 rounded-lg text-center rate-indicator hover:scale-105 transition-transform shadow-lg">
             <div className="text-3xl mb-2">🔴</div>
             <div className="font-bold text-white text-base mb-2">On-Peak</div>
-            <div className="text-sm text-white font-semibold">{mockData.ratePeriods.onPeak.kwh.toFixed(1)} kWh</div>
-            <div className="text-xs text-white/80">${mockData.ratePeriods.onPeak.cost.toFixed(2)}</div>
+            <div className="text-sm text-white font-semibold">{dashboardData.ratePeriods.onPeak.kwh.toFixed(1)} kWh</div>
+            <div className="text-xs text-white/80">${dashboardData.ratePeriods.onPeak.cost.toFixed(2)}</div>
           </div>
         
           <div className="energy-gradient-blue p-4 rounded-lg text-center rate-indicator hover:scale-105 transition-transform shadow-lg">
             <div className="text-3xl mb-2">🔵</div>
             <div className="font-bold text-white text-base mb-2">Super Off-Peak</div>
-            <div className="text-sm text-white font-semibold">{mockData.ratePeriods.superOffPeak.kwh.toFixed(1)} kWh</div>
-            <div className="text-xs text-white/80">${mockData.ratePeriods.superOffPeak.cost.toFixed(2)}</div>
+            <div className="text-sm text-white font-semibold">{dashboardData.ratePeriods.superOffPeak.kwh.toFixed(1)} kWh</div>
+            <div className="text-xs text-white/80">${dashboardData.ratePeriods.superOffPeak.cost.toFixed(2)}</div>
           </div>
         </div>
         
@@ -590,10 +564,10 @@ export default function Dashboard() {
                 <span className="text-xs text-muted-foreground font-semibold">Daily Usage</span>
               </div>
               <div className="text-2xl font-bold text-green-400 mb-1">
-                {mockData.personalUsage.daily.kwh.toFixed(1)} kWh
+                {dashboardData.personalUsage.daily.kwh.toFixed(1)} kWh
               </div>
               <div className="text-sm text-muted-foreground mb-2">
-                Cost: <strong className="text-green-400">${mockData.personalUsage.daily.cost.toFixed(2)}</strong>
+                Cost: <strong className="text-green-400">${dashboardData.personalUsage.daily.cost.toFixed(2)}</strong>
               </div>
               <Badge variant="off-peak" className="text-xs">
                 ↓ 12% from yesterday
@@ -608,10 +582,10 @@ export default function Dashboard() {
                 <span className="text-xs text-muted-foreground font-semibold">Weekly Usage</span>
               </div>
               <div className="text-2xl font-bold text-blue-400 mb-1">
-                {mockData.personalUsage.weekly.kwh.toFixed(1)} kWh
+                {dashboardData.personalUsage.weekly.kwh.toFixed(1)} kWh
               </div>
               <div className="text-sm text-muted-foreground mb-2">
-                Cost: <strong className="text-blue-400">${mockData.personalUsage.weekly.cost.toFixed(2)}</strong>
+                Cost: <strong className="text-blue-400">${dashboardData.personalUsage.weekly.cost.toFixed(2)}</strong>
               </div>
               <Badge variant="mid-peak" className="text-xs">
                 ↑ 5% from last week
@@ -626,10 +600,10 @@ export default function Dashboard() {
                 <span className="text-xs text-muted-foreground font-semibold">Monthly Usage</span>
               </div>
               <div className="text-2xl font-bold text-red-400 mb-1">
-                {mockData.personalUsage.monthly.kwh.toFixed(1)} kWh
+                {dashboardData.personalUsage.monthly.kwh.toFixed(1)} kWh
               </div>
               <div className="text-sm text-muted-foreground mb-2">
-                Cost: <strong className="text-red-400">${mockData.personalUsage.monthly.cost.toFixed(2)}</strong>
+                Cost: <strong className="text-red-400">${dashboardData.personalUsage.monthly.cost.toFixed(2)}</strong>
               </div>
               <Badge variant="off-peak" className="text-xs">
                 ↓ 8% from last month
@@ -643,41 +617,67 @@ export default function Dashboard() {
       <section className="mb-6 slide-up">
         <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground">🏠 Household Summary & Device Analysis</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Total Household Usage */}
-          <Card className="energy-card">
-            <CardHeader>
+          {/* Total Household Usage - Enhanced */}
+          <Card className="energy-card bg-gradient-to-br from-primary/15 via-emerald-500/10 to-cyan-500/15 border-primary/40 hover:border-primary/60 transition-all shadow-lg hover:shadow-primary/20">
+            <CardHeader className="pb-3">
               <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                📈 Total Usage
+                💡 Total Household Usage
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-400 mb-2">
-                {mockData.householdUsage.total.kwh.toFixed(1)} kWh
-              </div>
-              <div className="text-muted-foreground mb-4">
-                Total Cost: <strong className="text-foreground">${mockData.householdUsage.total.cost.toFixed(2)}</strong>
+              <div className="mb-4 p-4 bg-gradient-to-r from-primary/20 to-emerald-500/20 rounded-xl border border-primary/40">
+                <div className="text-4xl font-bold text-orange-400 mb-1">
+                  {dashboardData.householdUsage.total.kwh.toFixed(1)} kWh
+                </div>
+                <div className="text-sm text-foreground/80">
+                  Total Cost: <strong className="text-xl text-green-400 ml-1">${dashboardData.householdUsage.total.cost.toFixed(2)}</strong>
+                </div>
               </div>
               
-              <div className="space-y-2">
-                {mockData.householdUsage.members.map((member, index) => {
-                  // Color code to match bar chart
+              <div className="space-y-2.5">
+                {dashboardData.householdUsage.members.map((member, index) => {
+                  // Color code each user uniquely
                   const getUserColor = (name: string) => {
-                    switch(name) {
-                      case 'Vu': return 'text-green-400'
-                      case 'Thuy': return 'text-yellow-400'
-                      case 'Vy': return 'text-red-400'
-                      case 'Han': return 'text-blue-400'
-                      default: return 'text-foreground'
-                    }
+                    // Match name dynamically or use index-based colors
+                    const normalizedName = name.toLowerCase()
+                    if (normalizedName.includes('vu')) return 'text-green-400'
+                    if (normalizedName.includes('vy')) return 'text-red-400'
+                    if (normalizedName.includes('thuy')) return 'text-yellow-400'
+                    if (normalizedName.includes('han')) return 'text-blue-400'
+                    // Fallback to index-based colors
+                    const colors = ['text-green-400', 'text-yellow-400', 'text-red-400', 'text-blue-400', 'text-purple-400']
+                    return colors[index % colors.length]
                   }
                   
+                  const getUserIcon = (name: string) => {
+                    const normalizedName = name.toLowerCase()
+                    if (normalizedName.includes('vu')) return '👨'
+                    if (normalizedName.includes('vy')) return '👩'
+                    if (normalizedName.includes('thuy')) return '👩'
+                    if (normalizedName.includes('han')) return '👦'
+                    return '👤'
+                  }
+                  
+                  const percentage = dashboardData.householdUsage.total.kwh > 0 
+                    ? ((member.kwh / dashboardData.householdUsage.total.kwh) * 100).toFixed(0)
+                    : 0
+                  
                   return (
-                    <div key={index} className="flex justify-between items-center">
-                      <span className={`text-sm font-medium ${getUserColor(member.name)}`}>{member.name}</span>
-                      <div className="text-right">
-                        <div className={`text-sm font-semibold ${getUserColor(member.name)}`}>
+                    <div key={index} className="group">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className={`text-sm font-medium ${getUserColor(member.name)} flex items-center gap-1.5`}>
+                          <span className="text-base">{getUserIcon(member.name)}</span>
+                          {member.name}
+                        </span>
+                        <span className={`text-sm font-bold ${getUserColor(member.name)}`}>
                           {member.kwh.toFixed(1)} kWh
-                        </div>
+                        </span>
+                      </div>
+                      <div className="w-full bg-muted/30 rounded-full h-1.5 overflow-hidden">
+                        <div 
+                          className={`h-1.5 rounded-full transition-all duration-500 ${getUserColor(member.name).replace('text-', 'bg-')}`}
+                          style={{ width: `${percentage}%` }}
+                        />
                       </div>
                     </div>
                   )
@@ -686,101 +686,122 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Device Usage Pie Chart */}
-          <Card className="energy-card">
+          {/* Device Usage - Combined Chart & List - Spans 2 columns on large screens */}
+          <Card className="energy-card lg:col-span-2">
             <CardHeader>
               <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                🔌 Device Usage
+                🔌 Device Usage Analysis
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={deviceUsageData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="usage"
-                  >
-                    {deviceUsageData.map((entry, index) => (
-                      <Cell key={`cell-${index}-${entry.name}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--color-card))', 
-                      border: '2px solid hsl(var(--color-border))',
-                      borderRadius: '8px',
-                      color: 'hsl(var(--color-foreground)) !important',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-                      padding: '8px 12px'
-                    }}
-                    itemStyle={{ color: 'hsl(var(--color-foreground)) !important' }}
-                    labelStyle={{ color: 'hsl(var(--color-foreground)) !important' }}
-                    formatter={(value, name) => [
-                      <span style={{ color: 'hsl(var(--color-foreground))' }}>{Number(value).toFixed(2)} kWh</span>, 
-                      <span style={{ color: 'hsl(var(--color-foreground))' }}>{name}</span>
-                    ]}
-                    labelFormatter={() => <span style={{ color: 'hsl(var(--color-foreground))' }}>Device Energy Usage</span>}
-                    position={{ x: 10, y: 10 }}
-                    offset={20}
-                  />
-                  <Legend 
-                    wrapperStyle={{ 
-                      fontSize: '12px', 
-                      color: 'hsl(var(--color-foreground))',
-                      paddingTop: '10px'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Top Devices List */}
-          <Card className="energy-card">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                🏆 Top Devices
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {mockData.topDevices.map((device, index) => {
-                  // Color code based on cost level
-                  const getCostColor = (cost: number) => {
-                    if (cost > 100) return 'text-red-400'
-                    if (cost > 20) return 'text-yellow-400'
-                    return 'text-green-400'
-                  }
+              {deviceUsageData.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Pie Chart */}
+                  <div>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <PieChart>
+                        <Pie
+                          data={deviceUsageData}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={90}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          labelLine={{ stroke: 'hsl(var(--color-foreground))', strokeWidth: 1 }}
+                        >
+                          {deviceUsageData.map((entry, index) => (
+                            <Cell key={`cell-${index}-${entry.name}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--color-card))', 
+                            border: '2px solid hsl(var(--color-primary))',
+                            borderRadius: '8px',
+                            color: 'hsl(var(--color-foreground))',
+                            fontSize: '13px',
+                            fontWeight: '600'
+                          }}
+                          itemStyle={{
+                            color: 'hsl(var(--color-foreground))'
+                          }}
+                          labelStyle={{
+                            color: 'hsl(var(--color-primary))',
+                            fontWeight: 'bold'
+                          }}
+                          formatter={(value: any, name: any, props: any) => [
+                            `${Number(value).toFixed(2)} kWh ($${props.payload.cost.toFixed(2)})`,
+                            name
+                          ]}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
                   
-                  return (
-                    <div key={index} className="flex justify-between items-center">
-                      <div>
-                        <div className="font-medium text-foreground text-sm flex items-center gap-2">
-                          {device.name.split(' ').slice(-2).join(' ')}
-                          <Badge 
-                            variant={device.type === 'shared' ? 'info' : 'warning'}
-                            className="text-xs"
-                          >
-                            {device.type}
-                          </Badge>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {device.kwh.toFixed(1)} kWh
-                        </div>
-                      </div>
-                      <div className={`text-right font-semibold text-sm ${getCostColor(device.cost)}`}>
-                        ${device.cost.toFixed(2)}
-                      </div>
+                  {/* Device List - Scrollable if many devices */}
+                  <div className="flex flex-col">
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                      <span>📋</span>
+                      Device Breakdown {dashboardData.topDevices.length > 5 && `(Top ${Math.min(10, dashboardData.topDevices.length)})`}
+                    </h3>
+                    <div className="space-y-2.5 max-h-[240px] overflow-y-auto pr-2 custom-scrollbar">
+                      {dashboardData.topDevices.slice(0, 10).map((device, index) => {
+                        const getCostColor = (cost: number) => {
+                          if (cost > 100) return 'text-red-400'
+                          if (cost > 20) return 'text-yellow-400'
+                          return 'text-green-400'
+                        }
+                        
+                        const percentage = dashboardData.householdUsage.total.kwh > 0
+                          ? ((device.kwh / dashboardData.householdUsage.total.kwh) * 100).toFixed(1)
+                          : 0
+                        
+                        return (
+                          <div key={index} className="group p-2.5 rounded-lg hover:bg-muted/50 transition-all">
+                            <div className="flex justify-between items-center mb-1.5">
+                              <div className="flex items-center gap-2.5 flex-1">
+                                <div 
+                                  className="w-3 h-3 rounded-full flex-shrink-0" 
+                                  style={{ 
+                                    backgroundColor: COLORS[index % COLORS.length]
+                                  }}
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold text-foreground text-sm truncate">
+                                    {device.name}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {device.kwh.toFixed(2)} kWh • {percentage}% of total
+                                  </div>
+                                </div>
+                              </div>
+                              <div className={`text-right font-bold text-sm ml-3 ${getCostColor(device.cost)}`}>
+                                ${device.cost.toFixed(2)}
+                              </div>
+                            </div>
+                            <div className="w-full bg-muted/30 rounded-full h-1 overflow-hidden">
+                              <div 
+                                className="h-1 rounded-full transition-all duration-300" 
+                                style={{ 
+                                  width: `${percentage}%`,
+                                  backgroundColor: COLORS[index % COLORS.length]
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
-                  )
-                })}
-              </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground text-sm py-12">
+                  <div className="text-4xl mb-3">🔌</div>
+                  <p className="text-base font-medium">No device usage data available</p>
+                  <p className="text-xs mt-1">Start logging energy usage to see device breakdown</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -789,8 +810,9 @@ export default function Dashboard() {
       {/* Data Visualization Charts */}
       <section className="mb-8 slide-up">
         <h2 className="mb-3 md:mb-5 text-lg md:text-xl font-bold text-foreground">📈 Usage Trends & Analysis</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-          {/* Weekly Usage by Person Chart */}
+        
+        {/* Top Row: Weekly Usage */}
+        <div className="mb-4 md:mb-6">
           <Card className="energy-card chart-hover">
             <CardHeader>
               <CardTitle className="text-lg text-foreground flex items-center gap-2">
@@ -798,47 +820,68 @@ export default function Dashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={weeklyUsageData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border))" />
-                  <XAxis dataKey="day" stroke="hsl(var(--color-muted-foreground))" />
-                  <YAxis 
-                    stroke="hsl(var(--color-muted-foreground))" 
-                    label={{ value: 'Usage (kWh)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: 'hsl(var(--color-muted-foreground))' } }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--color-card))', 
-                      border: '1px solid hsl(var(--color-border))',
-                      borderRadius: '8px',
-                      color: 'hsl(var(--color-foreground))',
-                      fontSize: '14px'
-                    }}
-                    labelStyle={{ color: 'hsl(var(--color-foreground))' }}
-                    formatter={(value, name) => [`${value} kWh`, name]}
-                    labelFormatter={(label) => `${label} - Daily Usage by Person`}
-                  />
-                  <Bar dataKey="Vu" fill="#22c55e" />
-                  <Bar dataKey="Thuy" fill="#eab308" />
-                  <Bar dataKey="Vy" fill="#ef4444" />
-                  <Bar dataKey="Han" fill="#3b82f6" />
-                </BarChart>
-              </ResponsiveContainer>
+              {weeklyUsageData.length > 0 && weeklyUsageData.some(day => Object.keys(day).length > 2) ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={weeklyUsageData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border))" />
+                    <XAxis dataKey="day" stroke="hsl(var(--color-muted-foreground))" />
+                    <YAxis 
+                      stroke="hsl(var(--color-muted-foreground))" 
+                      label={{ value: 'Usage (kWh)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: 'hsl(var(--color-muted-foreground))' } }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--color-card))', 
+                        border: '1px solid hsl(var(--color-border))',
+                        borderRadius: '8px',
+                        color: 'hsl(var(--color-foreground))',
+                        fontSize: '14px'
+                      }}
+                      labelStyle={{ color: 'hsl(var(--color-foreground))' }}
+                      formatter={(value, name) => [`${value} kWh`, name]}
+                      labelFormatter={(label, payload) => {
+                        const dayData = payload && payload[0] ? payload[0].payload : null
+                        return `${label}${dayData?.date ? ` (${dayData.date})` : ''}`
+                      }}
+                    />
+                    {householdMembers.map((member, index) => (
+                      <Bar key={member.id} dataKey={member.name} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <div className="text-4xl mb-2">📊</div>
+                    <p className="text-sm">No energy logs in the past 7 days</p>
+                    <p className="text-xs mt-1">Start logging usage to see trends</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
+        </div>
 
-          {/* Monthly Trend Chart */}
-          <Card className="energy-card chart-hover">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                📈 Monthly Usage Trend
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+        {/* Monthly Trend Chart - Full Width */}
+        <Card className="energy-card chart-hover">
+          <CardHeader>
+            <CardTitle className="text-lg text-foreground flex items-center gap-2">
+              📈 Monthly Usage Trend (Last 12 Months)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {monthlyTrendData.some(m => m.usage > 0) ? (
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={monthlyTrendData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border))" />
-                  <XAxis dataKey="month" stroke="hsl(var(--color-muted-foreground))" />
+                  <XAxis 
+                    dataKey="month" 
+                    stroke="hsl(var(--color-muted-foreground))" 
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    tick={{ fontSize: 11 }}
+                  />
                   <YAxis 
                     stroke="hsl(var(--color-muted-foreground))" 
                     label={{ value: 'Total Usage (kWh)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: 'hsl(var(--color-muted-foreground))' } }}
@@ -852,18 +895,33 @@ export default function Dashboard() {
                       fontSize: '14px'
                     }}
                     labelStyle={{ color: 'hsl(var(--color-foreground))' }}
-                    formatter={(value) => [`${value} kWh`, 'Total Household Usage']}
-                    labelFormatter={(label) => {
-                      const monthData = monthlyTrendData.find(d => d.month === label);
-                      return `${label} 2024 - Usage: ${monthData?.usage || 0} kWh (Cost: $${monthData?.cost || 0})`;
+                    formatter={(value: any, name: any, props: any) => {
+                      const cost = props.payload.cost || 0
+                      const logs = props.payload.logs || 0
+                      return [`${value} kWh (Cost: $${cost}, Logs: ${logs})`, 'Total Usage']
                     }}
                   />
-                  <Line type="monotone" dataKey="usage" stroke="#22c55e" strokeWidth={3} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="usage" 
+                    stroke="#22c55e" 
+                    strokeWidth={3} 
+                    dot={{ fill: '#22c55e', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <div className="text-4xl mb-2">📈</div>
+                  <p className="text-sm">No monthly usage data available</p>
+                  <p className="text-xs mt-1">Log energy usage to see monthly trends</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
     </div>
