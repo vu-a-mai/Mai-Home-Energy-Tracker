@@ -1006,8 +1006,14 @@ export default function EnergyLogs() {
                       )}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>📅 {new Date(log.usage_date + 'T00:00:00').toLocaleDateString()}</span>
-                      <span>⏰ {formatTime12Hour(log.start_time)} - {formatTime12Hour(log.end_time)}</span>
+                      <span className="flex items-center gap-1">
+                        <CalendarIcon className="w-3 h-3" />
+                        {new Date(log.usage_date + 'T00:00:00').toLocaleDateString()}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <ClockIcon className="w-3 h-3" />
+                        {formatTime12Hour(log.start_time)} - {formatTime12Hour(log.end_time)}
+                      </span>
                       <span>({usageCalc.durationHours.toFixed(1)}h)</span>
                     </div>
                   </div>
@@ -1212,7 +1218,7 @@ export default function EnergyLogs() {
                   onClick={() => setShowUserFilter(false)}
                   className="p-2 h-8 w-8 border border-border rounded hover:bg-muted"
                 >
-                  ✕
+                  <XMarkIcon className="w-4 h-4" />
                 </button>
               </div>
               <p className="text-sm text-muted-foreground">
