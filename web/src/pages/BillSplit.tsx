@@ -681,7 +681,7 @@ ${householdUsers.map(user =>
                         <div className="space-y-1">
                           <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground flex items-center gap-1">
-                              <BoltIcon className="w-3 h-3" />
+                              <BoltIcon className="w-3 h-3 text-orange-400" />
                               Personal Usage:
                             </span>
                             <span className="font-semibold text-yellow-400">
@@ -690,7 +690,7 @@ ${householdUsers.map(user =>
                           </div>
                           <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground flex items-center gap-1">
-                              <CurrencyDollarIcon className="w-3 h-3" />
+                              <CurrencyDollarIcon className="w-3 h-3 text-green-400" />
                               Personal Cost:
                             </span>
                             <span className="font-semibold text-blue-400">
@@ -700,7 +700,7 @@ ${householdUsers.map(user =>
                         </div>
                         <div className="flex justify-between items-center text-sm">
                           <span className="text-muted-foreground flex items-center gap-1">
-                            <HomeIcon className="w-3 h-3" />
+                            <HomeIcon className="w-3 h-3 text-cyan-400" />
                             Shared:
                           </span>
                           <span className="font-semibold text-green-400">
@@ -713,7 +713,7 @@ ${householdUsers.map(user =>
                       <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 p-3 rounded-lg border border-red-500/30">
                         <div className="flex justify-between items-center">
                           <span className="text-xs text-muted-foreground font-semibold flex items-center gap-1">
-                            <CurrencyDollarIcon className="w-3 h-3" />
+                            <CurrencyDollarIcon className="w-3 h-3 text-green-400" />
                             Total Owed:
                           </span>
                           <span className="text-xl font-bold text-red-400">
