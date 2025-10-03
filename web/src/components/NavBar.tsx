@@ -3,6 +3,18 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useDemoMode } from '../contexts/DemoContext'
 import { Button } from './ui/Button'
+import {
+  ChartBarIcon,
+  CpuChipIcon,
+  ClipboardDocumentListIcon,
+  CurrencyDollarIcon,
+  Cog6ToothIcon,
+  BoltIcon,
+  ArrowRightOnRectangleIcon,
+  Bars3Icon,
+  XMarkIcon,
+  UserCircleIcon
+} from '@heroicons/react/24/outline'
 
 export default function NavBar() {
   const { user, logout } = useAuth()
@@ -54,7 +66,7 @@ export default function NavBar() {
       <div className="flex items-center justify-between gap-3 px-3 py-2.5 md:px-4 md:py-3 max-w-7xl mx-auto">
         {/* Brand Logo & Title */}
         <div className="flex items-center gap-2 md:gap-3">
-          <div className="text-2xl md:text-3xl energy-pulse">⚡</div>
+          <BoltIcon className="w-7 h-7 md:w-8 md:h-8 text-primary energy-pulse" />
           <div className="flex flex-col">
             <span className="font-bold text-base md:text-lg text-white leading-tight">
               Mai Energy Tracker
@@ -68,19 +80,24 @@ export default function NavBar() {
         {/* Desktop Navigation Links */}
         <div className="hidden lg:flex items-center gap-2">
           <NavLink to="/" className={({ isActive }) => navLinkClass(isActive)}>
-            📊 Dashboard
+            <ChartBarIcon className="w-5 h-5 inline-block mr-1.5" />
+            Dashboard
           </NavLink>
           <NavLink to="/devices" className={({ isActive }) => navLinkClass(isActive)}>
-            🔌 Devices
+            <CpuChipIcon className="w-5 h-5 inline-block mr-1.5" />
+            Devices
           </NavLink>
           <NavLink to="/logs" className={({ isActive }) => navLinkClass(isActive)}>
-            📋 Logs
+            <ClipboardDocumentListIcon className="w-5 h-5 inline-block mr-1.5" />
+            Logs
           </NavLink>
           <NavLink to="/bill-split" className={({ isActive }) => navLinkClass(isActive)}>
-            💳 Bill Split
+            <CurrencyDollarIcon className="w-5 h-5 inline-block mr-1.5" />
+            Bill Split
           </NavLink>
           <NavLink to="/settings" className={({ isActive }) => navLinkClass(isActive)}>
-            ⚙️ Settings
+            <Cog6ToothIcon className="w-5 h-5 inline-block mr-1.5" />
+            Settings
           </NavLink>
         </div>
 
@@ -118,7 +135,7 @@ export default function NavBar() {
             size="sm"
             className="hidden md:flex items-center gap-1.5 border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500 transition-all"
           >
-            <span className="text-base">🚪</span>
+            <ArrowRightOnRectangleIcon className="w-4 h-4" />
             <span className="text-sm font-medium">{isDemoMode ? 'Exit' : 'Logout'}</span>
           </Button>
 
@@ -128,13 +145,11 @@ export default function NavBar() {
             className="lg:hidden p-2 rounded-lg bg-primary/20 hover:bg-primary/30 border border-primary/30 transition-all"
             aria-label="Toggle menu"
           >
-            <svg className="w-5 h-5 md:w-6 md:h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {showMobileMenu ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
+            {showMobileMenu ? (
+              <XMarkIcon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+            ) : (
+              <Bars3Icon className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+            )}
           </button>
         </div>
       </div>
@@ -163,35 +178,40 @@ export default function NavBar() {
               onClick={() => setShowMobileMenu(false)}
               className={({ isActive }) => navLinkClass(isActive) + ' w-full justify-start'}
             >
-              📊 Dashboard
+              <ChartBarIcon className="w-5 h-5 inline-block mr-2" />
+              Dashboard
             </NavLink>
             <NavLink
               to="/devices"
               onClick={() => setShowMobileMenu(false)}
               className={({ isActive }) => navLinkClass(isActive) + ' w-full justify-start'}
             >
-              🔌 Devices
+              <CpuChipIcon className="w-5 h-5 inline-block mr-2" />
+              Devices
             </NavLink>
             <NavLink
               to="/logs"
               onClick={() => setShowMobileMenu(false)}
               className={({ isActive }) => navLinkClass(isActive) + ' w-full justify-start'}
             >
-              📋 Energy Logs
+              <ClipboardDocumentListIcon className="w-5 h-5 inline-block mr-2" />
+              Energy Logs
             </NavLink>
             <NavLink
               to="/bill-split"
               onClick={() => setShowMobileMenu(false)}
               className={({ isActive }) => navLinkClass(isActive) + ' w-full justify-start'}
             >
-              💳 Bill Split
+              <CurrencyDollarIcon className="w-5 h-5 inline-block mr-2" />
+              Bill Split
             </NavLink>
             <NavLink
               to="/settings"
               onClick={() => setShowMobileMenu(false)}
               className={({ isActive }) => navLinkClass(isActive) + ' w-full justify-start'}
             >
-              ⚙️ Settings
+              <Cog6ToothIcon className="w-5 h-5 inline-block mr-2" />
+              Settings
             </NavLink>
             
             {/* Logout Button Mobile */}
@@ -202,7 +222,7 @@ export default function NavBar() {
               }}
               className="w-full mt-2 px-3 py-2.5 rounded-lg bg-red-500/20 border-2 border-red-500/50 text-red-400 hover:bg-red-500/30 hover:border-red-500 transition-all flex items-center justify-center gap-2 font-medium"
             >
-              <span className="text-lg">🚪</span>
+              <ArrowRightOnRectangleIcon className="w-5 h-5" />
               <span>{isDemoMode ? 'Exit Demo Mode' : 'Logout'}</span>
             </button>
           </div>
