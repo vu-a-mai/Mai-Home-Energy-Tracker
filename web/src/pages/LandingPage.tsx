@@ -149,10 +149,60 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-5 bg-muted text-center text-muted-foreground">
-        <p className="text-sm">
-          © 2025 Mai Family Energy Tracker • Built with React & Supabase • TOU-D-PRIME Rate Structure
-        </p>
+      <footer className="py-12 px-5 bg-muted">
+        <div className="max-w-6xl mx-auto">
+          {/* Tech Stack Section */}
+          <div className="mb-8 text-center">
+            <h3 className="text-lg font-bold text-foreground mb-4">Built With Modern Technology</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+              <div className="bg-card border border-border rounded-lg p-4">
+                <p className="font-semibold text-foreground">React</p>
+                <p className="text-xs text-muted-foreground mt-1">Frontend Framework</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <p className="font-semibold text-foreground">TypeScript</p>
+                <p className="text-xs text-muted-foreground mt-1">Type Safety</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <p className="font-semibold text-foreground">Supabase</p>
+                <p className="text-xs text-muted-foreground mt-1">Database & Auth</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <p className="font-semibold text-foreground">Tailwind CSS</p>
+                <p className="text-xs text-muted-foreground mt-1">Styling</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <p className="font-semibold text-foreground">Vite</p>
+                <p className="text-xs text-muted-foreground mt-1">Build Tool</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <p className="font-semibold text-foreground">Recharts</p>
+                <p className="text-xs text-muted-foreground mt-1">Data Visualization</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <p className="font-semibold text-foreground">Heroicons</p>
+                <p className="text-xs text-muted-foreground mt-1">Icon System</p>
+              </div>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <p className="font-semibold text-foreground">PostgreSQL</p>
+                <p className="text-xs text-muted-foreground mt-1">Database</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-border my-8"></div>
+
+          {/* Credits & Copyright */}
+          <div className="text-center space-y-3">
+            <p className="text-sm text-foreground font-medium">
+              💡 App Idea and Design by <span className="font-bold text-primary">Vu Mai</span>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              © 2025 Mai Family Energy Tracker • TOU-D-PRIME Rate Structure
+            </p>
+          </div>
+        </div>
       </footer>
     </div>
   )
