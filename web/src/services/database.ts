@@ -1,4 +1,5 @@
 import { supabase, type User, type Device, type EnergyLog, type BillSplit } from '../lib/supabase'
+import { logger } from '../utils/logger'
 
 // User Services
 export const userService = {
@@ -13,7 +14,7 @@ export const userService = {
       .maybeSingle()
 
     if (error) {
-      console.error('Error fetching user:', error)
+      logger.error('Error fetching user:', error)
       return null
     }
     return data
@@ -26,7 +27,7 @@ export const userService = {
       .eq('household_id', householdId)
 
     if (error) {
-      console.error('Error fetching household members:', error)
+      logger.error('Error fetching household members:', error)
       return []
     }
     return data || []
@@ -43,7 +44,7 @@ export const deviceService = {
       .order('name')
 
     if (error) {
-      console.error('Error fetching devices:', error)
+      logger.error('Error fetching devices:', error)
       return []
     }
     return data || []
@@ -57,7 +58,7 @@ export const deviceService = {
       .single()
 
     if (error) {
-      console.error('Error creating device:', error)
+      logger.error('Error creating device:', error)
       return null
     }
     return data
@@ -72,7 +73,7 @@ export const deviceService = {
       .single()
 
     if (error) {
-      console.error('Error updating device:', error)
+      logger.error('Error updating device:', error)
       return null
     }
     return data
@@ -85,7 +86,7 @@ export const deviceService = {
       .eq('id', id)
 
     if (error) {
-      console.error('Error deleting device:', error)
+      logger.error('Error deleting device:', error)
       return false
     }
     return true
@@ -112,7 +113,7 @@ export const energyLogService = {
     const { data, error } = await query
 
     if (error) {
-      console.error('Error fetching energy logs:', error)
+      logger.error('Error fetching energy logs:', error)
       return []
     }
     return data || []
@@ -135,7 +136,7 @@ export const energyLogService = {
       .single()
 
     if (logError) {
-      console.error('Error creating energy log:', logError)
+      logger.error('Error creating energy log:', logError)
       return null
     }
 
@@ -151,7 +152,7 @@ export const energyLogService = {
       .single()
 
     if (error) {
-      console.error('Error updating energy log:', error)
+      logger.error('Error updating energy log:', error)
       return null
     }
     return data
@@ -164,7 +165,7 @@ export const energyLogService = {
       .eq('id', id)
 
     if (error) {
-      console.error('Error deleting energy log:', error)
+      logger.error('Error deleting energy log:', error)
       return false
     }
     return true
@@ -185,7 +186,7 @@ export const energyLogService = {
       .lte('usage_date', `${year}-12-31`)
 
     if (error) {
-      console.error('Error fetching monthly usage:', error)
+      logger.error('Error fetching monthly usage:', error)
       return []
     }
 
@@ -230,7 +231,7 @@ export const billSplitService = {
       .order('month', { ascending: false })
 
     if (error) {
-      console.error('Error fetching bill splits:', error)
+      logger.error('Error fetching bill splits:', error)
       return []
     }
     return data || []
@@ -244,7 +245,7 @@ export const billSplitService = {
       .single()
 
     if (error) {
-      console.error('Error creating bill split:', error)
+      logger.error('Error creating bill split:', error)
       return null
     }
     return data
@@ -259,7 +260,7 @@ export const billSplitService = {
       .single()
 
     if (error) {
-      console.error('Error updating bill split:', error)
+      logger.error('Error updating bill split:', error)
       return null
     }
     return data
