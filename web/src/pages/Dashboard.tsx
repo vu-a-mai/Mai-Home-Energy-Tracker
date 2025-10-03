@@ -22,7 +22,14 @@ import {
   ClockIcon,
   SunIcon,
   MoonIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  EyeIcon,
+  CurrencyDollarIcon,
+  ExclamationTriangleIcon,
+  UserIcon,
+  ClipboardDocumentListIcon,
+  RocketLaunchIcon,
+  PencilSquareIcon
 } from '@heroicons/react/24/outline'
 
 export default function Dashboard() {
@@ -395,7 +402,7 @@ export default function Dashboard() {
     return (
       <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-5 min-h-screen bg-background text-foreground font-sans fade-in flex items-center justify-center">
         <div className="text-center">
-          <div className="text-4xl md:text-6xl mb-4 energy-pulse">⚡</div>
+          <BoltIcon className="w-16 h-16 md:w-24 md:h-24 mb-4 energy-pulse text-primary mx-auto" />
           <h2 className="text-xl md:text-2xl font-bold mb-2">Loading Dashboard...</h2>
           <p className="text-sm md:text-base text-muted-foreground">Fetching your energy data</p>
         </div>
@@ -409,7 +416,7 @@ export default function Dashboard() {
       {isDemoMode && (
         <div className="mb-4 p-3 md:p-4 bg-yellow-500/20 border-2 border-yellow-500 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center gap-3">
           <div className="flex items-center gap-2 md:gap-3">
-            <span className="text-2xl md:text-3xl">👁️</span>
+            <EyeIcon className="w-8 h-8 md:w-10 md:h-10 text-yellow-500" />
             <div>
               <h3 className="font-bold text-yellow-500 text-sm md:text-base">Demo Mode Active</h3>
               <p className="text-xs md:text-sm text-yellow-200">Using demo data - Supabase unavailable</p>
@@ -431,8 +438,9 @@ export default function Dashboard() {
       {/* Header */}
       <header className="mb-6 md:mb-8 p-4 md:p-8 energy-header-gradient rounded-2xl text-white shadow-xl energy-glow">
         <div className="flex items-center justify-between mb-4 md:mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold energy-pulse">
-            ⚡ Energy Dashboard
+          <h1 className="text-2xl md:text-3xl font-bold energy-pulse flex items-center gap-2">
+            <BoltIcon className="w-7 h-7 md:w-8 md:h-8" />
+            Energy Dashboard
           </h1>
         </div>
         
@@ -445,7 +453,7 @@ export default function Dashboard() {
                 ? 'bg-green-500 text-white font-bold shadow-lg ring-2 ring-white/50' 
                 : 'bg-white/20 text-white/80 border border-white/30'
             }`}>
-              <span className="text-base">🟢</span>
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
               <span className="text-xs md:text-sm whitespace-nowrap">Off-Peak</span>
               <span className="text-xs opacity-80">$0.25/kWh</span>
             </div>
@@ -455,7 +463,7 @@ export default function Dashboard() {
                 ? 'bg-yellow-500 text-white font-bold shadow-lg ring-2 ring-white/50' 
                 : 'bg-white/20 text-white/80 border border-white/30'
             }`}>
-              <span className="text-base">🟡</span>
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
               <span className="text-xs md:text-sm whitespace-nowrap">Mid-Peak</span>
               <span className="text-xs opacity-80">$0.37/kWh</span>
             </div>
@@ -465,7 +473,7 @@ export default function Dashboard() {
                 ? 'bg-red-500 text-white font-bold shadow-lg ring-2 ring-white/50' 
                 : 'bg-white/20 text-white/80 border border-white/30'
             }`}>
-              <span className="text-base">🔴</span>
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
               <span className="text-xs md:text-sm whitespace-nowrap">On-Peak</span>
               <span className="text-xs opacity-80">$0.55/kWh</span>
             </div>
@@ -475,7 +483,7 @@ export default function Dashboard() {
                 ? 'bg-blue-500 text-white font-bold shadow-lg ring-2 ring-white/50' 
                 : 'bg-white/20 text-white/80 border border-white/30'
             }`}>
-              <span className="text-base">🔵</span>
+              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
               <span className="text-xs md:text-sm whitespace-nowrap">Super Off-Peak</span>
               <span className="text-xs opacity-80">$0.24/kWh</span>
             </div>
@@ -485,13 +493,16 @@ export default function Dashboard() {
 
       {/* Quick Actions */}
       <section className="mb-6 slide-up">
-        <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground">🚀 Quick Actions</h2>
+        <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
+          <RocketLaunchIcon className="w-6 h-6 text-primary" />
+          Quick Actions
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           <button 
             onClick={handleManageDevices}
             className="quick-actions-card p-4 md:p-5 rounded-lg text-left flex items-center gap-3 md:gap-4 hover:scale-105 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-300 text-foreground group"
           >
-            <div className="text-2xl md:text-3xl group-hover:scale-110 transition-transform">🔌</div>
+            <CpuChipIcon className="w-8 h-8 md:w-10 md:h-10 text-primary group-hover:scale-110 transition-transform" />
             <div>
               <div className="font-bold text-sm md:text-base mb-1">Manage Devices</div>
               <div className="text-xs text-muted-foreground">Add or edit devices</div>
@@ -502,7 +513,7 @@ export default function Dashboard() {
             onClick={handleLogEnergyUsage}
             className="quick-actions-card p-4 md:p-5 rounded-lg text-left flex items-center gap-3 md:gap-4 hover:scale-105 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-300 text-foreground group"
           >
-            <div className="text-2xl md:text-3xl group-hover:scale-110 transition-transform">📝</div>
+            <PencilSquareIcon className="w-8 h-8 md:w-10 md:h-10 text-primary group-hover:scale-110 transition-transform" />
             <div>
               <div className="font-bold text-sm md:text-base mb-1">Log Energy Usage</div>
               <div className="text-xs text-muted-foreground">Record usage sessions</div>
@@ -513,7 +524,7 @@ export default function Dashboard() {
             onClick={handleSplitBill}
             className="quick-actions-card p-4 md:p-5 rounded-lg text-left flex items-center gap-3 md:gap-4 hover:scale-105 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-300 text-foreground group"
           >
-            <div className="text-2xl md:text-3xl group-hover:scale-110 transition-transform">💳</div>
+            <CurrencyDollarIcon className="w-8 h-8 md:w-10 md:h-10 text-primary group-hover:scale-110 transition-transform" />
             <div>
               <div className="font-bold text-sm md:text-base mb-1">Split Monthly Bill</div>
               <div className="text-xs text-muted-foreground">Calculate cost allocation</div>
@@ -524,31 +535,34 @@ export default function Dashboard() {
 
       {/* Rate Period Breakdown */}
       <section className="mb-6 slide-up">
-        <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground">⏰ Rate Period Breakdown</h2>
+        <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
+          <ClockIcon className="w-6 h-6 text-primary" />
+          Rate Period Breakdown
+        </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <div className="energy-gradient-green p-4 rounded-lg text-center rate-indicator hover:scale-105 transition-transform shadow-lg">
-            <div className="text-3xl mb-2">🟢</div>
+            <div className="w-10 h-10 rounded-full bg-green-500 mx-auto mb-2"></div>
             <div className="font-bold text-white text-base mb-2">Off-Peak</div>
             <div className="text-sm text-white font-semibold">{dashboardData.ratePeriods.offPeak.kwh.toFixed(1)} kWh</div>
             <div className="text-xs text-white/80">${dashboardData.ratePeriods.offPeak.cost.toFixed(2)}</div>
           </div>
         
           <div className="energy-gradient-yellow p-4 rounded-lg text-center rate-indicator hover:scale-105 transition-transform shadow-lg">
-            <div className="text-3xl mb-2">🟡</div>
+            <div className="w-10 h-10 rounded-full bg-yellow-500 mx-auto mb-2"></div>
             <div className="font-bold text-white text-base mb-2">Mid-Peak</div>
             <div className="text-sm text-white font-semibold">{dashboardData.ratePeriods.midPeak.kwh.toFixed(1)} kWh</div>
             <div className="text-xs text-white/80">${dashboardData.ratePeriods.midPeak.cost.toFixed(2)}</div>
           </div>
         
           <div className="energy-gradient-red p-4 rounded-lg text-center rate-indicator hover:scale-105 transition-transform shadow-lg">
-            <div className="text-3xl mb-2">🔴</div>
+            <div className="w-10 h-10 rounded-full bg-red-500 mx-auto mb-2"></div>
             <div className="font-bold text-white text-base mb-2">On-Peak</div>
             <div className="text-sm text-white font-semibold">{dashboardData.ratePeriods.onPeak.kwh.toFixed(1)} kWh</div>
             <div className="text-xs text-white/80">${dashboardData.ratePeriods.onPeak.cost.toFixed(2)}</div>
           </div>
         
           <div className="energy-gradient-blue p-4 rounded-lg text-center rate-indicator hover:scale-105 transition-transform shadow-lg">
-            <div className="text-3xl mb-2">🔵</div>
+            <div className="w-10 h-10 rounded-full bg-blue-500 mx-auto mb-2"></div>
             <div className="font-bold text-white text-base mb-2">Super Off-Peak</div>
             <div className="text-sm text-white font-semibold">{dashboardData.ratePeriods.superOffPeak.kwh.toFixed(1)} kWh</div>
             <div className="text-xs text-white/80">${dashboardData.ratePeriods.superOffPeak.cost.toFixed(2)}</div>
@@ -557,9 +571,12 @@ export default function Dashboard() {
         
         <div className="bg-gradient-to-r from-red-500/20 via-orange-500/20 to-red-500/20 border-2 border-red-500/50 rounded-lg p-4 shadow-lg">
           <div className="flex items-center justify-center gap-3">
-            <div className="text-3xl animate-pulse">⚠️</div>
+            <ExclamationTriangleIcon className="w-10 h-10 text-yellow-400 animate-pulse" />
             <div className="text-center">
-              <div className="text-red-400 font-bold text-lg mb-1">⚡ Peak Usage Time Alert</div>
+              <div className="text-red-400 font-bold text-lg mb-1 flex items-center justify-center gap-2">
+                <BoltIcon className="w-5 h-5" />
+                Peak Usage Time Alert
+              </div>
               <div className="text-white font-semibold text-base">
                 🕓 4:00 PM - 9:00 PM 🕘
               </div>
@@ -567,7 +584,7 @@ export default function Dashboard() {
                 On-Peak Period - Highest Rates ($0.55/kWh)
               </div>
             </div>
-            <div className="text-3xl animate-pulse">⚠️</div>
+            <ExclamationTriangleIcon className="w-10 h-10 text-yellow-400 animate-pulse" />
           </div>
         </div>
       </section>
@@ -680,11 +697,11 @@ export default function Dashboard() {
                   
                   const getUserIcon = (name: string) => {
                     const normalizedName = name.toLowerCase()
-                    if (normalizedName.includes('vu')) return '👨'
-                    if (normalizedName.includes('vy')) return '👩'
-                    if (normalizedName.includes('thuy')) return '👩'
-                    if (normalizedName.includes('han')) return '👦'
-                    return '👤'
+                    if (normalizedName.includes('vu')) return <UserIcon className="w-4 h-4 inline-block text-green-400" />
+                    if (normalizedName.includes('vy')) return <UserIcon className="w-4 h-4 inline-block text-pink-400" />
+                    if (normalizedName.includes('thuy')) return <UserIcon className="w-4 h-4 inline-block text-purple-400" />
+                    if (normalizedName.includes('han')) return <UserIcon className="w-4 h-4 inline-block text-blue-400" />
+                    return <UserIcon className="w-4 h-4 inline-block text-primary" />
                   }
                   
                   const percentage = dashboardData.householdUsage.total.kwh > 0 
@@ -772,7 +789,7 @@ export default function Dashboard() {
                   {/* Device List - Scrollable if many devices */}
                   <div className="flex flex-col">
                     <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                      <span>📋</span>
+                      <ClipboardDocumentListIcon className="w-4 h-4" />
                       Device Breakdown {dashboardData.topDevices.length > 5 && `(Top ${Math.min(10, dashboardData.topDevices.length)})`}
                     </h3>
                     <div className="space-y-2.5 max-h-[240px] overflow-y-auto pr-2 custom-scrollbar">
@@ -786,7 +803,7 @@ export default function Dashboard() {
                         const percentage = dashboardData.householdUsage.total.kwh > 0
                           ? ((device.kwh / dashboardData.householdUsage.total.kwh) * 100).toFixed(1)
                           : 0
-                        
+                  
                   return (
                           <div key={index} className="group p-2.5 rounded-lg hover:bg-muted/50 transition-all">
                             <div className="flex justify-between items-center mb-1.5">
@@ -827,7 +844,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="text-center text-muted-foreground text-sm py-12">
-                  <div className="text-4xl mb-3">🔌</div>
+                  <CpuChipIcon className="w-16 h-16 mx-auto mb-3 text-muted-foreground" />
                   <p className="text-base font-medium">No device usage data available</p>
                   <p className="text-xs mt-1">Start logging energy usage to see device breakdown</p>
                 </div>
@@ -886,7 +903,7 @@ export default function Dashboard() {
               ) : (
                 <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
-                    <div className="text-4xl mb-2">📊</div>
+                    <ChartBarIcon className="w-16 h-16 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-sm">No energy logs in the past 7 days</p>
                     <p className="text-xs mt-1">Start logging usage to see trends</p>
                   </div>
