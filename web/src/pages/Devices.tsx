@@ -23,7 +23,9 @@ import {
   FireIcon,
   WifiIcon,
   HomeIcon,
-  UserIcon
+  UserIcon,
+  TagIcon,
+  MapPinIcon
 } from '@heroicons/react/24/outline'
 
 // Helper function to get device-specific icon
@@ -542,11 +544,17 @@ export default function Devices() {
               {/* Device Info - Compact Grid */}
               <div className="space-y-2 mb-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">📦 Type:</span>
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <TagIcon className="w-3 h-3 text-indigo-400" />
+                    Type:
+                  </span>
                   <span className="font-semibold text-foreground">{device.device_type}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">📍 Location:</span>
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <MapPinIcon className="w-3 h-3 text-pink-400" />
+                    Location:
+                  </span>
                   <span className="font-semibold text-foreground">{device.location}</span>
                 </div>
               </div>
