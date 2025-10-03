@@ -25,7 +25,11 @@ import {
   TrashIcon,
   CalendarIcon,
   UsersIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  UserIcon,
+  BoltIcon,
+  HomeIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 
 interface BillSplitData {
@@ -46,13 +50,15 @@ interface BillFormData {
 }
 
 // Helper function to get user icon
-const getUserIcon = (userName: string): string => {
+const getUserIcon = (userName: string): JSX.Element => {
   const name = userName.toLowerCase()
-  if (name.includes('vu')) return '👨'
-  if (name.includes('thuy')) return '👩'
-  if (name.includes('vy')) return '👧'
-  if (name.includes('han')) return '👦'
-  return '👤' // Default icon
+  const iconClass = "w-4 h-4 inline-block"
+  
+  if (name.includes('vu')) return <UserIcon className={`${iconClass} text-green-400`} />
+  if (name.includes('thuy')) return <UserIcon className={`${iconClass} text-purple-400`} />
+  if (name.includes('vy')) return <UserIcon className={`${iconClass} text-pink-400`} />
+  if (name.includes('han')) return <UserIcon className={`${iconClass} text-blue-400`} />
+  return <UserIcon className={`${iconClass} text-primary`} /> // Default icon
 }
 
 export default function BillSplit() {
@@ -463,8 +469,9 @@ ${householdUsers.map(user =>
       {/* Header */}
       <header className="flex justify-center items-center mb-6 md:mb-8 p-4 md:p-6 energy-header-gradient rounded-2xl text-white shadow-xl energy-glow">
         <div className="text-center">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2 energy-pulse">
-            💳 Bill Split Calculator
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 energy-pulse flex items-center gap-2">
+            <CurrencyDollarIcon className="w-7 h-7 md:w-8 md:h-8 text-green-400" />
+            Bill Split Calculator
           </h1>
           <p className="opacity-90 text-sm md:text-base">
             Fairly allocate electricity costs among family members
@@ -481,7 +488,7 @@ ${householdUsers.map(user =>
               <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4">
                 {/* Title */}
                 <div className="flex items-center gap-2 text-foreground font-semibold text-sm md:text-base">
-                  <span className="text-lg">📅</span>
+                  <CalendarIcon className="w-5 h-5 text-blue-400" />
                   <span>Bill Period:</span>
                 </div>
                 
@@ -511,7 +518,10 @@ ${householdUsers.map(user =>
 
                 {/* Total Bill Amount */}
                   <div className="flex items-center gap-2 flex-1 min-w-[180px]">
-                    <label className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">💵 Total:</label>
+                    <label className="text-xs md:text-sm text-muted-foreground whitespace-nowrap flex items-center gap-1">
+                      <CurrencyDollarIcon className="w-4 h-4 text-green-400" />
+                      Total:
+                    </label>
                   <Input
                     type="number"
                     step="0.01"
@@ -529,7 +539,8 @@ ${householdUsers.map(user =>
                   type="submit"
                   className="energy-action-btn px-4 md:px-6 py-2 md:py-1.5 text-sm w-full sm:w-auto"
                 >
-                  📊 Calculate Split
+                  <ChartBarIcon className="w-5 h-5 inline-block mr-1" />
+                  Calculate Split
                 </Button>
               </div>
               
@@ -565,7 +576,7 @@ ${householdUsers.map(user =>
                 <Card className="energy-card bg-gradient-to-br from-slate-500/10 to-gray-500/10 border-slate-500/30">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-2xl">📅</span>
+                      <CalendarIcon className="w-6 h-6 md:w-7 md:h-7 text-blue-400" />
                       <span className="text-xs text-muted-foreground font-semibold">Billing Period</span>
                     </div>
                     <div className="font-bold text-slate-300">
@@ -578,7 +589,7 @@ ${householdUsers.map(user =>
                 <Card className="energy-card bg-gradient-to-br from-red-500/10 to-orange-500/10 border-red-500/30">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-2xl">💰</span>
+                      <CurrencyDollarIcon className="w-6 h-6 md:w-7 md:h-7 text-green-400" />
                       <span className="text-xs text-muted-foreground font-semibold">Total Bill</span>
                     </div>
                     <div className="font-bold text-2xl text-red-400">
@@ -591,7 +602,7 @@ ${householdUsers.map(user =>
                 <Card className="energy-card bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/30">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-2xl">🏠</span>
+                      <HomeIcon className="w-6 h-6 md:w-7 md:h-7 text-cyan-400" />
                       <span className="text-xs text-muted-foreground font-semibold">Shared Amount</span>
                     </div>
                     <div className="font-bold text-xl text-blue-400">
@@ -616,7 +627,10 @@ ${householdUsers.map(user =>
 
               {/* Usage Summary */}
               <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 p-4 rounded-lg border border-slate-600/50 mb-6">
-                <h3 className="text-lg font-bold text-foreground mb-3">📊 Usage Summary</h3>
+                <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+                  <ChartBarIcon className="w-5 h-5 text-blue-400" />
+                  Usage Summary
+                </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div className="text-center">
                     <div className="text-yellow-400 font-bold text-xl">
@@ -660,20 +674,29 @@ ${householdUsers.map(user =>
                       <div className="space-y-2 mb-3">
                         <div className="space-y-1">
                           <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">⚡ Personal Usage:</span>
+                            <span className="text-muted-foreground flex items-center gap-1">
+                              <BoltIcon className="w-3 h-3" />
+                              Personal Usage:
+                            </span>
                             <span className="font-semibold text-yellow-400">
                               {calculateBillSplit.personalKwh[user.id].toFixed(2)} kWh
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">🔌 Personal Cost:</span>
+                            <span className="text-muted-foreground flex items-center gap-1">
+                              <CurrencyDollarIcon className="w-3 h-3" />
+                              Personal Cost:
+                            </span>
                             <span className="font-semibold text-blue-400">
                               ${calculateBillSplit.personalCosts[user.id].toFixed(2)}
                             </span>
                           </div>
                         </div>
                         <div className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground">🏠 Shared:</span>
+                          <span className="text-muted-foreground flex items-center gap-1">
+                            <HomeIcon className="w-3 h-3" />
+                            Shared:
+                          </span>
                           <span className="font-semibold text-green-400">
                             ${(calculateBillSplit.sharedCost / householdUsers.length).toFixed(2)}
                           </span>
@@ -683,7 +706,10 @@ ${householdUsers.map(user =>
                       {/* Total */}
                       <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 p-3 rounded-lg border border-red-500/30">
                         <div className="flex justify-between items-center">
-                          <span className="text-xs text-muted-foreground font-semibold">💰 Total Owed:</span>
+                          <span className="text-xs text-muted-foreground font-semibold flex items-center gap-1">
+                            <CurrencyDollarIcon className="w-3 h-3" />
+                            Total Owed:
+                          </span>
                           <span className="text-xl font-bold text-red-400">
                             ${calculateBillSplit.finalAmounts[user.id].toFixed(2)}
                           </span>
@@ -741,7 +767,10 @@ ${householdUsers.map(user =>
               </CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs md:text-sm text-muted-foreground font-semibold whitespace-nowrap">📅 Year:</span>
+                <span className="text-xs md:text-sm text-muted-foreground font-semibold whitespace-nowrap flex items-center gap-1">
+                  <CalendarIcon className="w-4 h-4" />
+                  Year:
+                </span>
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -790,7 +819,7 @@ ${householdUsers.map(user =>
                           className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-500/20 rounded"
                           title="Delete"
                         >
-                          <span className="text-red-400 text-sm">🗑️</span>
+                          <TrashIcon className="w-4 h-4 text-red-400" />
                         </button>
                       )}
                         </div>
