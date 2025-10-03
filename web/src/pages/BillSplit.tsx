@@ -502,7 +502,10 @@ ${householdUsers.map(user =>
                 <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 flex-1">
                 {/* Billing Period Start */}
                   <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                    <label className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">📆 From:</label>
+                    <label className="text-xs md:text-sm text-muted-foreground whitespace-nowrap flex items-center gap-1">
+                      <CalendarIcon className="w-3 h-3 text-blue-400" />
+                      From:
+                    </label>
                   <Input
                     type="date"
                     value={formData.startDate}
@@ -513,7 +516,10 @@ ${householdUsers.map(user =>
 
                 {/* Billing Period End */}
                   <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                    <label className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">To:</label>
+                    <label className="text-xs md:text-sm text-muted-foreground whitespace-nowrap flex items-center gap-1">
+                      <CalendarIcon className="w-3 h-3 text-blue-400" />
+                      To:
+                    </label>
                   <Input
                     type="date"
                     value={formData.endDate}
