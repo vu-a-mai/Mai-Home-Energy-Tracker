@@ -21,8 +21,14 @@ import {
   FolderIcon,
   CpuChipIcon,
   ClipboardDocumentListIcon,
-  CurrencyDollarIcon,
-  LightBulbIcon
+    CurrencyDollarIcon,
+    LightBulbIcon,
+    CodeBracketSquareIcon,
+    ServerStackIcon,
+    PaintBrushIcon,
+    RocketLaunchIcon,
+    ChartPieIcon,
+    Squares2X2Icon
 } from '@heroicons/react/24/outline'
 
 export default function Settings() {
@@ -381,35 +387,59 @@ export default function Settings() {
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
-                <p className="font-semibold text-foreground text-sm">React</p>
+                <div className="flex items-center gap-2">
+                  <BoltIcon className="w-4 h-4 text-cyan-400" />
+                  <p className="font-semibold text-foreground text-sm">React</p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Frontend Framework</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
-                <p className="font-semibold text-foreground text-sm">TypeScript</p>
+                <div className="flex items-center gap-2">
+                  <CodeBracketSquareIcon className="w-4 h-4 text-blue-400" />
+                  <p className="font-semibold text-foreground text-sm">TypeScript</p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Type Safety</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
-                <p className="font-semibold text-foreground text-sm">Supabase</p>
+                <div className="flex items-center gap-2">
+                  <ServerStackIcon className="w-4 h-4 text-emerald-400" />
+                  <p className="font-semibold text-foreground text-sm">Supabase</p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Database & Auth</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
-                <p className="font-semibold text-foreground text-sm">Tailwind CSS</p>
+                <div className="flex items-center gap-2">
+                  <PaintBrushIcon className="w-4 h-4 text-sky-400" />
+                  <p className="font-semibold text-foreground text-sm">Tailwind CSS</p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Styling</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
-                <p className="font-semibold text-foreground text-sm">Vite</p>
+                <div className="flex items-center gap-2">
+                  <RocketLaunchIcon className="w-4 h-4 text-purple-400" />
+                  <p className="font-semibold text-foreground text-sm">Vite</p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Build Tool</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
-                <p className="font-semibold text-foreground text-sm">Recharts</p>
+                <div className="flex items-center gap-2">
+                  <ChartPieIcon className="w-4 h-4 text-pink-400" />
+                  <p className="font-semibold text-foreground text-sm">Recharts</p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Data Visualization</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
-                <p className="font-semibold text-foreground text-sm">Heroicons</p>
+                <div className="flex items-center gap-2">
+                  <Squares2X2Icon className="w-4 h-4 text-indigo-400" />
+                  <p className="font-semibold text-foreground text-sm">Heroicons</p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Icon System</p>
               </div>
               <div className="bg-card border border-border rounded-lg p-3 hover:border-primary/50 transition-colors">
-                <p className="font-semibold text-foreground text-sm">PostgreSQL</p>
+                <div className="flex items-center gap-2">
+                  <CircleStackIcon className="w-4 h-4 text-blue-500" />
+                  <p className="font-semibold text-foreground text-sm">PostgreSQL</p>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">Database</p>
               </div>
             </div>
