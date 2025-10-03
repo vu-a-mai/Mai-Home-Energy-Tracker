@@ -1057,7 +1057,7 @@ export default function EnergyLogs() {
                         className="p-2 h-8 w-8 text-xs"
                         title={isExpanded ? "Hide details" : "View details"}
                       >
-                        {isExpanded ? '▲' : '▼'}
+                        {isExpanded ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
                       </Button>
                       <Button
                         onClick={() => handleEdit(log)}
