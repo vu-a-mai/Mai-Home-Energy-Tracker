@@ -947,7 +947,7 @@ ${householdUsers.map(user =>
                     <Card className="energy-card bg-gradient-to-br from-red-500/10 to-orange-500/10 border-red-500/30">
                       <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl">💰</span>
+                          <CurrencyDollarIcon className="w-7 h-7 text-green-400" />
                           <span className="text-xs text-muted-foreground font-semibold">Total Bill</span>
                         </div>
                         <div className="font-bold text-2xl text-red-400">
@@ -960,7 +960,7 @@ ${householdUsers.map(user =>
                     <Card className="energy-card bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/30">
                       <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl">🏠</span>
+                          <HomeIcon className="w-7 h-7 text-cyan-400" />
                           <span className="text-xs text-muted-foreground font-semibold">Shared Amount</span>
                         </div>
                         <div className="font-bold text-xl text-blue-400">
@@ -1043,15 +1043,24 @@ ${householdUsers.map(user =>
                             {/* Usage Stats Row */}
                             <div className="grid grid-cols-3 gap-2 mb-3">
                               <div>
-                                <div className="text-xs text-slate-400 mb-1">⚡ Personal Usage:</div>
+                                <div className="text-xs text-slate-400 mb-1 flex items-center gap-1">
+                                  <BoltIcon className="w-3 h-3 text-orange-400" />
+                                  Personal Usage:
+                                </div>
                                 <div className="text-yellow-400 font-bold">{userStat.totalKwh.toFixed(2)} kWh</div>
                               </div>
                               <div>
-                                <div className="text-xs text-slate-400 mb-1">💰 Personal Cost:</div>
+                                <div className="text-xs text-slate-400 mb-1 flex items-center gap-1">
+                                  <CurrencyDollarIcon className="w-3 h-3 text-green-400" />
+                                  Personal Cost:
+                                </div>
                                 <div className="text-blue-400 font-bold">${userAllocation.personalCost.toFixed(2)}</div>
                               </div>
                               <div>
-                                <div className="text-xs text-slate-400 mb-1">🏠 Shared:</div>
+                                <div className="text-xs text-slate-400 mb-1 flex items-center gap-1">
+                                  <HomeIcon className="w-3 h-3 text-cyan-400" />
+                                  Shared:
+                                </div>
                                 <div className="text-green-400 font-bold">${userAllocation.sharedCost.toFixed(2)}</div>
                               </div>
                             </div>
@@ -1059,27 +1068,31 @@ ${householdUsers.map(user =>
                             {/* Rate Breakdown Badges */}
                             <div className="flex flex-wrap gap-1.5 mb-3">
                               {userStat.offPeak.kwh > 0 && (
-                                <div className="bg-green-900/50 rounded px-2 py-1 border border-green-700">
-                                  <span className="text-green-200 text-xs font-semibold">🟢 {userStat.offPeak.kwh.toFixed(1)} kWh</span>
-                                  <span className="text-green-100 text-xs ml-1">${userStat.offPeak.cost.toFixed(2)}</span>
+                                <div className="bg-green-900/50 rounded px-2 py-1 border border-green-700 flex items-center gap-1">
+                                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                  <span className="text-green-200 text-xs font-semibold">{userStat.offPeak.kwh.toFixed(1)} kWh</span>
+                                  <span className="text-green-100 text-xs">${userStat.offPeak.cost.toFixed(2)}</span>
                                 </div>
                               )}
                               {userStat.midPeak.kwh > 0 && (
-                                <div className="bg-yellow-900/50 rounded px-2 py-1 border border-yellow-700">
-                                  <span className="text-yellow-200 text-xs font-semibold">🟡 {userStat.midPeak.kwh.toFixed(1)} kWh</span>
-                                  <span className="text-yellow-100 text-xs ml-1">${userStat.midPeak.cost.toFixed(2)}</span>
+                                <div className="bg-yellow-900/50 rounded px-2 py-1 border border-yellow-700 flex items-center gap-1">
+                                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                                  <span className="text-yellow-200 text-xs font-semibold">{userStat.midPeak.kwh.toFixed(1)} kWh</span>
+                                  <span className="text-yellow-100 text-xs">${userStat.midPeak.cost.toFixed(2)}</span>
                                 </div>
                               )}
                               {userStat.onPeak.kwh > 0 && (
-                                <div className="bg-red-900/50 rounded px-2 py-1 border border-red-700">
-                                  <span className="text-red-200 text-xs font-semibold">🔴 {userStat.onPeak.kwh.toFixed(1)} kWh</span>
-                                  <span className="text-red-100 text-xs ml-1">${userStat.onPeak.cost.toFixed(2)}</span>
+                                <div className="bg-red-900/50 rounded px-2 py-1 border border-red-700 flex items-center gap-1">
+                                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                  <span className="text-red-200 text-xs font-semibold">{userStat.onPeak.kwh.toFixed(1)} kWh</span>
+                                  <span className="text-red-100 text-xs">${userStat.onPeak.cost.toFixed(2)}</span>
                                 </div>
                               )}
                               {userStat.superOffPeak.kwh > 0 && (
-                                <div className="bg-blue-900/50 rounded px-2 py-1 border border-blue-700">
-                                  <span className="text-blue-200 text-xs font-semibold">🔵 {userStat.superOffPeak.kwh.toFixed(1)} kWh</span>
-                                  <span className="text-blue-100 text-xs ml-1">${userStat.superOffPeak.cost.toFixed(2)}</span>
+                                <div className="bg-blue-900/50 rounded px-2 py-1 border border-blue-700 flex items-center gap-1">
+                                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                  <span className="text-blue-200 text-xs font-semibold">{userStat.superOffPeak.kwh.toFixed(1)} kWh</span>
+                                  <span className="text-blue-100 text-xs">${userStat.superOffPeak.cost.toFixed(2)}</span>
                                 </div>
                               )}
                             </div>
@@ -1087,7 +1100,10 @@ ${householdUsers.map(user =>
                             {/* Total Owed - Prominent */}
                             <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-lg p-3 border-2 border-slate-700">
                               <div className="flex items-center justify-between">
-                                <span className="text-slate-300 text-sm font-semibold">💵 Total Owed:</span>
+                                <span className="text-slate-300 text-sm font-semibold flex items-center gap-1">
+                                  <CurrencyDollarIcon className="w-4 h-4 text-green-400" />
+                                  Total Owed:
+                                </span>
                                 <span className="text-red-400 font-bold text-2xl">${userAllocation.totalOwed.toFixed(2)}</span>
                               </div>
                               <div className="text-xs text-slate-400 mt-1">
