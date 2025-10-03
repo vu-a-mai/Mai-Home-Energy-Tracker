@@ -566,7 +566,7 @@ export default function Dashboard() {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">📅</span>
-                <span className="text-xs text-muted-foreground font-semibold">Daily Usage</span>
+                <span className="text-xs text-muted-foreground font-semibold">Current Daily Usage</span>
               </div>
               <div className="text-2xl font-bold text-green-400 mb-1">
                 {dashboardData.personalUsage.daily.kwh.toFixed(1)} kWh
@@ -584,7 +584,7 @@ export default function Dashboard() {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">📈</span>
-                <span className="text-xs text-muted-foreground font-semibold">Weekly Usage</span>
+                <span className="text-xs text-muted-foreground font-semibold">Current Weekly Usage</span>
               </div>
               <div className="text-2xl font-bold text-blue-400 mb-1">
                 {dashboardData.personalUsage.weekly.kwh.toFixed(1)} kWh
@@ -602,7 +602,7 @@ export default function Dashboard() {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">📊</span>
-                <span className="text-xs text-muted-foreground font-semibold">Monthly Usage</span>
+                <span className="text-xs text-muted-foreground font-semibold">Current Monthly Usage</span>
               </div>
               <div className="text-2xl font-bold text-red-400 mb-1">
                 {dashboardData.personalUsage.monthly.kwh.toFixed(1)} kWh
