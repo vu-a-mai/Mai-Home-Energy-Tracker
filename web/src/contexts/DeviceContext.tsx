@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
-import { supabase } from '../lib/supabaseClient'
+import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useDemoMode } from './DemoContext'
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription'
@@ -74,6 +74,25 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
         return
       }
 
+      // Get user's household_id to filter devices
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('household_id')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (userError) {
+        console.error('Error fetching user data:', userError)
+        setLoading(false)
+        return
+      }
+
+      if (!userData?.household_id) {
+        console.error('User has no household_id')
+        setLoading(false)
+        return
+      }
+
       // Check cache first
       const cacheKey = `devices-${user.id}`
       if (useCache && cache.has(cacheKey)) {
@@ -85,9 +104,11 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      // Fetch devices - FILTERED BY HOUSEHOLD
       const { data, error } = await supabase
         .from('devices')
         .select('*')
+        .eq('household_id', userData.household_id)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -125,18 +146,50 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
       
-      // Get user's household_id
-      const { data: userData, error: userError } = await supabase
+      // Get or create user's household_id
+      let userData = null
+      
+      // First try to get existing user
+      const { data: existingUser, error: userError } = await supabase
         .from('users')
         .select('household_id')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
 
-      if (userError) throw userError
+      if (existingUser) {
+        userData = existingUser
+      } else {
+        // User doesn't exist in database, create them
+        console.log('User not found in database, creating user record...')
+        const householdId = crypto.randomUUID()
+        
+        const newUser = {
+          id: user.id,
+          email: user.email || '',
+          name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+          household_id: householdId
+        }
+
+        const { data: createdUser, error: createError } = await supabase
+          .from('users')
+          .insert([newUser])
+          .select('household_id')
+          .single()
+
+        if (createError) {
+          console.error('Error creating user:', createError)
+          throw new Error('Failed to create user profile. Please try again.')
+        }
+        
+        userData = createdUser
+      }
+
+      if (!userData) {
+        throw new Error('Failed to get user data. Please try again.')
+      }
 
       const newDevice = {
         ...deviceData,
-        kwh_per_hour: deviceData.wattage / 1000, // Convert watts to kWh/hour
         household_id: userData.household_id,
         created_by: user.id
       }
@@ -156,7 +209,8 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
       cache.remove(`devices-${user.id}`)
     } catch (err) {
       console.error('Error adding device:', err)
-      setError('Failed to add device')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to add device'
+      setError(errorMessage)
       throw err
     }
   }
@@ -165,20 +219,19 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
     try {
       setError(null)
 
-      // If wattage is being updated, also update kwh_per_hour
+      // Remove kwh_per_hour from updates since it's auto-calculated
       const updateData = { ...updates }
-      if (updates.wattage) {
-        updateData.kwh_per_hour = updates.wattage / 1000
-      }
+      delete updateData.kwh_per_hour
 
       const { data, error } = await supabase
         .from('devices')
         .update(updateData)
         .eq('id', id)
         .select()
-        .single()
+        .maybeSingle()
 
       if (error) throw error
+      if (!data) throw new Error('Device not found')
 
       // Update local state (real-time will also update)
       setDevices(prev => prev.map(device => 

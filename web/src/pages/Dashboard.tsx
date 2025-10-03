@@ -400,26 +400,26 @@ export default function Dashboard() {
   // Show loading state
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto p-5 min-h-screen bg-background text-foreground font-sans fade-in flex items-center justify-center">
+      <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-5 min-h-screen bg-background text-foreground font-sans fade-in flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4 energy-pulse">⚡</div>
-          <h2 className="text-2xl font-bold mb-2">Loading Dashboard...</h2>
-          <p className="text-muted-foreground">Fetching your energy data</p>
+          <div className="text-4xl md:text-6xl mb-4 energy-pulse">⚡</div>
+          <h2 className="text-xl md:text-2xl font-bold mb-2">Loading Dashboard...</h2>
+          <p className="text-sm md:text-base text-muted-foreground">Fetching your energy data</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-5 min-h-screen bg-background text-foreground font-sans fade-in">
+    <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-5 min-h-screen bg-background text-foreground font-sans fade-in">
       {/* Demo Mode Banner */}
       {isDemoMode && (
-        <div className="mb-4 p-4 bg-yellow-500/20 border-2 border-yellow-500 rounded-lg flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">👁️</span>
+        <div className="mb-4 p-3 md:p-4 bg-yellow-500/20 border-2 border-yellow-500 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
+            <span className="text-2xl md:text-3xl">👁️</span>
             <div>
-              <h3 className="font-bold text-yellow-500">Demo Mode Active</h3>
-              <p className="text-sm text-yellow-200">Using demo data - Supabase connection unavailable</p>
+              <h3 className="font-bold text-yellow-500 text-sm md:text-base">Demo Mode Active</h3>
+              <p className="text-xs md:text-sm text-yellow-200">Using demo data - Supabase unavailable</p>
             </div>
           </div>
           <Button 
@@ -428,7 +428,7 @@ export default function Dashboard() {
               navigate('/login')
             }}
             variant="outline"
-            className="border-yellow-500 text-yellow-500 hover:bg-yellow-500/20"
+            className="border-yellow-500 text-yellow-500 hover:bg-yellow-500/20 text-sm w-full sm:w-auto"
           >
             Exit Demo
           </Button>
@@ -492,37 +492,37 @@ export default function Dashboard() {
 
       {/* Quick Actions */}
       <section className="mb-6 slide-up">
-        <h2 className="mb-4 text-xl font-bold text-foreground">🚀 Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground">🚀 Quick Actions</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           <button 
             onClick={handleManageDevices}
-            className="quick-actions-card p-5 rounded-lg text-left flex items-center gap-4 hover:scale-105 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-300 text-foreground group"
+            className="quick-actions-card p-4 md:p-5 rounded-lg text-left flex items-center gap-3 md:gap-4 hover:scale-105 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-300 text-foreground group"
           >
-            <div className="text-3xl group-hover:scale-110 transition-transform">🔌</div>
+            <div className="text-2xl md:text-3xl group-hover:scale-110 transition-transform">🔌</div>
             <div>
-              <div className="font-bold text-base mb-1">Manage Devices</div>
+              <div className="font-bold text-sm md:text-base mb-1">Manage Devices</div>
               <div className="text-xs text-muted-foreground">Add or edit devices</div>
             </div>
           </button>
           
           <button 
             onClick={handleLogEnergyUsage}
-            className="quick-actions-card p-5 rounded-lg text-left flex items-center gap-4 hover:scale-105 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-300 text-foreground group"
+            className="quick-actions-card p-4 md:p-5 rounded-lg text-left flex items-center gap-3 md:gap-4 hover:scale-105 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-300 text-foreground group"
           >
-            <div className="text-3xl group-hover:scale-110 transition-transform">📝</div>
+            <div className="text-2xl md:text-3xl group-hover:scale-110 transition-transform">📝</div>
             <div>
-              <div className="font-bold text-base mb-1">Log Energy Usage</div>
+              <div className="font-bold text-sm md:text-base mb-1">Log Energy Usage</div>
               <div className="text-xs text-muted-foreground">Record usage sessions</div>
             </div>
           </button>
           
           <button 
             onClick={handleSplitBill}
-            className="quick-actions-card p-5 rounded-lg text-left flex items-center gap-4 hover:scale-105 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-300 text-foreground group"
+            className="quick-actions-card p-4 md:p-5 rounded-lg text-left flex items-center gap-3 md:gap-4 hover:scale-105 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-all duration-300 text-foreground group"
           >
-            <div className="text-3xl group-hover:scale-110 transition-transform">💳</div>
+            <div className="text-2xl md:text-3xl group-hover:scale-110 transition-transform">💳</div>
             <div>
-              <div className="font-bold text-base mb-1">Split Monthly Bill</div>
+              <div className="font-bold text-sm md:text-base mb-1">Split Monthly Bill</div>
               <div className="text-xs text-muted-foreground">Calculate cost allocation</div>
             </div>
           </button>
@@ -531,7 +531,7 @@ export default function Dashboard() {
 
       {/* Rate Period Breakdown */}
       <section className="mb-6 slide-up">
-        <h2 className="mb-4 text-xl font-bold text-foreground">⏰ Rate Period Breakdown</h2>
+        <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground">⏰ Rate Period Breakdown</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <div className="energy-gradient-green p-4 rounded-lg text-center rate-indicator hover:scale-105 transition-transform shadow-lg">
             <div className="text-3xl mb-2">🟢</div>
@@ -581,8 +581,8 @@ export default function Dashboard() {
 
       {/* Personal Usage Stats - Color Coded */}
       <section className="mb-6 slide-up">
-        <h2 className="mb-4 text-xl font-bold text-foreground">📊 Personal Usage Analytics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground">📊 Personal Usage Analytics</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           <Card className="energy-card bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30 hover:border-green-500/50 transition-all">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -641,8 +641,8 @@ export default function Dashboard() {
 
       {/* Household Summary & Device Analysis */}
       <section className="mb-6 slide-up">
-        <h2 className="mb-4 text-xl font-bold text-foreground">🏠 Household Summary & Device Analysis</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground">🏠 Household Summary & Device Analysis</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Total Household Usage */}
           <Card className="energy-card">
             <CardHeader>
@@ -788,8 +788,8 @@ export default function Dashboard() {
 
       {/* Data Visualization Charts */}
       <section className="mb-8 slide-up">
-        <h2 className="mb-5 text-xl font-bold text-foreground">📈 Usage Trends & Analysis</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <h2 className="mb-3 md:mb-5 text-lg md:text-xl font-bold text-foreground">📈 Usage Trends & Analysis</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Weekly Usage by Person Chart */}
           <Card className="energy-card chart-hover">
             <CardHeader>

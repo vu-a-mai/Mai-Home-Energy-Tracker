@@ -10,7 +10,7 @@ export const userService = {
       .from('users')
       .select('*')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     if (error) {
       console.error('Error fetching user:', error)
@@ -99,10 +99,7 @@ export const energyLogService = {
       .from('energy_logs')
       .select(`
         *,
-        devices(name),
-        energy_log_users(
-          users(name)
-        )
+        devices(name, wattage)
       `)
       .eq('household_id', householdId)
       .order('usage_date', { ascending: false })
@@ -125,31 +122,21 @@ export const energyLogService = {
     log: Omit<EnergyLog, 'id' | 'calculated_cost' | 'created_at' | 'updated_at'>,
     userIds: string[]
   ): Promise<EnergyLog | null> {
+    // Include assigned_users in the log data
+    const logWithUsers = {
+      ...log,
+      assigned_users: userIds
+    }
+
     const { data: logData, error: logError } = await supabase
       .from('energy_logs')
-      .insert([log])
+      .insert([logWithUsers])
       .select()
       .single()
 
     if (logError) {
       console.error('Error creating energy log:', logError)
       return null
-    }
-
-    // Add users to the log
-    if (userIds.length > 0) {
-      const userLogEntries = userIds.map(userId => ({
-        energy_log_id: logData.id,
-        user_id: userId
-      }))
-
-      const { error: userLogError } = await supabase
-        .from('energy_log_users')
-        .insert(userLogEntries)
-
-      if (userLogError) {
-        console.error('Error adding users to energy log:', userLogError)
-      }
     }
 
     return logData

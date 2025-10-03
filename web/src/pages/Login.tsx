@@ -57,18 +57,18 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans flex items-center justify-center p-5 fade-in">
+    <div className="min-h-screen bg-background text-foreground font-sans flex items-center justify-center p-3 md:p-5 fade-in">
       <Card className="energy-card w-full max-w-lg shadow-2xl energy-glow">
-        <CardHeader className="text-center pb-6">
-          <div className="text-5xl mb-4 energy-pulse">⚡</div>
-          <CardTitle className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+        <CardHeader className="text-center pb-4 md:pb-6">
+          <div className="text-4xl md:text-5xl mb-3 md:mb-4 energy-pulse">⚡</div>
+          <CardTitle className="text-2xl md:text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
             Welcome Back
           </CardTitle>
-          <CardDescription className="text-lg">
+          <CardDescription className="text-base md:text-lg">
             Sign in to your Mai Energy Tracker account
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4 md:space-y-6">
 
           {/* Error Message */}
           {error && (
@@ -118,7 +118,7 @@ export default function Login() {
             <Button 
               type="submit" 
               disabled={loading}
-              className="w-full energy-action-btn py-4 text-lg font-semibold"
+              className="w-full energy-action-btn py-3 md:py-4 text-base md:text-lg font-semibold"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -132,15 +132,15 @@ export default function Login() {
           </form>
           
           {/* Quick Email Selection */}
-          <div className="bg-muted/50 p-6 rounded-lg border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+          <div className="bg-muted/50 p-4 md:p-6 rounded-lg border border-border">
+            <h3 className="text-base md:text-lg font-semibold text-foreground mb-2 md:mb-3 flex items-center gap-2">
               🏠 Mai Family Accounts
             </h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4">
               Click on a family member to auto-fill their email:
             </p>
             
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 mb-3 md:mb-4">
               {householdMembers.map((member) => (
                 <button
                   key={member.email}
@@ -164,15 +164,15 @@ export default function Login() {
           </div>
 
           {/* View Demo Button */}
-          <div className="pt-4">
+          <div className="pt-2 md:pt-4">
             <Button
               type="button"
               onClick={handleViewDemo}
               variant="outline"
-              className="w-full border-2 border-primary/50 hover:bg-primary/10 transition-all duration-300"
+              className="w-full border-2 border-primary/50 hover:bg-primary/10 transition-all duration-300 py-3 md:py-4"
             >
-              <span className="flex items-center justify-center gap-2">
-                <span className="text-2xl">👁️</span>
+              <span className="flex items-center justify-center gap-2 text-sm md:text-base">
+                <span className="text-xl md:text-2xl">👁️</span>
                 <span>View Demo (No Login Required)</span>
               </span>
             </Button>

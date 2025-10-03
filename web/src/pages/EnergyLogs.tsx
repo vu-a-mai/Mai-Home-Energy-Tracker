@@ -7,11 +7,10 @@ import { toast } from 'sonner'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card'
-import { BackupRestore } from '../components/BackupRestore'
-import { calculateUsageCost, getSeason } from '../utils/rateCalculator'
+import { calculateUsageCost } from '../utils/rateCalculatorFixed'
+import { getSeason } from '../utils/rateCalculator'
 import { validateDate, validateTimeRange, validateUsageDuration } from '../utils/validation'
-import type { BackupData } from '../utils/dataBackup'
-import { supabase } from '../lib/supabaseClient'
+import { supabase } from '../lib/supabase'
 
 interface EnergyLogFormData {
   device_id: string
@@ -27,6 +26,17 @@ const formatTime12Hour = (time24: string): string => {
   const period = hours >= 12 ? 'PM' : 'AM'
   const hours12 = hours % 12 || 12
   return `${hours12}:${minutes.toString().padStart(2, '0')}${period}`
+}
+
+// Helper function to ensure time is in HH:MM format for HTML time inputs
+const formatTimeForInput = (timeString: string): string => {
+  if (!timeString) return ''
+  // If time includes seconds (HH:MM:SS), remove them
+  const parts = timeString.split(':')
+  if (parts.length >= 2) {
+    return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`
+  }
+  return timeString
 }
 
 // Helper function to get device-specific icon
@@ -184,7 +194,21 @@ export default function EnergyLogs() {
     }))
   }
 
-  const totalUsage = getTotalUsage()
+  // Calculate totals using live rate calculator instead of database values
+  const totalUsage = useMemo(() => {
+    return energyLogs.reduce((totals, log) => {
+      const calc = calculateUsageCost(
+        log.device_wattage || 0,
+        log.start_time,
+        log.end_time,
+        log.usage_date
+      )
+      return {
+        totalKwh: totals.totalKwh + calc.totalKwh,
+        totalCost: totals.totalCost + calc.totalCost
+      }
+    }, { totalKwh: 0, totalCost: 0 })
+  }, [energyLogs])
   
   const filteredLogs = useMemo(() => {
     let filtered = [...energyLogs]
@@ -245,60 +269,11 @@ export default function EnergyLogs() {
     setFormData({
       device_id: log.device_id,
       usage_date: log.usage_date,
-      start_time: log.start_time,
-      end_time: log.end_time,
+      start_time: formatTimeForInput(log.start_time),
+      end_time: formatTimeForInput(log.end_time),
       assigned_users: log.assigned_users || []
     })
     setShowForm(true)
-  }
-
-  // Handle restore from backup
-  const handleRestore = async (backupData: BackupData) => {
-    if (!user) throw new Error('User not authenticated')
-
-    try {
-      // Get user's household_id
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('household_id')
-        .eq('id', user.id)
-        .single()
-
-      if (userError) throw userError
-
-      // Restore devices first
-      for (const device of backupData.devices) {
-        const { error } = await supabase
-          .from('devices')
-          .upsert({
-            ...device,
-            household_id: userData.household_id,
-            created_by: user.id
-          })
-
-        if (error) console.error('Error restoring device:', error)
-      }
-
-      // Restore energy logs
-      for (const log of backupData.energyLogs) {
-        const { error } = await supabase
-          .from('energy_logs')
-          .upsert({
-            ...log,
-            household_id: userData.household_id,
-            created_by: user.id
-          })
-
-        if (error) console.error('Error restoring energy log:', error)
-      }
-
-      // Refresh data
-      await refreshDevices(false)
-      await refreshEnergyLogs()
-    } catch (error) {
-      console.error('Restore failed:', error)
-      throw error
-    }
   }
 
   if (loading) {
@@ -329,49 +304,39 @@ export default function EnergyLogs() {
         </Button>
       </header>
 
-      {/* Backup & Restore */}
-      {user && (
-        <BackupRestore
-          devices={devices}
-          energyLogs={energyLogs}
-          householdId={user.id}
-          onRestore={handleRestore}
-        />
-      )}
-
       {/* Summary Statistics - Color Coded */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 slide-up">
+      <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6 slide-up">
         <Card className="energy-card bg-gradient-to-br from-slate-500/10 to-gray-500/10 border-slate-500/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">📊</span>
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 mb-1 md:mb-2">
+              <span className="text-xl md:text-2xl">📊</span>
               <span className="text-xs text-muted-foreground font-semibold">Total Entries</span>
             </div>
-            <div className="text-3xl font-bold text-slate-300">
+            <div className="text-2xl md:text-3xl font-bold text-slate-300">
               {filteredLogs.length}
             </div>
           </CardContent>
         </Card>
         
         <Card className="energy-card bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">⚡</span>
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 mb-1 md:mb-2">
+              <span className="text-xl md:text-2xl">⚡</span>
               <span className="text-xs text-muted-foreground font-semibold">Total Energy</span>
             </div>
-            <div className="text-3xl font-bold text-green-400">
+            <div className="text-2xl md:text-3xl font-bold text-green-400">
               {totalUsage.totalKwh.toFixed(1)} kWh
             </div>
           </CardContent>
         </Card>
         
         <Card className="energy-card bg-gradient-to-br from-red-500/10 to-orange-500/10 border-red-500/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">💰</span>
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center gap-2 mb-1 md:mb-2">
+              <span className="text-xl md:text-2xl">💰</span>
               <span className="text-xs text-muted-foreground font-semibold">Total Cost</span>
             </div>
-            <div className="text-3xl font-bold text-red-400">
+            <div className="text-2xl md:text-3xl font-bold text-red-400">
               ${totalUsage.totalCost.toFixed(2)}
             </div>
           </CardContent>
@@ -805,16 +770,14 @@ export default function EnergyLogs() {
       {/* Energy Logs List - Compact with Expandable Details */}
       <section className="space-y-3 slide-up">
         {paginatedLogs.map(log => {
-          // Use database cost and calculate rate breakdown for display
+          // Use calculated values for display (more accurate than stored values)
           const usageCalc = calculateUsageCost(
             log.device_wattage || 0,
             log.start_time,
             log.end_time,
             log.usage_date
           )
-          // Override with actual database cost
-          usageCalc.totalCost = log.calculated_cost
-          usageCalc.totalKwh = log.total_kwh
+          // Use calculated values instead of potentially outdated database values
           
           const isExpanded = expandedLog === log.id
           

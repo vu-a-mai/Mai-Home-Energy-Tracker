@@ -147,37 +147,89 @@ export const calculateUsageCost = (
   let totalCost = 0
   const breakdown: UsageCalculation['breakdown'] = []
   
-  // Calculate cost for each rate period
-  for (const period of ratePeriods) {
-    let periodStart = timeToMinutes(period.start)
-    let periodEnd = timeToMinutes(period.end)
+  // Process time chronologically hour by hour to ensure no gaps
+  let currentMinutes = startMinutes
+  
+  while (currentMinutes < endMinutes) {
+    // Find which rate period applies to current time
+    const currentTime = currentMinutes % (24 * 60) // Handle day wrapping
+    let applicablePeriod = null
     
-    // Handle rate periods that cross midnight
-    if (periodEnd < periodStart) {
-      periodEnd += 24 * 60
+    for (const period of ratePeriods) {
+      const periodStart = timeToMinutes(period.start)
+      const periodEnd = timeToMinutes(period.end)
+      
+      if (periodEnd < periodStart) {
+        // Period crosses midnight (like 21:00-07:59)
+        if (currentTime >= periodStart || currentTime <= periodEnd) {
+          applicablePeriod = period
+          break
+        }
+      } else {
+        // Normal period (like 16:00-20:59)
+        if (currentTime >= periodStart && currentTime <= periodEnd) {
+          applicablePeriod = period
+          break
+        }
+      }
     }
     
-    // Find overlap between usage time and rate period
-    const overlapStart = Math.max(startMinutes, periodStart)
-    const overlapEnd = Math.min(endMinutes, periodEnd)
-    
-    if (overlapStart < overlapEnd) {
-      const overlapMinutes = overlapEnd - overlapStart
-      const overlapHours = overlapMinutes / 60
-      const overlapKwh = calculateKwh(wattage, overlapHours)
-      const overlapCost = overlapKwh * period.rate
+    if (applicablePeriod) {
+      // Find the end of this rate period or end of usage, whichever comes first
+      const periodStart = timeToMinutes(applicablePeriod.start)
+      const periodEnd = timeToMinutes(applicablePeriod.end)
       
-      totalCost += overlapCost
+      let segmentEnd
+      if (periodEnd < periodStart) {
+        // Period crosses midnight
+        if (currentTime >= periodStart) {
+          // We're in the before-midnight part
+          segmentEnd = Math.min(endMinutes, Math.ceil(currentMinutes / (24 * 60)) * (24 * 60))
+        } else {
+          // We're in the after-midnight part
+          const dayStart = Math.floor(currentMinutes / (24 * 60)) * (24 * 60)
+          segmentEnd = Math.min(endMinutes, dayStart + periodEnd + 1)
+        }
+      } else {
+        // Normal period
+        const dayStart = Math.floor(currentMinutes / (24 * 60)) * (24 * 60)
+        segmentEnd = Math.min(endMinutes, dayStart + periodEnd + 1)
+      }
       
-      breakdown.push({
-        ratePeriod: period.name,
-        hours: overlapHours,
-        kwh: overlapKwh,
-        rate: period.rate,
-        cost: overlapCost,
-        startTime: minutesToTime(overlapStart % (24 * 60)),
-        endTime: minutesToTime(overlapEnd % (24 * 60))
-      })
+      const segmentMinutes = segmentEnd - currentMinutes
+      const segmentHours = segmentMinutes / 60
+      const segmentKwh = calculateKwh(wattage, segmentHours)
+      const segmentCost = segmentKwh * applicablePeriod.rate
+      
+      totalCost += segmentCost
+      
+      // Check if we already have an entry for this period, if so combine them
+      const existingEntry = breakdown.find(entry => 
+        entry.ratePeriod === applicablePeriod.name && 
+        entry.rate === applicablePeriod.rate
+      )
+      
+      if (existingEntry) {
+        existingEntry.hours += segmentHours
+        existingEntry.kwh += segmentKwh
+        existingEntry.cost += segmentCost
+        existingEntry.endTime = minutesToTime(segmentEnd % (24 * 60))
+      } else {
+        breakdown.push({
+          ratePeriod: applicablePeriod.name,
+          hours: segmentHours,
+          kwh: segmentKwh,
+          rate: applicablePeriod.rate,
+          cost: segmentCost,
+          startTime: minutesToTime(currentMinutes % (24 * 60)),
+          endTime: minutesToTime(segmentEnd % (24 * 60))
+        })
+      }
+      
+      currentMinutes = segmentEnd
+    } else {
+      // No applicable period found, skip this minute (shouldn't happen)
+      currentMinutes += 1
     }
   }
   

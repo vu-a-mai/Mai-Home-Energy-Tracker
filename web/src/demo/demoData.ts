@@ -1183,13 +1183,32 @@ export const demoBillSplits: BillSplit[] = [
     household_id: DEMO_HOUSEHOLD_ID,
     month: 9,
     year: 2025,
-    total_amount: 450,
+    billing_period_start: '2025-09-01',
+    billing_period_end: '2025-09-30',
+    total_bill_amount: 450,
     user_allocations: {
-      'demo-user-vu': 159.89,
-      'demo-user-vy': 124.35,
-      'demo-user-thuy': 82.88, // 6.60 + share of remaining
-      'demo-user-han': 82.88 // 6.90 + share of remaining
+      'demo-user-vu': {
+        personalCost: 116.33,
+        sharedCost: 43.56,
+        totalOwed: 159.89
+      },
+      'demo-user-vy': {
+        personalCost: 80.79,
+        sharedCost: 43.56,
+        totalOwed: 124.35
+      },
+      'demo-user-thuy': {
+        personalCost: 39.32,
+        sharedCost: 43.56,
+        totalOwed: 82.88
+      },
+      'demo-user-han': {
+        personalCost: 39.32,
+        sharedCost: 43.56,
+        totalOwed: 82.88
+      }
     },
+    created_by: 'demo-user-vu',
     created_at: '2025-10-01T00:00:00Z',
     updated_at: '2025-10-01T00:00:00Z'
   }
