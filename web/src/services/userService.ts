@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
+import { logger } from '../utils/logger'
 
 export interface DatabaseUser {
   id: string
@@ -23,7 +24,7 @@ export const syncUserWithDatabase = async (authUser: SupabaseUser): Promise<Data
       .maybeSingle()
 
     if (fetchError) {
-      console.error('Error checking user in database:', fetchError)
+      logger.error('Error checking user in database:', fetchError)
       return null
     }
 
@@ -40,18 +41,18 @@ export const syncUserWithDatabase = async (authUser: SupabaseUser): Promise<Data
       .maybeSingle()
 
     if (emailError && emailError.code !== 'PGRST116') { // PGRST116 = no rows returned
-      console.error('Error checking user by email:', emailError)
+      logger.error('Error checking user by email:', emailError)
       return null
     }
 
     if (userByEmail) {
-      console.warn('User email exists with different ID. Auth ID:', authUser.id, 'DB ID:', userByEmail.id)
-      console.warn('Please run fix-user-id-mismatch.sql to resolve this issue')
+      logger.warn('User email exists with different ID. Auth ID:', authUser.id, 'DB ID:', userByEmail.id)
+      logger.warn('Please run fix-user-id-mismatch.sql to resolve this issue')
       return userByEmail // Return the existing user to prevent errors
     }
 
     // User doesn't exist, create them
-    console.log('User not found in database, creating record...')
+    logger.log('User not found in database, creating record...')
     
     // Create a new household for the user
     const householdId = crypto.randomUUID()
@@ -70,7 +71,7 @@ export const syncUserWithDatabase = async (authUser: SupabaseUser): Promise<Data
       .single()
 
     if (insertError) {
-      console.error('Error creating user in database:', insertError)
+      logger.error('Error creating user in database:', insertError)
       
       // If it's a duplicate email error, try to fetch the existing user
       if (insertError.code === '23505') {
@@ -81,7 +82,7 @@ export const syncUserWithDatabase = async (authUser: SupabaseUser): Promise<Data
           .maybeSingle()
         
         if (fallbackUser) {
-          console.warn('Returning existing user due to email conflict')
+          logger.warn('Returning existing user due to email conflict')
           return fallbackUser
         }
       }
@@ -89,10 +90,10 @@ export const syncUserWithDatabase = async (authUser: SupabaseUser): Promise<Data
       return null
     }
 
-    console.log('User successfully synced with database')
+    logger.log('User successfully synced with database')
     return createdUser
   } catch (error) {
-    console.error('Error syncing user with database:', error)
+    logger.error('Error syncing user with database:', error)
     return null
   }
 }
@@ -109,13 +110,13 @@ export const getHouseholdMembers = async (householdId: string): Promise<Database
       .order('name')
 
     if (error) {
-      console.error('Error fetching household members:', error)
+      logger.error('Error fetching household members:', error)
       return []
     }
 
     return data || []
   } catch (error) {
-    console.error('Error fetching household members:', error)
+    logger.error('Error fetching household members:', error)
     return []
   }
 }
@@ -135,13 +136,13 @@ export const updateUserHousehold = async (
       .eq('id', userId)
 
     if (error) {
-      console.error('Error updating user household:', error)
+      logger.error('Error updating user household:', error)
       return false
     }
 
     return true
   } catch (error) {
-    console.error('Error updating user household:', error)
+    logger.error('Error updating user household:', error)
     return false
   }
 }
@@ -158,13 +159,13 @@ export const getUserById = async (userId: string): Promise<DatabaseUser | null> 
       .maybeSingle()
 
     if (error) {
-      console.error('Error fetching user:', error)
+      logger.error('Error fetching user:', error)
       return null
     }
 
     return data
   } catch (error) {
-    console.error('Error fetching user:', error)
+    logger.error('Error fetching user:', error)
     return null
   }
 }
