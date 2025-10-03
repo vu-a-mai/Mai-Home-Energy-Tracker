@@ -16,9 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security fixes SQL script (`lib/14-fix-security-warnings.sql`)
 - Option 3 navigation design (Bold Indicator Bar) with glowing accent
 - SQL migrations archive folder for historical debugging files
-- Professional Heroicon system replacing all emojis (~315 icons)
+- Professional Heroicon system replacing all emojis (~320+ icons)
 - Comprehensive color-coding system for icons (by function)
 - Icon reference guide in `utils/iconReference.ts`
+- Device type and location icons (`TagIcon`, `MapPinIcon`) to device cards
 
 ### Changed
 - **BREAKING**: Removed `supabaseService.ts` (179 lines) - functionality moved to contexts
@@ -48,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dashboard realtime synchronization - now updates when energy logs change
 - Personal Usage Analytics now displays current day/week/month data correctly
 - Monthly trend chart restored and implemented with correct calculations
+- Personal badge readability with improved amber color and opacity
 - Device usage distribution combined with usage list for better UX
 - Tooltip text readability in pie charts (fixed black text on dark background)
 - Active navigation tab visibility and contrast
