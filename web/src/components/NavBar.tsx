@@ -66,7 +66,7 @@ export default function NavBar() {
       <div className="flex items-center justify-between gap-3 px-3 py-2.5 md:px-4 md:py-3 max-w-7xl mx-auto">
         {/* Brand Logo & Title */}
         <div className="flex items-center gap-2 md:gap-3">
-          <BoltIcon className="w-7 h-7 md:w-8 md:h-8 text-primary energy-pulse" />
+          <BoltIcon className="w-7 h-7 md:w-8 md:h-8 text-orange-400 energy-pulse" />
           <div className="flex flex-col">
             <span className="font-bold text-base md:text-lg text-white leading-tight">
               Mai Energy Tracker

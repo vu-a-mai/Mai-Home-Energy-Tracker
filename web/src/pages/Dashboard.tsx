@@ -868,7 +868,7 @@ export default function Dashboard() {
           <Card className="energy-card chart-hover">
             <CardHeader>
               <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                <ChartBarIcon className="w-5 h-5 text-primary" />
+                <ChartBarIcon className="w-5 h-5 text-blue-400" />
                 Weekly Usage by Person
               </CardTitle>
             </CardHeader>
@@ -919,7 +919,7 @@ export default function Dashboard() {
           <Card className="energy-card chart-hover">
             <CardHeader>
               <CardTitle className="text-lg text-foreground flex items-center gap-2">
-              <ArrowTrendingUpIcon className="w-5 h-5 text-primary" />
+              <ArrowTrendingUpIcon className="w-5 h-5 text-green-400" />
               Monthly Usage Trend (Last 12 Months)
               </CardTitle>
             </CardHeader>
