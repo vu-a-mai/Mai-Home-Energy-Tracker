@@ -156,7 +156,7 @@ export default function Settings() {
       {/* Header */}
       <header className="mb-4 p-3 md:p-4 energy-header-gradient rounded-xl text-white shadow-xl">
         <h1 className="text-xl md:text-2xl font-bold energy-pulse flex items-center gap-3">
-          <Cog6ToothIcon className="w-7 h-7 md:w-8 md:h-8" />
+          <Cog6ToothIcon className="w-7 h-7 md:w-8 md:h-8 text-purple-400" />
           Settings
         </h1>
         <p className="opacity-90 text-xs md:text-sm">
