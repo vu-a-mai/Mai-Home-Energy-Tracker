@@ -43,10 +43,10 @@ export default function NavBar() {
   }
 
   const navLinkClass = (isActive: boolean) =>
-    `no-underline px-4 md:px-5 py-2.5 md:py-3 rounded-xl transition-all duration-300 text-sm md:text-base font-semibold relative ${
+    `no-underline px-4 md:px-5 py-3 md:py-4 transition-all duration-300 text-sm md:text-base font-semibold relative ${
       isActive 
-        ? 'text-slate-900 bg-gradient-to-br from-emerald-400 to-primary shadow-[0_4px_12px_rgba(16,185,129,0.4)] -translate-y-0.5 border border-emerald-300/50' 
-        : 'text-slate-400 hover:text-slate-200 bg-slate-800/30 hover:bg-slate-700/50 hover:shadow-md hover:-translate-y-0.5 border border-transparent hover:border-slate-600/50'
+        ? 'text-white after:absolute after:bottom-0 after:left-0 after:right-0 after:h-1 after:bg-gradient-to-r after:from-primary after:via-emerald-400 after:to-primary after:rounded-t-full after:shadow-[0_-2px_10px_rgba(16,185,129,0.5)]' 
+        : 'text-slate-400 hover:text-slate-200 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-1 after:bg-transparent hover:after:bg-slate-600/50 after:rounded-t-full after:transition-all after:duration-300'
     }`
 
   return (
