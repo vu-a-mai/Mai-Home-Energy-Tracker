@@ -594,7 +594,7 @@ export default function Dashboard() {
       {/* Personal Usage Stats - Color Coded */}
       <section className="mb-6 slide-up">
         <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
-          <UserGroupIcon className="w-6 h-6 text-primary" />
+          <UserGroupIcon className="w-6 h-6 text-purple-400" />
           Personal Usage Analytics
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
@@ -660,7 +660,7 @@ export default function Dashboard() {
       {/* Household Summary & Device Analysis */}
       <section className="mb-6 slide-up">
         <h2 className="mb-3 md:mb-4 text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
-          <HomeIcon className="w-6 h-6 text-primary" />
+          <HomeIcon className="w-6 h-6 text-cyan-400" />
           Household Summary & Device Analysis
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -668,7 +668,7 @@ export default function Dashboard() {
           <Card className="energy-card bg-gradient-to-br from-primary/15 via-emerald-500/10 to-cyan-500/15 border-primary/40 hover:border-primary/60 transition-all shadow-lg hover:shadow-primary/20">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                <HomeIcon className="w-5 h-5 text-primary" />
+                <HomeIcon className="w-5 h-5 text-cyan-400" />
                 Total Household Usage
               </CardTitle>
             </CardHeader>
@@ -703,7 +703,7 @@ export default function Dashboard() {
                     if (normalizedName.includes('vy')) return <UserIcon className="w-4 h-4 inline-block text-pink-400" />
                     if (normalizedName.includes('thuy')) return <UserIcon className="w-4 h-4 inline-block text-purple-400" />
                     if (normalizedName.includes('han')) return <UserIcon className="w-4 h-4 inline-block text-blue-400" />
-                    return <UserIcon className="w-4 h-4 inline-block text-primary" />
+                    return <UserIcon className="w-4 h-4 inline-block text-slate-400" />
                   }
                   
                   const percentage = dashboardData.householdUsage.total.kwh > 0 
@@ -738,7 +738,7 @@ export default function Dashboard() {
           <Card className="energy-card lg:col-span-2">
             <CardHeader>
               <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                <CpuChipIcon className="w-5 h-5 text-primary" />
+                <CpuChipIcon className="w-5 h-5 text-cyan-400" />
                 Device Usage Analysis
               </CardTitle>
             </CardHeader>
@@ -859,7 +859,7 @@ export default function Dashboard() {
       {/* Data Visualization Charts */}
       <section className="mb-8 slide-up">
         <h2 className="mb-3 md:mb-5 text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
-          <ChartPieIcon className="w-6 h-6 text-primary" />
+          <ChartPieIcon className="w-6 h-6 text-blue-400" />
           Usage Trends & Analysis
         </h2>
         
