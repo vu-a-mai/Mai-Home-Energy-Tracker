@@ -17,7 +17,9 @@ import {
   TrashIcon,
   CalendarIcon,
   ClockIcon,
-  BoltIcon
+  BoltIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 
 interface EnergyLogFormData {
