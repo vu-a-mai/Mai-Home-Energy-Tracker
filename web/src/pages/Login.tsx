@@ -5,6 +5,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card'
+import { BoltIcon, HomeIcon, EyeIcon } from '@heroicons/react/24/outline'
 
 export default function Login() {
   const [email, setEmail] = useState('')
