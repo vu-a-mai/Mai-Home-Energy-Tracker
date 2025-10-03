@@ -10,6 +10,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { calculateUsageCost, getSeason } from '../utils/rateCalculatorFixed'
 import { validateDate, validateTimeRange, validateUsageDuration } from '../utils/validation'
 import { supabase } from '../lib/supabase'
+import {
+  ClipboardDocumentListIcon,
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  CalendarIcon,
+  ClockIcon,
+  BoltIcon
+} from '@heroicons/react/24/outline'
 
 interface EnergyLogFormData {
   device_id: string
@@ -288,8 +297,9 @@ export default function EnergyLogs() {
       {/* Header */}
       <header className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mb-6 md:mb-8 p-4 md:p-6 energy-header-gradient rounded-2xl text-white shadow-xl energy-glow">
         <div className="flex-1">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 md:mb-2 energy-pulse">
-            📝 Energy Logs
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 md:mb-2 energy-pulse flex items-center gap-3">
+            <ClipboardDocumentListIcon className="w-7 h-7 md:w-8 md:h-8" />
+            Energy Logs
           </h1>
           <p className="opacity-90 text-xs sm:text-sm md:text-base">
             Track and analyze device usage sessions
