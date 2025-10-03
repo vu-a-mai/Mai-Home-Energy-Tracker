@@ -1066,7 +1066,7 @@ export default function EnergyLogs() {
                         className="p-2 h-8 w-8 border-blue-300 text-blue-500 hover:bg-blue-500/10"
                         title="Edit log"
                       >
-                        ✏️
+                        <PencilIcon className="w-4 h-4" />
                       </Button>
                       <Button
                         onClick={() => deleteEnergyLog(log.id)}
@@ -1075,7 +1075,7 @@ export default function EnergyLogs() {
                         className="p-2 h-8 w-8 border-red-300 text-red-500 hover:bg-red-500/10"
                         title="Delete log"
                       >
-                        🗑️
+                        <TrashIcon className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
