@@ -18,6 +18,7 @@ import {
 } from '../components/ui/dialog'
 import { validateAmount, validateDateRange } from '../utils/validation'
 import { calculateUsageCost } from '../utils/rateCalculatorFixed'
+import { logger } from '../utils/logger'
 
 interface BillSplitData {
   billingPeriod: string
@@ -237,7 +238,7 @@ export default function BillSplit() {
       setPeriodLogs(logs)
       setShowResults(true)
     } catch (error) {
-      console.error('Error fetching logs:', error)
+      logger.error('Error fetching logs:', error)
     } finally {
       setLoadingLogs(false)
     }
@@ -282,7 +283,7 @@ export default function BillSplit() {
         totalAmount: 0
       })
     } catch (error) {
-      console.error('Error saving bill split:', error)
+      logger.error('Error saving bill split:', error)
       toast.error('Failed to save bill split. Please try again.')
     } finally {
       setSaving(false)
@@ -298,7 +299,7 @@ export default function BillSplit() {
       setDeletingBillSplit(null)
       setViewingBillSplit(null)
       } catch (error) {
-        console.error('Error deleting bill split:', error)
+        logger.error('Error deleting bill split:', error)
         toast.error('Failed to delete bill split. Please try again.')
       }
     }
@@ -331,11 +332,11 @@ export default function BillSplit() {
   // Calculate usage statistics for a bill split
   const calculateUsageStats = (split: typeof savedBillSplits[0]) => {
     const logs = getLogsByDateRange(split.billing_period_start, split.billing_period_end)
-    console.log(`📊 Bill Split Details:`)
-    console.log(`- Month/Year: ${monthNames[split.month - 1]} ${split.year}`)
-    console.log(`- Billing Period: ${split.billing_period_start} to ${split.billing_period_end}`)
-    console.log(`- Energy Logs Found: ${logs.length}`)
-    console.log(`- Total Bill: $${split.total_bill_amount.toFixed(2)}`)
+    logger.debug(`📊 Bill Split Details:`)
+    logger.debug(`- Month/Year: ${monthNames[split.month - 1]} ${split.year}`)
+    logger.debug(`- Billing Period: ${split.billing_period_start} to ${split.billing_period_end}`)
+    logger.debug(`- Energy Logs Found: ${logs.length}`)
+    logger.debug(`- Total Bill: $${split.total_bill_amount.toFixed(2)}`)
     
     // Group by user and rate period
     const userStats: Record<string, {
@@ -412,12 +413,12 @@ export default function BillSplit() {
 
     // Log summary
     const totalKwhCalculated = Object.values(userStats).reduce((sum, stat) => sum + stat.totalKwh, 0)
-    console.log(`- Total kWh Calculated: ${totalKwhCalculated.toFixed(2)}`)
-    console.log('- Per User:')
+    logger.debug(`- Total kWh Calculated: ${totalKwhCalculated.toFixed(2)}`)
+    logger.debug('- Per User:')
     householdUsers.forEach(user => {
       const stats = userStats[user.id]
       if (stats) {
-        console.log(`  ${user.name}: ${stats.totalKwh.toFixed(2)} kWh`)
+        logger.debug(`  ${user.name}: ${stats.totalKwh.toFixed(2)} kWh`)
       }
     })
 

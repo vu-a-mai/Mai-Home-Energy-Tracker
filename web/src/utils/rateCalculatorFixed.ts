@@ -54,12 +54,6 @@ const minutesToTime = (minutes: number): string => {
   return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`
 }
 
-// Get season
-const getSeason = (date: Date): 'summer' | 'winter' => {
-  const month = date.getMonth() + 1
-  return (month >= 6 && month <= 9) ? 'summer' : 'winter'
-}
-
 // Get rate periods
 const getRatePeriods = (date: Date): RatePeriod[] => {
   const season = getSeason(date)
