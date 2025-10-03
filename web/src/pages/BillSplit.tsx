@@ -29,7 +29,11 @@ import {
   UserIcon,
   BoltIcon,
   HomeIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ArrowTrendingUpIcon,
+  DocumentArrowDownIcon,
+  CloudArrowDownIcon,
+  FolderIcon
 } from '@heroicons/react/24/outline'
 
 interface BillSplitData {
@@ -560,7 +564,8 @@ ${householdUsers.map(user =>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-slate-900 border-2 border-green-600">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
-                  📈 Bill Split Results
+                  <ArrowTrendingUpIcon className="w-7 h-7 text-green-400" />
+                  Bill Split Results
             </DialogTitle>
             <DialogDescription className="text-slate-300">
               Detailed breakdown of energy costs for the billing period
@@ -725,16 +730,27 @@ ${householdUsers.map(user =>
                 <Button
                   onClick={exportBillSplit}
                   variant="outline"
-                  className="bg-green-600 hover:bg-green-700 text-white border-green-600"
+                  className="bg-green-600 hover:bg-green-700 text-white border-green-600 flex items-center gap-2"
                 >
-                  📄 Export
+                  <DocumentArrowDownIcon className="w-5 h-5" />
+                  Export
                 </Button>
                 <Button
                   onClick={handleSaveBillSplit}
                   disabled={saving}
-                  className="bg-blue-600 hover:bg-blue-700 text-white border-none"
+                  className="bg-blue-600 hover:bg-blue-700 text-white border-none flex items-center gap-2"
                 >
-                  {saving ? '⏳ Saving...' : '💾 Save'}
+                  {saving ? (
+                    <>
+                      <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <CloudArrowDownIcon className="w-5 h-5" />
+                      Save
+                    </>
+                  )}
                 </Button>
                 <Button
                   onClick={() => setShowResults(false)}
@@ -756,7 +772,8 @@ ${householdUsers.map(user =>
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
               <div className="flex-1">
               <CardTitle className="text-lg md:text-xl text-foreground flex items-center gap-2">
-                📁 Bill Split History
+                <FolderIcon className="w-5 h-5 md:w-6 md:h-6 text-yellow-400" />
+                Bill Split History
               </CardTitle>
               <CardDescription className="text-xs md:text-sm mt-1">
                   View and manage your monthly bill splits for {selectedYear}
@@ -1087,9 +1104,10 @@ ${householdUsers.map(user =>
                   <div className="flex justify-end items-center gap-2 pt-1.5 border-t border-slate-700">
                     <Button
                       onClick={() => setDeletingBillSplit(viewingBillSplit)}
-                      className="bg-red-600 hover:bg-red-700 text-white border-none px-3 py-1 text-xs"
+                      className="bg-red-600 hover:bg-red-700 text-white border-none px-3 py-1 text-xs flex items-center gap-1"
                     >
-                      🗑️ Delete
+                      <TrashIcon className="w-4 h-4" />
+                      Delete
                     </Button>
                     <Button
                       onClick={() => setViewingBillSplit(null)}
@@ -1110,7 +1128,7 @@ ${householdUsers.map(user =>
         <DialogContent className="max-w-md bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-red-500/50 shadow-2xl shadow-red-500/20">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
-              <span className="text-3xl">⚠️</span>
+              <ExclamationTriangleIcon className="w-8 h-8 text-yellow-400" />
               Delete Bill Split
             </DialogTitle>
             <DialogDescription className="text-slate-300 text-base pt-2">
@@ -1144,8 +1162,9 @@ ${householdUsers.map(user =>
 
               {/* Warning Message */}
               <div className="bg-red-950/30 border border-red-500/30 rounded-lg p-3">
-                <p className="text-sm text-red-200 font-medium">
-                  ⚠️ This action cannot be undone. All data for this bill split will be permanently deleted.
+                <p className="text-sm text-red-200 font-medium flex items-start gap-2">
+                  <ExclamationTriangleIcon className="w-5 h-5 text-yellow-400 shrink-0 mt-0.5" />
+                  This action cannot be undone. All data for this bill split will be permanently deleted.
                 </p>
               </div>
 
@@ -1159,9 +1178,10 @@ ${householdUsers.map(user =>
                 </Button>
                 <Button
                   onClick={handleDeleteBillSplit}
-                  className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white border-none py-3 text-base font-bold shadow-lg shadow-red-500/30"
+                  className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white border-none py-3 text-base font-bold shadow-lg shadow-red-500/30 flex items-center justify-center gap-2"
                 >
-                  🗑️ Delete Forever
+                  <TrashIcon className="w-5 h-5" />
+                  Delete Forever
                 </Button>
               </div>
             </div>
