@@ -254,18 +254,18 @@ export default function Dashboard() {
     // Summer rates (June-September)
     if (month >= 6 && month <= 9) {
       if (!isWeekend) {
-        if (hour >= 16 && hour < 21) return { name: 'On-Peak', rate: 0.55, color: '#ef4444', emoji: '🔴' }
-        return { name: 'Off-Peak', rate: 0.25, color: '#22c55e', emoji: '🟢' }
+        if (hour >= 16 && hour < 21) return { name: 'On-Peak', rate: 0.55, color: '#ef4444' }
+        return { name: 'Off-Peak', rate: 0.25, color: '#22c55e' }
       } else {
-        if (hour >= 16 && hour < 21) return { name: 'Mid-Peak', rate: 0.37, color: '#f59e0b', emoji: '🟡' }
-        return { name: 'Off-Peak', rate: 0.25, color: '#22c55e', emoji: '🟢' }
+        if (hour >= 16 && hour < 21) return { name: 'Mid-Peak', rate: 0.37, color: '#f59e0b' }
+        return { name: 'Off-Peak', rate: 0.25, color: '#22c55e' }
       }
     }
     // Winter rates (October-May)
     else {
-      if (hour >= 21 || hour < 8) return { name: 'Off-Peak', rate: 0.24, color: '#22c55e', emoji: '🟢' }
-      if (hour >= 8 && hour < 16) return { name: 'Super Off-Peak', rate: 0.24, color: '#3b82f6', emoji: '🔵' }
-      return { name: 'Mid-Peak', rate: 0.52, color: '#f59e0b', emoji: '🟡' }
+      if (hour >= 21 || hour < 8) return { name: 'Off-Peak', rate: 0.24, color: '#22c55e' }
+      if (hour >= 8 && hour < 16) return { name: 'Super Off-Peak', rate: 0.24, color: '#3b82f6' }
+      return { name: 'Mid-Peak', rate: 0.52, color: '#f59e0b' }
     }
   }
 
@@ -968,7 +968,7 @@ export default function Dashboard() {
             ) : (
               <div className="h-[300px] flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
-                  <div className="text-4xl mb-2">📈</div>
+                  <ArrowTrendingUpIcon className="w-16 h-16 mx-auto mb-3 text-primary opacity-50" />
                   <p className="text-sm">No monthly usage data available</p>
                   <p className="text-xs mt-1">Log energy usage to see monthly trends</p>
                 </div>
