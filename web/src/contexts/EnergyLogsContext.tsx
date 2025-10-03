@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useDemoMode } from './DemoContext'
 import type { EnergyLog } from '../lib/supabase'
 import { calculateUsageCost } from '../utils/rateCalculatorFixed'
+import { logger } from '../utils/logger'
 import { demoEnergyLogs, demoDevices } from '../demo/demoData'
 
 // Re-export EnergyLog for convenience
@@ -76,13 +77,13 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
         .maybeSingle()
 
       if (userError) {
-        console.error('Error fetching user data:', userError)
+        logger.error('Error fetching user data:', userError)
         setLoading(false)
         return
       }
 
       if (!userData?.household_id) {
-        console.error('User has no household_id')
+        logger.error('User has no household_id')
         setLoading(false)
         return
       }
@@ -112,7 +113,7 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
 
       setEnergyLogs(transformedLogs)
     } catch (err) {
-      console.error('Error fetching energy logs:', err)
+      logger.error('Error fetching energy logs:', err)
     } finally {
       setLoading(false)
     }
@@ -148,7 +149,7 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
         kwh: Math.round(calculation.totalKwh * 1000) / 1000  // Round to 3 decimal places
       }
     } catch (err) {
-      console.error('Error calculating energy cost:', err)
+      logger.error('Error calculating energy cost:', err)
       throw new Error('Failed to calculate energy cost')
     }
   }
@@ -167,12 +168,12 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
         .maybeSingle()
 
       if (userError) {
-        console.error('Error fetching user data:', userError)
+        logger.error('Error fetching user data:', userError)
         throw new Error('Failed to fetch user data. Please try logging out and back in.')
       }
       
       if (!userData) {
-        console.error('User not found in database. User ID:', user.id)
+        logger.error('User not found in database. User ID:', user.id)
         throw new Error('User profile not found. Please try logging out and back in to sync your account.')
       }
 
@@ -220,7 +221,7 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
 
       setEnergyLogs(prev => [transformedLog, ...prev])
     } catch (err) {
-      console.error('Error adding energy log:', err)
+      logger.error('Error adding energy log:', err)
       setError('Failed to add energy log')
       throw err
     }
@@ -272,7 +273,7 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
         log.id === id ? { ...log, ...transformedLog } : log
       ))
     } catch (err) {
-      console.error('Error updating energy log:', err)
+      logger.error('Error updating energy log:', err)
       setError('Failed to update energy log')
       throw err
     }
@@ -304,14 +305,14 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
 
       // Check if deletion was actually successful (RLS might block it silently)
       if (count === 0) {
-        console.error('Delete was blocked by RLS policy. Log details:', existingLog)
-        console.error('Current user:', user?.id)
+        logger.error('Delete was blocked by RLS policy. Log details:', existingLog)
+        logger.error('Current user:', user?.id)
         throw new Error('You do not have permission to delete this energy log. It may have been created by another user. Please contact your administrator.')
       }
 
       setEnergyLogs(prev => prev.filter(log => log.id !== id))
     } catch (err) {
-      console.error('Error deleting energy log:', err)
+      logger.error('Error deleting energy log:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete energy log'
       setError(errorMessage)
       throw err
@@ -358,7 +359,7 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
           table: 'energy_logs'
         },
         (payload) => {
-          console.log('Energy log change detected:', payload)
+          logger.debug('Energy log change detected:', payload)
           // Refresh logs when any change occurs
           refreshEnergyLogs()
         }

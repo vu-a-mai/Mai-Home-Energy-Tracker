@@ -8,6 +8,7 @@ import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription'
 import { useCache } from '../hooks/useCache'
 import { MockDataService } from '../services/mockDataService'
 import { demoDevices } from '../demo/demoData'
+import { logger } from '../utils/logger'
 
 export interface Device {
   id: string
@@ -82,13 +83,13 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
         .maybeSingle()
 
       if (userError) {
-        console.error('Error fetching user data:', userError)
+        logger.error('Error fetching user data:', userError)
         setLoading(false)
         return
       }
 
       if (!userData?.household_id) {
-        console.error('User has no household_id')
+        logger.error('User has no household_id')
         setLoading(false)
         return
       }
@@ -117,8 +118,8 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
       setDevices(deviceData)
       cache.set(cacheKey, deviceData)
     } catch (err) {
-      console.error('Error fetching devices:', err)
-      console.log('Falling back to mock data...')
+      logger.error('Error fetching devices:', err)
+      logger.log('Falling back to mock data...')
       
       // Fallback to mock data
       try {
@@ -132,7 +133,7 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
         setDevices(deviceData)
         setError('Using demo data - Supabase connection unavailable')
       } catch (mockErr) {
-        console.error('Mock data error:', mockErr)
+        logger.error('Mock data error:', mockErr)
         setError('Failed to load devices')
       }
     } finally {
@@ -160,7 +161,7 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
         userData = existingUser
       } else {
         // User doesn't exist in database, create them
-        console.log('User not found in database, creating user record...')
+        logger.log('User not found in database, creating user record...')
         const householdId = crypto.randomUUID()
         
         const newUser = {
@@ -177,7 +178,7 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
           .single()
 
         if (createError) {
-          console.error('Error creating user:', createError)
+          logger.error('Error creating user:', createError)
           throw new Error('Failed to create user profile. Please try again.')
         }
         
@@ -208,7 +209,7 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
       // Invalidate cache
       cache.remove(`devices-${user.id}`)
     } catch (err) {
-      console.error('Error adding device:', err)
+      logger.error('Error adding device:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to add device'
       setError(errorMessage)
       throw err
@@ -241,7 +242,7 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
       // Invalidate cache
       if (user) cache.remove(`devices-${user.id}`)
     } catch (err) {
-      console.error('Error updating device:', err)
+      logger.error('Error updating device:', err)
       setError('Failed to update device')
       throw err
     }
@@ -264,7 +265,7 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
       // Invalidate cache
       if (user) cache.remove(`devices-${user.id}`)
     } catch (err) {
-      console.error('Error deleting device:', err)
+      logger.error('Error deleting device:', err)
       setError('Failed to delete device')
       throw err
     }
