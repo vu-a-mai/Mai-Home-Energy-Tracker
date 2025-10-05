@@ -355,14 +355,14 @@ export default function EnergyLogs() {
         <div className="flex flex-wrap gap-2">
           <Button
             onClick={() => setShowBulkEntry(true)}
-            className="px-2.5 sm:px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap bg-purple-600 hover:bg-purple-700 text-white border-0"
+            className="px-2.5 sm:px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap bg-purple-500 hover:bg-purple-600 text-white border-0 shadow-lg shadow-purple-500/30"
           >
             <BoltIcon className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1 md:mr-2" />
             <span className="hidden xs:inline">Quick </span>kWh
           </Button>
           <Button
             onClick={() => setShowTemplates(true)}
-            className="px-2.5 sm:px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white border-0"
+            className="px-2.5 sm:px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-lg shadow-blue-500/30"
           >
             <DocumentDuplicateIcon className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1 md:mr-2" />
             <span className="hidden sm:inline">Templates</span>
@@ -370,7 +370,7 @@ export default function EnergyLogs() {
           </Button>
           <Button
             onClick={() => setShowSchedules(true)}
-            className="px-2.5 sm:px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap bg-green-600 hover:bg-green-700 text-white border-0"
+            className="px-2.5 sm:px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap bg-cyan-500 hover:bg-cyan-600 text-white border-0 shadow-lg shadow-cyan-500/30"
           >
             <ArrowPathIcon className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1 md:mr-2" />
             <span className="hidden sm:inline">Schedules</span>
@@ -378,7 +378,7 @@ export default function EnergyLogs() {
           </Button>
           <Button
             onClick={() => setShowForm(true)}
-            className="energy-action-btn px-3 sm:px-4 md:px-6 py-2 md:py-2.5 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap"
+            className="px-2.5 sm:px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg shadow-green-500/30"
           >
             <PlusIcon className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1" />
             <span className="hidden xs:inline">Log </span>Usage
