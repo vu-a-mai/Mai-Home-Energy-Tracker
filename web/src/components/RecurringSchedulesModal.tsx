@@ -160,11 +160,11 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="w-full max-w-5xl my-8">
-        <div className="energy-card w-full bg-card border border-border rounded-lg shadow-xl">
+    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
+      <div className="w-full max-w-5xl my-4 min-h-0">
+        <div className="energy-card w-full bg-card border border-border rounded-lg shadow-xl max-h-[90vh] flex flex-col">
           {/* Header */}
-          <div className="p-6 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
+          <div className="p-6 border-b border-border flex items-center justify-between flex-shrink-0">
           <div>
             <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <ArrowPathIcon className="w-7 h-7 text-green-400" />
