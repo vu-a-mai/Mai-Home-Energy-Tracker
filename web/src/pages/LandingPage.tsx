@@ -159,7 +159,7 @@ export default function LandingPage() {
               Logging Made Effortless
             </h2>
             <p className="text-muted-foreground max-w-3xl mx-auto">
-              Save 80% of your time with our new automation features
+              Save 80% of your time with automation features. Enhanced dashboard with real-time insights and beautiful visualizations.
             </p>
           </div>
 
@@ -291,7 +291,7 @@ export default function LandingPage() {
             Ready to Start Tracking?
           </h2>
           <p className="text-sm sm:text-base md:text-lg mb-4 md:mb-6 opacity-90 max-w-3xl px-4 leading-relaxed">
-            Join the Mai family in smart energy management. Access templates, auto-recurring schedules, quick kWh entry, and more!
+            Join the Mai family in smart energy management. Access templates, auto-recurring schedules, quick kWh entry, enhanced dashboard analytics, and more!
           </p>
           <Link 
             to="/login"
