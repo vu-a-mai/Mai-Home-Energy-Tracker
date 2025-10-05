@@ -30,6 +30,8 @@ export interface EnergyLog {
   household_id: string
   created_by: string
   created_at: string
+  source_type?: 'manual' | 'template' | 'recurring'
+  source_id?: string
 }
 
 export interface EnergyLogUser {
@@ -61,4 +63,63 @@ export interface RatePeriod {
 export interface TimeRange {
   start: string
   end: string
+}
+
+export interface EnergyLogTemplate {
+  id: string
+  household_id: string
+  template_name: string
+  device_id: string
+  default_start_time: string
+  default_end_time: string
+  assigned_users: string[]
+  created_by: string
+  created_at: string
+  updated_at: string
+  // Joined fields (from queries)
+  device_name?: string
+  device_wattage?: number
+}
+
+export interface RecurringSchedule {
+  id: string
+  household_id: string
+  schedule_name: string
+  device_id: string
+  recurrence_type: 'daily' | 'weekly' | 'custom'
+  days_of_week: number[] // [0=Sun, 1=Mon, ..., 6=Sat]
+  start_time: string
+  end_time: string
+  schedule_start_date: string
+  schedule_end_date: string | null
+  assigned_users: string[]
+  is_active: boolean
+  auto_create: boolean
+  created_by: string
+  created_at: string
+  updated_at: string
+  // Joined fields (from queries)
+  device_name?: string
+  device_wattage?: number
+}
+
+export interface TemplateFormData {
+  template_name: string
+  device_id: string
+  default_start_time: string
+  default_end_time: string
+  assigned_users: string[]
+}
+
+export interface ScheduleFormData {
+  schedule_name: string
+  device_id: string
+  recurrence_type: 'daily' | 'weekly' | 'custom'
+  days_of_week: number[]
+  start_time: string
+  end_time: string
+  schedule_start_date: string
+  schedule_end_date: string | null
+  assigned_users: string[]
+  auto_create: boolean
 }
