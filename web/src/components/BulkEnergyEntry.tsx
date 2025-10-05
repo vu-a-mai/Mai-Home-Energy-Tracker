@@ -152,10 +152,10 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="w-full max-w-2xl my-8">
-        <Card className="energy-card w-full bg-card border border-border rounded-lg shadow-xl">
-          <CardHeader className="p-4 md:p-6 border-b border-border sticky top-0 bg-card z-10">
+    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
+      <div className="w-full max-w-2xl my-4 min-h-0">
+        <Card className="energy-card w-full bg-card border border-border rounded-lg shadow-xl max-h-[90vh] flex flex-col">
+          <CardHeader className="p-4 md:p-6 border-b border-border flex-shrink-0">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl md:text-2xl text-foreground flex items-center gap-2">
                 <BoltIcon className="w-6 h-6 text-orange-400" />
@@ -170,7 +170,7 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
             </p>
           </CardHeader>
 
-          <CardContent className="p-4 md:p-6">
+          <CardContent className="p-4 md:p-6 overflow-y-auto flex-1 min-h-0">
           {/* Mode Toggle */}
           <div className="flex gap-2 mb-6 p-1 bg-muted rounded-lg">
             <button
