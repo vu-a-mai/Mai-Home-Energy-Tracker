@@ -73,18 +73,6 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
           usage_date: formData.start_date,
           start_time: '00:00:00',
           end_time: '23:59:59',
-          total_kwh: parseFloat(formData.total_kwh),
-          calculated_cost: totalCost,
-          rate_breakdown: {
-            type: 'bulk_entry',
-            rate_period: formData.rate_period,
-            rate: rateToUse,
-            date_range: {
-              start: formData.start_date,
-              end: formData.end_date
-            },
-            notes: formData.notes
-          },
           assigned_users: formData.assigned_users,
           created_by: user?.id,
           source_type: 'manual'
@@ -109,15 +97,6 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
           usage_date: formData.start_date,
           start_time: times.start,
           end_time: times.end,
-          total_kwh: parseFloat(formData.total_kwh),
-          calculated_cost: totalCost,
-          rate_breakdown: {
-            type: 'quick_kwh_entry',
-            rate_period: formData.rate_period,
-            rate: rateToUse,
-            estimated_times: true,
-            notes: formData.notes
-          },
           assigned_users: formData.assigned_users,
           created_by: user?.id,
           source_type: 'manual'

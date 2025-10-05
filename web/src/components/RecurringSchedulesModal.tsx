@@ -6,6 +6,7 @@ import { Button } from './ui/Button'
 import { Input } from './ui/Input'
 import { Card, CardContent } from './ui/Card'
 import type { ScheduleFormData } from '../types'
+import { toast } from 'sonner'
 import {
   XMarkIcon,
   ClockIcon,
@@ -124,7 +125,30 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
   }
 
   const handleGenerateLog = async (scheduleId: string) => {
+    const schedule = schedules.find(s => s.id === scheduleId)
+    if (!schedule) return
+
     const today = new Date().toISOString().split('T')[0]
+    
+    // Check if today is within schedule range
+    if (today < schedule.schedule_start_date) {
+      toast.error('Cannot generate log: Today is before schedule start date')
+      return
+    }
+    
+    if (schedule.schedule_end_date && today > schedule.schedule_end_date) {
+      toast.error(`Cannot generate log: Schedule ended on ${schedule.schedule_end_date}. Please update the schedule end date or remove it.`)
+      return
+    }
+    
+    // Check if today is in the selected days
+    const dayOfWeek = new Date(today).getDay()
+    if (!schedule.days_of_week.includes(dayOfWeek)) {
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+      toast.error(`Cannot generate log: Schedule doesn't run on ${dayNames[dayOfWeek]}`)
+      return
+    }
+    
     await generateLogsFromSchedule(scheduleId, today)
   }
 
@@ -247,7 +271,10 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                               variant="outline"
                               size="sm"
                               className="p-2 border-cyan-300 text-cyan-500 hover:bg-cyan-500/10"
-                              title="Generate log now"
+                              title={schedule.schedule_end_date && new Date().toISOString().split('T')[0] > schedule.schedule_end_date 
+                                ? `Schedule ended ${schedule.schedule_end_date}. Use Quick kWh Entry to backfill.` 
+                                : "Generate log now"}
+                              disabled={schedule.schedule_end_date ? new Date().toISOString().split('T')[0] > schedule.schedule_end_date : false}
                             >
                               <PlusIcon className="w-4 h-4" />
                             </Button>
