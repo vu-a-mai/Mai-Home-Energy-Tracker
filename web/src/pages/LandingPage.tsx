@@ -10,7 +10,10 @@ import {
   RocketLaunchIcon,
   ChartPieIcon,
   Squares2X2Icon,
-  CircleStackIcon
+  CircleStackIcon,
+  DocumentDuplicateIcon,
+  ArrowPathIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline'
 
 export default function LandingPage() {
@@ -40,8 +43,22 @@ export default function LandingPage() {
             for the Family
           </h2>
           <p className="text-sm sm:text-base md:text-lg max-w-2xl mx-auto mb-4 md:mb-6 leading-relaxed text-muted-foreground px-4 text-center">
-            Track household energy usage, calculate costs with TOU-D-PRIME rates, and fairly split electricity bills between family members.
+            Track household energy usage, automate logging with templates & schedules, calculate costs with TOU-D-PRIME rates, and fairly split electricity bills between family members.
           </p>
+          <div className="flex flex-wrap justify-center gap-3 mb-4 md:mb-6">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 text-purple-300 rounded-full text-xs md:text-sm font-medium">
+              <SparklesIcon className="w-4 h-4" />
+              Quick kWh Entry
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/20 border border-blue-500/30 text-blue-300 rounded-full text-xs md:text-sm font-medium">
+              <DocumentDuplicateIcon className="w-4 h-4" />
+              Templates
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-500/20 border border-green-500/30 text-green-300 rounded-full text-xs md:text-sm font-medium">
+              <ArrowPathIcon className="w-4 h-4" />
+              Auto-Recurring
+            </span>
+          </div>
           <div className="mt-2 md:mt-4"></div>
           <Link 
             to="/login"
@@ -60,7 +77,7 @@ export default function LandingPage() {
             Why Choose Mai Energy Tracker?
           </h2>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 items-stretch">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 items-stretch">
             {/* Feature 1 */}
             <div className="energy-card text-center p-4 md:p-6 hover:scale-105 transition-transform flex flex-col h-full">
               <CpuChipIcon className="w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 energy-pulse text-cyan-400 mx-auto" />
@@ -92,6 +109,131 @@ export default function LandingPage() {
               <p className="text-xs md:text-sm text-muted-foreground leading-relaxed flex-grow">
                 Automatically calculate personal device costs and split shared expenses evenly among family members for transparent billing.
               </p>
+            </div>
+
+            {/* Feature 4 - NEW */}
+            <div className="energy-card text-center p-4 md:p-6 hover:scale-105 transition-transform flex flex-col h-full bg-gradient-to-br from-purple-500/10 to-purple-600/10 border-purple-500/30">
+              <SparklesIcon className="w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 energy-pulse text-purple-400 mx-auto" />
+              <h3 className="text-base md:text-lg font-semibold mb-2 md:mb-3 text-foreground">
+                Quick kWh Entry
+              </h3>
+              <p className="text-xs md:text-sm text-muted-foreground leading-relaxed flex-grow">
+                Perfect for Tesla charging! Enter total kWh without exact times. Bulk monthly or daily entry modes with custom rate support.
+              </p>
+            </div>
+
+            {/* Feature 5 - NEW */}
+            <div className="energy-card text-center p-4 md:p-6 hover:scale-105 transition-transform flex flex-col h-full bg-gradient-to-br from-blue-500/10 to-blue-600/10 border-blue-500/30">
+              <DocumentDuplicateIcon className="w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 energy-pulse text-blue-400 mx-auto" />
+              <h3 className="text-base md:text-lg font-semibold mb-2 md:mb-3 text-foreground">
+                Reusable Templates
+              </h3>
+              <p className="text-xs md:text-sm text-muted-foreground leading-relaxed flex-grow">
+                Save common usage patterns and reuse with one click. Create from scratch or save any existing log as a template.
+              </p>
+            </div>
+
+            {/* Feature 6 - NEW */}
+            <div className="energy-card text-center p-4 md:p-6 hover:scale-105 transition-transform flex flex-col h-full bg-gradient-to-br from-green-500/10 to-green-600/10 border-green-500/30">
+              <ArrowPathIcon className="w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 energy-pulse text-green-400 mx-auto" />
+              <h3 className="text-base md:text-lg font-semibold mb-2 md:mb-3 text-foreground">
+                Auto-Recurring Schedules
+              </h3>
+              <p className="text-xs md:text-sm text-muted-foreground leading-relaxed flex-grow">
+                Set it once, forget it forever! Automatically generate logs for daily/weekly routines. Pause during vacation, resume anytime.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* New Features Highlight */}
+      <section className="py-8 md:py-10 px-3 md:px-5 bg-gradient-to-br from-primary/5 to-primary/10 slide-up">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/20 border border-primary/30 rounded-full mb-4">
+              <SparklesIcon className="w-5 h-5 text-primary" />
+              <span className="text-sm font-bold text-primary">NEW FEATURES</span>
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">
+              Logging Made Effortless
+            </h2>
+            <p className="text-muted-foreground max-w-3xl mx-auto">
+              Save 80% of your time with our new automation features
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-card border border-border rounded-xl p-6">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4">
+                <SparklesIcon className="w-6 h-6 text-purple-400" />
+              </div>
+              <h3 className="text-lg font-bold mb-2 text-foreground">Quick kWh Entry</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Don't know exact times? No problem! Enter total kWh from Tesla app or utility bill.
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-2">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Bulk monthly entry (e.g., 435 kWh)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Daily entry with estimated times</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Custom rate override support</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-card border border-border rounded-xl p-6">
+              <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4">
+                <DocumentDuplicateIcon className="w-6 h-6 text-blue-400" />
+              </div>
+              <h3 className="text-lg font-bold mb-2 text-foreground">Templates</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Save common patterns and reuse with one click. Perfect for repeated usage.
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-2">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>One-click log creation</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Save any log as template</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Pre-assign users & devices</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-card border border-border rounded-xl p-6">
+              <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mb-4">
+                <ArrowPathIcon className="w-6 h-6 text-green-400" />
+              </div>
+              <h3 className="text-lg font-bold mb-2 text-foreground">Auto-Recurring</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Set up once, logs generate automatically. Zero manual effort!
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-2">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Daily/weekly schedules</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Pause/resume anytime</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Perfect for 24/7 appliances</span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -149,7 +291,7 @@ export default function LandingPage() {
             Ready to Start Tracking?
           </h2>
           <p className="text-sm sm:text-base md:text-lg mb-4 md:mb-6 opacity-90 max-w-3xl px-4 leading-relaxed">
-            Join the Mai family in smart energy management. Login to access your personalized dashboard.
+            Join the Mai family in smart energy management. Access templates, auto-recurring schedules, quick kWh entry, and more!
           </p>
           <Link 
             to="/login"
