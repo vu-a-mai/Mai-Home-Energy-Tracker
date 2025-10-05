@@ -65,14 +65,30 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
 
       if (!userData?.household_id) throw new Error('No household found')
 
+      // For Quick kWh Entry, we bypass the automatic calculation and insert our own values
+      // This prevents timeout issues with the trigger trying to calculate complex time ranges
+      
       if (mode === 'bulk') {
-        // Create a single bulk entry
+        // Create a single bulk entry with manual cost calculation
         const { error } = await supabase.from('energy_logs').insert({
           household_id: userData.household_id,
           device_id: formData.device_id,
           usage_date: formData.start_date,
           start_time: '00:00:00',
-          end_time: '23:59:59',
+          end_time: '00:00:01', // Use minimal time range to avoid trigger timeout
+          total_kwh: parseFloat(formData.total_kwh),
+          calculated_cost: totalCost,
+          rate_breakdown: JSON.stringify({
+            type: 'bulk_entry',
+            rate_period: formData.rate_period,
+            rate: rateToUse,
+            total_kwh: parseFloat(formData.total_kwh),
+            date_range: {
+              start: formData.start_date,
+              end: formData.end_date
+            },
+            notes: formData.notes
+          }),
           assigned_users: formData.assigned_users,
           created_by: user?.id,
           source_type: 'manual'
@@ -97,6 +113,16 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
           usage_date: formData.start_date,
           start_time: times.start,
           end_time: times.end,
+          total_kwh: parseFloat(formData.total_kwh),
+          calculated_cost: totalCost,
+          rate_breakdown: JSON.stringify({
+            type: 'quick_kwh_entry',
+            rate_period: formData.rate_period,
+            rate: rateToUse,
+            total_kwh: parseFloat(formData.total_kwh),
+            estimated_times: true,
+            notes: formData.notes
+          }),
           assigned_users: formData.assigned_users,
           created_by: user?.id,
           source_type: 'manual'
