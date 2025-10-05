@@ -347,37 +347,37 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                       key={day.value}
                       type="button"
                       onClick={() => toggleDay(day.value)}
-                      className={`px-4 py-2 rounded-lg border transition-colors ${
+                      className={`px-3 sm:px-4 py-2 rounded-lg border-2 transition-all font-bold text-sm ${
                         formData.days_of_week.includes(day.value)
-                          ? 'bg-blue-500 border-blue-500 text-white'
-                          : 'bg-background border-border text-foreground hover:bg-muted'
+                          ? 'bg-cyan-500 border-cyan-400 text-white shadow-xl shadow-cyan-500/60 scale-105'
+                          : 'bg-slate-900/80 border-slate-700/50 text-slate-500 hover:bg-slate-800 hover:border-slate-600 hover:text-slate-300'
                       }`}
                     >
                       {day.label}
                     </button>
                   ))}
                 </div>
-                <div className="mt-2 flex gap-2">
+                <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, days_of_week: [1, 2, 3, 4, 5] })}
-                    className="text-xs text-blue-400 hover:text-blue-300 underline"
+                    className="px-3 py-1.5 text-xs font-semibold bg-blue-500/20 border border-blue-500/40 text-blue-300 rounded-md hover:bg-blue-500/30 hover:border-blue-500/60 transition-all"
                   >
-                    Weekdays
+                    📅 Weekdays
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, days_of_week: [0, 6] })}
-                    className="text-xs text-blue-400 hover:text-blue-300 underline"
+                    className="px-3 py-1.5 text-xs font-semibold bg-purple-500/20 border border-purple-500/40 text-purple-300 rounded-md hover:bg-purple-500/30 hover:border-purple-500/60 transition-all"
                   >
-                    Weekends
+                    🎉 Weekends
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, days_of_week: [0, 1, 2, 3, 4, 5, 6] })}
-                    className="text-xs text-blue-400 hover:text-blue-300 underline"
+                    className="px-3 py-1.5 text-xs font-semibold bg-green-500/20 border border-green-500/40 text-green-300 rounded-md hover:bg-green-500/30 hover:border-green-500/60 transition-all"
                   >
-                    Every Day
+                    🌟 Every Day
                   </button>
                 </div>
               </div>
