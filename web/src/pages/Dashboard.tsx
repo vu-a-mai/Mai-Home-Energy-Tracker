@@ -37,6 +37,7 @@ export default function Dashboard() {
   const { isDemoMode, disableDemoMode } = useDemoMode()
   const navigate = useNavigate()
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [usageTimeframe, setUsageTimeframe] = useState<'all' | 'month'>('all')
   
   // Use the same hooks as other pages for consistency
   const { energyLogs, loading: logsLoading } = useEnergyLogs()
@@ -50,9 +51,23 @@ export default function Dashboard() {
     return () => clearInterval(timer)
   }, [])
 
+  // Filter logs based on timeframe
+  const filteredLogs = useMemo(() => {
+    if (usageTimeframe === 'month') {
+      const now = new Date()
+      const currentMonth = now.getMonth()
+      const currentYear = now.getFullYear()
+      return energyLogs.filter(log => {
+        const logDate = new Date(log.usage_date)
+        return logDate.getMonth() === currentMonth && logDate.getFullYear() === currentYear
+      })
+    }
+    return energyLogs
+  }, [energyLogs, usageTimeframe])
+
   // Calculate data from actual energy logs using the same logic as Energy Logs page
   const calculateDashboardData = useMemo(() => {
-    if (energyLogs.length === 0) {
+    if (filteredLogs.length === 0) {
       return {
         personalUsage: {
           daily: { kwh: 0, cost: 0 },
@@ -95,7 +110,7 @@ export default function Dashboard() {
     }
 
     // Process each energy log
-    energyLogs.forEach(log => {
+    filteredLogs.forEach(log => {
       const device = devices.find(d => d.id === log.device_id)
       if (!device) return
 
@@ -227,7 +242,7 @@ export default function Dashboard() {
       topDevices,
       ratePeriods
     }
-  }, [energyLogs, devices, householdMembers, user])
+  }, [filteredLogs, devices, householdMembers, user])
 
   const dashboardData = calculateDashboardData
 
@@ -663,14 +678,38 @@ export default function Dashboard() {
           <HomeIcon className="w-6 h-6 text-cyan-400" />
           Household Summary & Device Analysis
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Total Household Usage - Enhanced */}
-          <Card className="energy-card bg-gradient-to-br from-primary/15 via-emerald-500/10 to-cyan-500/15 border-primary/40 hover:border-primary/60 transition-all shadow-lg hover:shadow-primary/20">
+        
+        {/* Total Household Usage - Full Width on Top */}
+        <Card className="energy-card bg-gradient-to-br from-primary/15 via-emerald-500/10 to-cyan-500/15 border-primary/40 hover:border-primary/60 transition-all shadow-lg hover:shadow-primary/20 mb-4 md:mb-6">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                <HomeIcon className="w-5 h-5 text-cyan-400" />
-                Total Household Usage
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                  <HomeIcon className="w-5 h-5 text-cyan-400" />
+                  Total Household Usage
+                </CardTitle>
+                <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1 border border-slate-700/50">
+                  <button
+                    onClick={() => setUsageTimeframe('all')}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                      usageTimeframe === 'all'
+                        ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/50'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+                    }`}
+                  >
+                    All Time
+                  </button>
+                  <button
+                    onClick={() => setUsageTimeframe('month')}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                      usageTimeframe === 'month'
+                        ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/50'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+                    }`}
+                  >
+                    This Month
+                  </button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="mb-4 p-4 bg-gradient-to-r from-primary/20 to-emerald-500/20 rounded-xl border border-primary/40">
@@ -734,8 +773,8 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Device Usage - Combined Chart & List - Spans 2 columns on large screens */}
-          <Card className="energy-card lg:col-span-2">
+        {/* Device Usage - Combined Chart & List - Full Width Below */}
+        <Card className="energy-card">
             <CardHeader>
               <CardTitle className="text-lg text-foreground flex items-center gap-2">
                 <CpuChipIcon className="w-5 h-5 text-cyan-400" />
@@ -744,20 +783,21 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               {deviceUsageData.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Pie Chart */}
-                  <div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Pie Chart - Takes 1 column */}
+                  <div className="flex items-center justify-center md:col-span-1">
                     <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie
                     data={deviceUsageData}
                     cx="50%"
                     cy="50%"
-                          outerRadius={90}
+                          outerRadius={100}
+                          innerRadius={50}
                     fill="#8884d8"
                           dataKey="value"
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                          labelLine={{ stroke: 'hsl(var(--color-foreground))', strokeWidth: 1 }}
+                          label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
+                          labelLine={false}
                   >
                     {deviceUsageData.map((entry, index) => (
                       <Cell key={`cell-${index}-${entry.name}`} fill={COLORS[index % COLORS.length]} />
@@ -788,8 +828,8 @@ export default function Dashboard() {
               </ResponsiveContainer>
                   </div>
                   
-                  {/* Device List - Scrollable if many devices */}
-                  <div className="flex flex-col">
+                  {/* Device List - Takes 2 columns, scrollable if many devices */}
+                  <div className="flex flex-col md:col-span-2">
                     <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
                       <ClipboardDocumentListIcon className="w-4 h-4 text-cyan-400" />
                       Device Breakdown {dashboardData.topDevices.length > 5 && `(Top ${Math.min(10, dashboardData.topDevices.length)})`}
@@ -853,7 +893,6 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
-        </div>
       </section>
 
       {/* Data Visualization Charts */}
