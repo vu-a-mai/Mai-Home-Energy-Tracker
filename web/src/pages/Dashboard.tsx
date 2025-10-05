@@ -109,6 +109,10 @@ export default function Dashboard() {
       superOffPeak: { kwh: 0, cost: 0 }
     }
 
+    // Initialize household totals
+    let totalKwh = 0
+    let totalCost = 0
+
     // Process each energy log
     filteredLogs.forEach(log => {
       const device = devices.find(d => d.id === log.device_id)
@@ -121,6 +125,10 @@ export default function Dashboard() {
         log.end_time,
         log.usage_date
       )
+
+      // Add to household totals
+      totalKwh += calculation.totalKwh
+      totalCost += calculation.totalCost
 
       // Determine assigned users (same logic as Bill Split)
       const assignedUsers = log.assigned_users && log.assigned_users.length > 0 
@@ -165,10 +173,6 @@ export default function Dashboard() {
         }
       })
     })
-
-    // Calculate totals
-    const totalKwh = Object.values(userTotals).reduce((sum, user) => sum + user.kwh, 0)
-    const totalCost = Object.values(userTotals).reduce((sum, user) => sum + user.cost, 0)
 
     // Convert to member array
     const members = householdMembers.map(member => ({
