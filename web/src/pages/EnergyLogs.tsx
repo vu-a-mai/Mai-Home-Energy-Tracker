@@ -10,6 +10,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { calculateUsageCost, getSeason } from '../utils/rateCalculatorFixed'
 import { validateDate, validateTimeRange, validateUsageDuration } from '../utils/validation'
 import { supabase } from '../lib/supabase'
+import { TemplatesModal } from '../components/TemplatesModal'
+import { RecurringSchedulesModal } from '../components/RecurringSchedulesModal'
+import { BulkEnergyEntry } from '../components/BulkEnergyEntry'
+import { useTemplates } from '../hooks/useTemplates'
 import {
   ClipboardDocumentListIcon,
   PlusIcon,
@@ -31,7 +35,9 @@ import {
   ChevronUpIcon,
   ArrowsUpDownIcon,
   MagnifyingGlassIcon,
-  FunnelIcon
+  FunnelIcon,
+  DocumentDuplicateIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline'
 
 interface EnergyLogFormData {
@@ -95,6 +101,7 @@ export default function EnergyLogs() {
   const { devices, refreshDevices } = useDevices()
   const { users: householdUsers } = useHouseholdUsers()
   const { user } = useAuth()
+  const { addTemplate } = useTemplates()
   const [showForm, setShowForm] = useState(false)
   const [expandedLog, setExpandedLog] = useState<string | null>(null)
   const [editingLog, setEditingLog] = useState<string | null>(null)
@@ -119,6 +126,9 @@ export default function EnergyLogs() {
   })
   const [showUserFilter, setShowUserFilter] = useState(false)
   const [showRateBreakdown, setShowRateBreakdown] = useState(false)
+  const [showTemplates, setShowTemplates] = useState(false)
+  const [showSchedules, setShowSchedules] = useState(false)
+  const [showBulkEntry, setShowBulkEntry] = useState(false)
 
   const validateForm = (): boolean => {
     const errors: Partial<EnergyLogFormData> = {}
@@ -302,6 +312,25 @@ export default function EnergyLogs() {
     setShowForm(true)
   }
 
+  // Handle save as template
+  const handleSaveAsTemplate = async (log: typeof energyLogs[0]) => {
+    try {
+      const templateName = prompt('Enter a name for this template:', `${log.device_name} Template`)
+      if (!templateName) return
+
+      await addTemplate({
+        template_name: templateName,
+        device_id: log.device_id,
+        default_start_time: formatTimeForInput(log.start_time),
+        default_end_time: formatTimeForInput(log.end_time),
+        assigned_users: log.assigned_users || []
+      })
+      toast.success('Template created successfully!')
+    } catch (err) {
+      // Error handled in hook
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-96 text-xl text-muted-foreground">
@@ -323,12 +352,38 @@ export default function EnergyLogs() {
             Track and analyze device usage sessions
           </p>
         </div>
-        <Button
-          onClick={() => setShowForm(true)}
-          className="energy-action-btn px-4 sm:px-5 md:px-6 py-2.5 md:py-3 text-sm sm:text-base md:text-lg font-semibold whitespace-nowrap shrink-0"
-        >
-          + Log Usage
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            onClick={() => setShowBulkEntry(true)}
+            className="px-2.5 sm:px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap bg-purple-600 hover:bg-purple-700 text-white border-0"
+          >
+            <BoltIcon className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1 md:mr-2" />
+            <span className="hidden xs:inline">Quick </span>kWh
+          </Button>
+          <Button
+            onClick={() => setShowTemplates(true)}
+            className="px-2.5 sm:px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white border-0"
+          >
+            <DocumentDuplicateIcon className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1 md:mr-2" />
+            <span className="hidden sm:inline">Templates</span>
+            <span className="sm:hidden">Temp</span>
+          </Button>
+          <Button
+            onClick={() => setShowSchedules(true)}
+            className="px-2.5 sm:px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap bg-green-600 hover:bg-green-700 text-white border-0"
+          >
+            <ArrowPathIcon className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1 md:mr-2" />
+            <span className="hidden sm:inline">Schedules</span>
+            <span className="sm:hidden">Sched</span>
+          </Button>
+          <Button
+            onClick={() => setShowForm(true)}
+            className="energy-action-btn px-3 sm:px-4 md:px-6 py-2 md:py-2.5 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap"
+          >
+            <PlusIcon className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1" />
+            <span className="hidden xs:inline">Log </span>Usage
+          </Button>
+        </div>
       </header>
 
       {/* Summary Statistics - Color Coded */}
@@ -962,6 +1017,15 @@ export default function EnergyLogs() {
                       )}
                     </Button>
                     <Button
+                      onClick={() => handleSaveAsTemplate(log)}
+                      variant="outline"
+                      size="sm"
+                      className="p-2 h-8 w-8 border-purple-300 text-purple-500 hover:bg-purple-500/10"
+                      title="Save as template"
+                    >
+                      <DocumentDuplicateIcon className="w-4 h-4" />
+                    </Button>
+                    <Button
                       onClick={() => handleEdit(log)}
                       variant="outline"
                       size="sm"
@@ -1058,6 +1122,15 @@ export default function EnergyLogs() {
                         title={isExpanded ? "Hide details" : "View details"}
                       >
                         {isExpanded ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
+                      </Button>
+                      <Button
+                        onClick={() => handleSaveAsTemplate(log)}
+                        variant="outline"
+                        size="sm"
+                        className="p-2 h-8 w-8 border-purple-300 text-purple-500 hover:bg-purple-500/10"
+                        title="Save as template"
+                      >
+                        <DocumentDuplicateIcon className="w-4 h-4" />
                       </Button>
                       <Button
                         onClick={() => handleEdit(log)}
@@ -1196,6 +1269,32 @@ export default function EnergyLogs() {
           </Button>
         </section>
       )}
+
+      {/* Bulk/Quick kWh Entry Modal */}
+      <BulkEnergyEntry
+        isOpen={showBulkEntry}
+        onClose={() => setShowBulkEntry(false)}
+        onSuccess={() => {
+          setShowBulkEntry(false)
+          refreshEnergyLogs()
+        }}
+      />
+
+      {/* Templates Modal */}
+      <TemplatesModal
+        isOpen={showTemplates}
+        onClose={() => setShowTemplates(false)}
+        onUseTemplate={() => {
+          setShowTemplates(false)
+          refreshEnergyLogs()
+        }}
+      />
+
+      {/* Recurring Schedules Modal */}
+      <RecurringSchedulesModal
+        isOpen={showSchedules}
+        onClose={() => setShowSchedules(false)}
+      />
 
       {/* User Filter Modal */}
       {showUserFilter && (
