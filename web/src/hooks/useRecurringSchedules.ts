@@ -186,6 +186,131 @@ export function useRecurringSchedules() {
     }
   }
 
+  const bulkGenerateLogsForSchedule = async (scheduleId: string, replaceExisting: boolean = false) => {
+    try {
+      const schedule = schedules.find(s => s.id === scheduleId)
+      if (!schedule) throw new Error('Schedule not found')
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const { data: userData } = await supabase
+        .from('users')
+        .select('household_id')
+        .eq('id', user.id)
+        .single()
+
+      if (!userData?.household_id) throw new Error('No household found')
+
+      // Calculate all matching dates
+      const startDate = new Date(schedule.schedule_start_date)
+      const endDate = schedule.schedule_end_date ? new Date(schedule.schedule_end_date) : new Date()
+      const today = new Date()
+      
+      // Don't generate logs for future dates
+      const actualEndDate = endDate > today ? today : endDate
+
+      const matchingDates: string[] = []
+      const currentDate = new Date(startDate)
+
+      while (currentDate <= actualEndDate) {
+        const dayOfWeek = currentDate.getDay()
+        if (schedule.days_of_week.includes(dayOfWeek)) {
+          matchingDates.push(currentDate.toISOString().split('T')[0])
+        }
+        currentDate.setDate(currentDate.getDate() + 1)
+      }
+
+      if (matchingDates.length === 0) {
+        toast.info('No matching dates found for this schedule')
+        return { success: 0, failed: 0, skipped: 0 }
+      }
+
+      // Generate logs for all matching dates
+      let successCount = 0
+      let failedCount = 0
+      let skippedCount = 0
+
+      toast.info(`Generating ${matchingDates.length} log(s)...`)
+
+      for (const date of matchingDates) {
+        try {
+          // Check if log already exists
+          const { data: existingLog } = await supabase
+            .from('energy_logs')
+            .select('id')
+            .eq('source_type', 'recurring')
+            .eq('source_id', scheduleId)
+            .eq('usage_date', date)
+            .single()
+
+          if (existingLog) {
+            if (replaceExisting) {
+              // Delete existing log first
+              const { error: deleteError } = await supabase
+                .from('energy_logs')
+                .delete()
+                .eq('id', existingLog.id)
+
+              if (deleteError) {
+                console.error(`Failed to delete existing log for ${date}:`, deleteError)
+                failedCount++
+                continue
+              }
+            } else {
+              // Skip if not replacing
+              skippedCount++
+              continue
+            }
+          }
+
+          // Create the log
+          const { error: insertError } = await supabase
+            .from('energy_logs')
+            .insert({
+              household_id: userData.household_id,
+              device_id: schedule.device_id,
+              usage_date: date,
+              start_time: schedule.start_time,
+              end_time: schedule.end_time,
+              assigned_users: schedule.assigned_users,
+              created_by: user.id,
+              source_type: 'recurring',
+              source_id: scheduleId
+            })
+
+          if (insertError) {
+            console.error(`Failed to create log for ${date}:`, insertError)
+            failedCount++
+          } else {
+            successCount++
+          }
+        } catch (err) {
+          console.error(`Error processing date ${date}:`, err)
+          failedCount++
+        }
+      }
+
+      // Show results
+      if (successCount > 0) {
+        toast.success(`✅ Generated ${successCount} log(s) successfully!`)
+      }
+      if (skippedCount > 0) {
+        toast.info(`⏭️ Skipped ${skippedCount} existing log(s)`)
+      }
+      if (failedCount > 0) {
+        toast.error(`❌ Failed to generate ${failedCount} log(s)`)
+      }
+
+      return { success: successCount, failed: failedCount, skipped: skippedCount }
+    } catch (err) {
+      console.error('Error bulk generating logs:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Failed to bulk generate logs'
+      toast.error(errorMessage)
+      throw err
+    }
+  }
+
   return {
     schedules,
     loading,
@@ -196,6 +321,7 @@ export function useRecurringSchedules() {
     deleteSchedule,
     generateLogsFromSchedule,
     autoGenerateLogsForDate,
+    bulkGenerateLogsForSchedule,
     refreshSchedules: fetchSchedules
   }
 }

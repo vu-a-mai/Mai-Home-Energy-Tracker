@@ -14,7 +14,8 @@ import {
   DocumentDuplicateIcon,
   ArrowPathIcon,
   SparklesIcon,
-  FolderPlusIcon
+  FolderPlusIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline'
 
 export default function LandingPage() {
@@ -222,20 +223,20 @@ export default function LandingPage() {
               </div>
               <h3 className="text-lg font-bold mb-2 text-foreground">Templates</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Save common patterns and reuse with one click. Multi-device support included!
+                Save patterns and bulk-generate logs across date ranges with smart preview!
               </p>
               <ul className="text-xs text-muted-foreground space-y-2">
                 <li className="flex items-start gap-2">
                   <span className="text-green-400 mt-0.5">✓</span>
-                  <span>One-click log creation</span>
+                  <span>Single date or bulk date range</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-400 mt-0.5">✓</span>
-                  <span>Multi-device templates</span>
+                  <span>Select specific days (Mon-Fri)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-400 mt-0.5">✓</span>
-                  <span>Pre-assign users & devices</span>
+                  <span>Preview & replace existing logs</span>
                 </li>
               </ul>
             </div>
@@ -246,20 +247,44 @@ export default function LandingPage() {
               </div>
               <h3 className="text-lg font-bold mb-2 text-foreground">Auto-Recurring</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Set up once, logs generate automatically. Multi-device schedules supported!
+                Bulk-generate logs for entire date ranges with smart conflict detection!
               </p>
               <ul className="text-xs text-muted-foreground space-y-2">
                 <li className="flex items-start gap-2">
                   <span className="text-green-400 mt-0.5">✓</span>
-                  <span>Daily/weekly schedules</span>
+                  <span>Bulk generate all matching dates</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-400 mt-0.5">✓</span>
-                  <span>Multi-device automation</span>
+                  <span>Preview conflicts before replacing</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-400 mt-0.5">✓</span>
-                  <span>Pause/resume anytime</span>
+                  <span>Safe skip or replace mode</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-card border border-border rounded-xl p-6">
+              <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center mb-4">
+                <TrashIcon className="w-6 h-6 text-red-400" />
+              </div>
+              <h3 className="text-lg font-bold mb-2 text-foreground">Bulk Delete</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Safely delete multiple logs with recovery options and complete transparency!
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-2">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Soft delete with 1-90 day recovery</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Device breakdown & preview</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Multi-device & date filtering</span>
                 </li>
               </ul>
             </div>

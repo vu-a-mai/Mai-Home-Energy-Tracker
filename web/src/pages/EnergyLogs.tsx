@@ -16,6 +16,9 @@ import { RecurringSchedulesModal } from '../components/RecurringSchedulesModal'
 import { BulkEnergyEntry } from '../components/BulkEnergyEntry'
 import { MultiDeviceSelector } from '../components/MultiDeviceSelector'
 import { SaveGroupModal } from '../components/SaveGroupModal'
+import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal'
+import type { DeleteOptions } from '../components/DeleteConfirmationModal'
+import { TemplateNameModal } from '../components/TemplateNameModal'
 import { useTemplates } from '../hooks/useTemplates'
 import {
   ClipboardDocumentListIcon,
@@ -128,16 +131,21 @@ export default function EnergyLogs() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [filters, setFilters] = useState({
     device: '',
+    devices: [] as string[], // Multi-device filter
     startDate: '',
     endDate: '',
     users: [] as string[], // Changed to array for multi-select
     sortBy: 'date'
   })
   const [showUserFilter, setShowUserFilter] = useState(false)
+  const [showDeviceFilter, setShowDeviceFilter] = useState(false)
   const [showRateBreakdown, setShowRateBreakdown] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
   const [showSchedules, setShowSchedules] = useState(false)
   const [showBulkEntry, setShowBulkEntry] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showTemplateNameModal, setShowTemplateNameModal] = useState(false)
+  const [templateLogData, setTemplateLogData] = useState<typeof energyLogs[0] | null>(null)
 
   const validateForm = (): boolean => {
     const errors: Partial<EnergyLogFormData> = {}
@@ -302,7 +310,10 @@ export default function EnergyLogs() {
   const filteredLogs = useMemo(() => {
     let filtered = [...energyLogs]
     
-    if (filters.device) {
+    // Device filtering: support multi-device (devices[]) first, then single device fallback
+    if (filters.devices && filters.devices.length > 0) {
+      filtered = filtered.filter(log => filters.devices.includes(log.device_id))
+    } else if (filters.device) {
       filtered = filtered.filter(log => log.device_id === filters.device)
     }
     
@@ -408,21 +419,72 @@ export default function EnergyLogs() {
   }
 
   // Handle save as template
-  const handleSaveAsTemplate = async (log: typeof energyLogs[0]) => {
-    try {
-      const templateName = prompt('Enter a name for this template:', `${log.device_name} Template`)
-      if (!templateName) return
+  const handleSaveAsTemplate = (log: typeof energyLogs[0]) => {
+    setTemplateLogData(log)
+    setShowTemplateNameModal(true)
+  }
 
+  // Toggle a device in the multi-select filter
+  const toggleDevice = (deviceId: string) => {
+    setFilters(prev => ({
+      ...prev,
+      devices: prev.devices.includes(deviceId)
+        ? prev.devices.filter(id => id !== deviceId)
+        : [...prev.devices, deviceId]
+    }))
+  }
+
+  const confirmSaveTemplate = async (templateName: string) => {
+    if (!templateLogData) return
+    
+    try {
       await addTemplate({
         template_name: templateName,
-        device_id: log.device_id,
-        default_start_time: formatTimeForInput(log.start_time),
-        default_end_time: formatTimeForInput(log.end_time),
-        assigned_users: log.assigned_users || []
+        device_id: templateLogData.device_id,
+        default_start_time: formatTimeForInput(templateLogData.start_time),
+        default_end_time: formatTimeForInput(templateLogData.end_time),
+        assigned_users: templateLogData.assigned_users || []
       })
       toast.success('Template created successfully!')
+      setShowTemplateNameModal(false)
+      setTemplateLogData(null)
     } catch (err) {
       // Error handled in hook
+    }
+  }
+
+  // Handle bulk delete
+  const handleBulkDelete = async (options: DeleteOptions) => {
+    try {
+      const logIds = filteredLogs.map(log => log.id)
+      
+      if (options.mode === 'permanent' || options.skipRecovery) {
+        // Permanent delete
+        const { error } = await supabase.rpc('permanent_delete_energy_logs', {
+          p_log_ids: logIds
+        })
+        if (error) throw error
+        toast.success(`Permanently deleted ${logIds.length} log(s)`)
+      } else {
+        // Soft delete
+        const { error } = await supabase.rpc('soft_delete_energy_logs', {
+          p_log_ids: logIds,
+          p_recovery_days: options.recoveryDays
+        })
+        if (error) throw error
+        toast.success(`Soft deleted ${logIds.length} log(s) (recoverable for ${options.recoveryDays} days)`, {
+          action: {
+            label: 'View Deleted',
+            onClick: () => window.location.href = '/logs/deleted'
+          }
+        })
+      }
+      
+      setShowDeleteModal(false)
+      refreshEnergyLogs()
+    } catch (error) {
+      console.error('Delete error:', error)
+      toast.error('Failed to delete logs')
     }
   }
 
@@ -548,8 +610,9 @@ export default function EnergyLogs() {
                 </div>
                 <Button
                   onClick={() => {
-                    setFilters({ device: '', startDate: '', endDate: '', users: [], sortBy: 'date' })
+                    setFilters({ device: '', devices: [], startDate: '', endDate: '', users: [], sortBy: 'date' })
                     setShowUserFilter(false)
+                    setShowDeviceFilter(false)
                   }}
                   variant="outline"
                   size="sm"
@@ -676,22 +739,25 @@ export default function EnergyLogs() {
                 </button>
               </div>
               
-              {/* Device Filter */}
+              {/* Device Filter (Multi-Select) */}
               <div className="flex items-center gap-2">
                 <label className="text-sm text-muted-foreground whitespace-nowrap flex items-center gap-1">
                   <BoltIcon className="w-4 h-4" />
-                  Device:
+                  Devices:
                 </label>
-                <select
-                  value={filters.device}
-                  onChange={(e) => setFilters({...filters, device: e.target.value})}
-                  className="px-3 py-1.5 text-sm border rounded-lg bg-background text-foreground border-border min-w-[160px]"
+                <button
+                  type="button"
+                  onClick={() => setShowDeviceFilter(true)}
+                  className="px-3 py-1.5 text-sm border rounded-lg bg-background text-foreground border-border hover:border-primary/50 min-w-[160px] flex items-center justify-between gap-2 group"
                 >
-                  <option value="">All Devices</option>
-                  {devices.map(device => (
-                    <option key={device.id} value={device.id}>{device.name}</option>
-                  ))}
-                </select>
+                  <span className="flex items-center gap-2">
+                    <BoltIcon className="w-4 h-4 text-orange-400" />
+                    {filters.devices.length === 0
+                      ? 'All Devices'
+                      : (filters.devices.length === devices.length ? 'All Devices' : `${filters.devices.length} selected`)}
+                  </span>
+                  <ChevronDownIcon className="w-3 h-3 text-orange-400 group-hover:text-yellow-400 transition-colors" />
+                </button>
               </div>
               
               {/* Date Range */}
@@ -739,8 +805,9 @@ export default function EnergyLogs() {
               {/* Clear Filters Button */}
               <Button
                 onClick={() => {
-                  setFilters({ device: '', startDate: '', endDate: '', users: [], sortBy: 'date' })
+                  setFilters({ device: '', devices: [], startDate: '', endDate: '', users: [], sortBy: 'date' })
                   setShowUserFilter(false)
+                  setShowDeviceFilter(false)
                 }}
                 variant="outline"
                 size="sm"
@@ -749,6 +816,19 @@ export default function EnergyLogs() {
                 <XMarkIcon className="w-4 h-4 inline-block mr-1" />
                 Clear All
               </Button>
+
+              {/* Delete Filtered Logs Button */}
+              {(filters.device || filters.devices.length > 0 || filters.startDate || filters.endDate || filters.users.length > 0) && filteredLogs.length > 0 && (
+                <Button
+                  onClick={() => setShowDeleteModal(true)}
+                  variant="outline"
+                  size="sm"
+                  className="ml-2 px-4 py-1.5 text-sm border-red-500 text-red-500 hover:bg-red-500/20 hover:border-red-600"
+                >
+                  <TrashIcon className="w-4 h-4 inline-block mr-1" />
+                  Delete Filtered ({filteredLogs.length})
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -1058,6 +1138,82 @@ export default function EnergyLogs() {
                 </CardContent>
               </div>
             </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Device Filter Modal */}
+      {showDeviceFilter && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowDeviceFilter(false)
+            }
+          }}
+        >
+          <div className="energy-card w-full max-w-md bg-card border border-border rounded-lg shadow-xl">
+            <div className="p-6 border-b border-border">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                  <BoltIcon className="w-6 h-6 text-orange-400" />
+                  Filter by Devices
+                </h3>
+                <button
+                  onClick={() => setShowDeviceFilter(false)}
+                  className="p-2 h-8 w-8 border border-border rounded hover:bg-muted"
+                >
+                  <XMarkIcon className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Select which devices to show in the logs
+              </p>
+            </div>
+            
+            <div className="p-6">
+              <div className="space-y-2 mb-4 max-h-80 overflow-y-auto pr-1">
+                {devices.map(device => (
+                  <label 
+                    key={device.id} 
+                    className="flex items-center gap-3 px-3 py-3 hover:bg-muted rounded-lg cursor-pointer transition-colors border border-transparent hover:border-primary/30"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={filters.devices.includes(device.id)}
+                      onChange={() => toggleDevice(device.id)}
+                      className="w-5 h-5 cursor-pointer accent-primary"
+                    />
+                    <span className="text-base text-foreground font-medium flex-1">{device.name}</span>
+                    {device.wattage && (
+                      <span className="text-xs text-muted-foreground">{device.wattage}W</span>
+                    )}
+                  </label>
+                ))}
+              </div>
+              
+              <div className="flex gap-3 pt-4 border-t border-border">
+                <button
+                  onClick={() => setFilters({...filters, devices: devices.map(d => d.id)})}
+                  className="flex-1 px-3 py-2 text-sm bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-400 rounded font-medium"
+                >
+                  ✓ Select All
+                </button>
+                <button
+                  onClick={() => setFilters({...filters, devices: []})}
+                  className="flex-1 px-3 py-2 text-sm bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded font-medium"
+                >
+                  <XMarkIcon className="w-4 h-4 inline-block mr-1" />
+                  Clear All
+                </button>
+                <button
+                  onClick={() => setShowDeviceFilter(false)}
+                  className="flex-1 px-3 py-2 text-sm energy-action-btn rounded font-medium"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1531,6 +1687,36 @@ export default function EnergyLogs() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        logsToDelete={filteredLogs}
+        totalKwh={totalUsage.totalKwh}
+        totalCost={totalUsage.totalCost}
+        calculateCost={(log) => {
+          const calc = calculateUsageCost(
+            log.device_wattage || 0,
+            log.start_time,
+            log.end_time,
+            log.usage_date
+          )
+          return calc.totalCost
+        }}
+        onConfirm={handleBulkDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
+
+      {/* Template Name Modal */}
+      <TemplateNameModal
+        isOpen={showTemplateNameModal}
+        defaultName={templateLogData ? `${templateLogData.device_name} Template` : ''}
+        onConfirm={confirmSaveTemplate}
+        onCancel={() => {
+          setShowTemplateNameModal(false)
+          setTemplateLogData(null)
+        }}
+      />
     </div>
   )
 }
