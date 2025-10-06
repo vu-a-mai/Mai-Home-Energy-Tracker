@@ -103,9 +103,27 @@ export interface RecurringSchedule {
   device_wattage?: number
 }
 
+export interface DeviceGroup {
+  id: string
+  household_id: string
+  group_name: string
+  device_ids: string[]
+  created_by: string
+  created_at: string
+  updated_at: string
+  // Joined fields (from queries)
+  devices?: Device[]
+}
+
+export interface DeviceGroupFormData {
+  group_name: string
+  device_ids: string[]
+}
+
 export interface TemplateFormData {
   template_name: string
   device_id: string
+  device_ids?: string[] // For multi-device support
   default_start_time: string
   default_end_time: string
   assigned_users: string[]
@@ -114,6 +132,7 @@ export interface TemplateFormData {
 export interface ScheduleFormData {
   schedule_name: string
   device_id: string
+  device_ids?: string[] // For multi-device support
   recurrence_type: 'daily' | 'weekly' | 'custom'
   days_of_week: number[]
   start_time: string

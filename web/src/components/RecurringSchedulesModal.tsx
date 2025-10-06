@@ -2,9 +2,12 @@ import { useState } from 'react'
 import { useRecurringSchedules } from '../hooks/useRecurringSchedules'
 import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
+import { useDeviceGroups } from '../hooks/useDeviceGroups'
 import { Button } from './ui/Button'
 import { Input } from './ui/Input'
 import { Card, CardContent } from './ui/Card'
+import { MultiDeviceSelector } from './MultiDeviceSelector'
+import { SaveGroupModal } from './SaveGroupModal'
 import type { ScheduleFormData } from '../types'
 import { toast } from 'sonner'
 import {
@@ -40,12 +43,17 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
   const { schedules, loading, addSchedule, updateSchedule, toggleScheduleActive, deleteSchedule, generateLogsFromSchedule } = useRecurringSchedules()
   const { devices } = useDevices()
   const { users: householdUsers } = useHouseholdUsers()
+  const { deviceGroups, addDeviceGroup } = useDeviceGroups()
   
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [useMultiDevice, setUseMultiDevice] = useState(false)
+  const [showSaveGroupModal, setShowSaveGroupModal] = useState(false)
+  const [pendingGroupDevices, setPendingGroupDevices] = useState<string[]>([])
   const [formData, setFormData] = useState<ScheduleFormData>({
     schedule_name: '',
     device_id: '',
+    device_ids: [],
     recurrence_type: 'weekly',
     days_of_week: [],
     start_time: '',
@@ -60,15 +68,56 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    try {
-      if (editingId) {
-        await updateSchedule(editingId, formData)
-      } else {
-        await addSchedule(formData)
+    
+    // Validate device selection
+    if (useMultiDevice) {
+      if (!formData.device_ids || formData.device_ids.length === 0) {
+        toast.error('Please select at least one device')
+        return
       }
-      resetForm()
-    } catch (err) {
-      // Error handled in hook
+      
+      // Create multiple schedules (one per device)
+      try {
+        for (const deviceId of formData.device_ids) {
+          const device = devices.find(d => d.id === deviceId)
+          const scheduleData = {
+            schedule_name: formData.device_ids.length > 1 
+              ? `${formData.schedule_name} - ${device?.name}`
+              : formData.schedule_name,
+            device_id: deviceId,
+            recurrence_type: formData.recurrence_type,
+            days_of_week: formData.days_of_week,
+            start_time: formData.start_time,
+            end_time: formData.end_time,
+            schedule_start_date: formData.schedule_start_date,
+            schedule_end_date: formData.schedule_end_date,
+            assigned_users: formData.assigned_users,
+            auto_create: formData.auto_create
+          }
+          
+          if (editingId && formData.device_ids.length === 1) {
+            await updateSchedule(editingId, scheduleData)
+          } else {
+            await addSchedule(scheduleData)
+          }
+        }
+        toast.success(`${formData.device_ids.length} schedule(s) created successfully!`)
+        resetForm()
+      } catch (err) {
+        // Error handled in hook
+      }
+    } else {
+      // Single device mode
+      try {
+        if (editingId) {
+          await updateSchedule(editingId, formData)
+        } else {
+          await addSchedule(formData)
+        }
+        resetForm()
+      } catch (err) {
+        // Error handled in hook
+      }
     }
   }
 
@@ -76,6 +125,7 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
     setFormData({
       schedule_name: '',
       device_id: '',
+      device_ids: [],
       recurrence_type: 'weekly',
       days_of_week: [],
       start_time: '',
@@ -87,12 +137,14 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
     })
     setShowForm(false)
     setEditingId(null)
+    setUseMultiDevice(false)
   }
 
   const handleEdit = (schedule: typeof schedules[0]) => {
     setFormData({
       schedule_name: schedule.schedule_name,
       device_id: schedule.device_id,
+      device_ids: [schedule.device_id],
       recurrence_type: schedule.recurrence_type,
       days_of_week: schedule.days_of_week,
       start_time: schedule.start_time,
@@ -103,6 +155,7 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
       auto_create: schedule.auto_create
     })
     setEditingId(schedule.id)
+    setUseMultiDevice(false)
     setShowForm(true)
   }
 
@@ -122,6 +175,23 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
         ? prev.assigned_users.filter(id => id !== userId)
         : [...prev.assigned_users, userId]
     }))
+  }
+
+  const handleSaveAsGroup = (deviceIds: string[]) => {
+    setPendingGroupDevices(deviceIds)
+    setShowSaveGroupModal(true)
+  }
+
+  const handleConfirmSaveGroup = async (groupName: string) => {
+    try {
+      await addDeviceGroup({
+        group_name: groupName,
+        device_ids: pendingGroupDevices
+      })
+      setPendingGroupDevices([])
+    } catch (err) {
+      // Error handled in hook
+    }
   }
 
   const handleGenerateLog = async (scheduleId: string) => {
@@ -318,23 +388,60 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                 />
               </div>
 
+              {/* Device Selection Mode Toggle */}
+              <div className="flex items-center gap-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useMultiDevice}
+                    onChange={(e) => {
+                      setUseMultiDevice(e.target.checked)
+                      if (e.target.checked) {
+                        setFormData({ ...formData, device_ids: formData.device_id ? [formData.device_id] : [] })
+                      } else {
+                        setFormData({ ...formData, device_id: formData.device_ids?.[0] || '' })
+                      }
+                    }}
+                    className="w-4 h-4"
+                    disabled={!!editingId}
+                  />
+                  <span className="text-sm font-bold text-blue-300">
+                    Multi-Device Mode
+                  </span>
+                </label>
+                <span className="text-xs text-blue-200">
+                  {useMultiDevice ? '✓ Select multiple devices at once (creates separate schedule for each)' : '○ Single device only'}
+                </span>
+              </div>
+
+              {/* Device Selection */}
               <div>
                 <label className="block mb-2 text-sm font-semibold text-foreground">
-                  Device *
+                  Device{useMultiDevice ? 's' : ''} *
                 </label>
-                <select
-                  value={formData.device_id}
-                  onChange={(e) => setFormData({ ...formData, device_id: e.target.value })}
-                  className="w-full p-3 border rounded-lg bg-background text-foreground border-border"
-                  required
-                >
-                  <option value="">Select a device</option>
-                  {devices.map(device => (
-                    <option key={device.id} value={device.id}>
-                      {device.name} ({device.wattage}W)
-                    </option>
-                  ))}
-                </select>
+                {useMultiDevice ? (
+                  <MultiDeviceSelector
+                    devices={devices}
+                    selectedDeviceIds={formData.device_ids || []}
+                    onSelectionChange={(ids) => setFormData({ ...formData, device_ids: ids })}
+                    deviceGroups={deviceGroups}
+                    onSaveAsGroup={handleSaveAsGroup}
+                  />
+                ) : (
+                  <select
+                    value={formData.device_id}
+                    onChange={(e) => setFormData({ ...formData, device_id: e.target.value })}
+                    className="w-full p-3 border rounded-lg bg-background text-foreground border-border"
+                    required
+                  >
+                    <option value="">Select a device</option>
+                    {devices.map(device => (
+                      <option key={device.id} value={device.id}>
+                        {device.name} ({device.wattage}W)
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div>
@@ -496,6 +603,14 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
           </div>
         </div>
       </div>
+
+      {/* Save Group Modal */}
+      <SaveGroupModal
+        isOpen={showSaveGroupModal}
+        onClose={() => setShowSaveGroupModal(false)}
+        onSave={handleConfirmSaveGroup}
+        deviceCount={pendingGroupDevices.length}
+      />
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { useEnergyLogs } from '../hooks/useEnergyLogs'
 import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
 import { useAuth } from '../hooks/useAuth'
+import { useDeviceGroups } from '../hooks/useDeviceGroups'
 import { toast } from 'sonner'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -13,6 +14,8 @@ import { supabase } from '../lib/supabase'
 import { TemplatesModal } from '../components/TemplatesModal'
 import { RecurringSchedulesModal } from '../components/RecurringSchedulesModal'
 import { BulkEnergyEntry } from '../components/BulkEnergyEntry'
+import { MultiDeviceSelector } from '../components/MultiDeviceSelector'
+import { SaveGroupModal } from '../components/SaveGroupModal'
 import { useTemplates } from '../hooks/useTemplates'
 import {
   ClipboardDocumentListIcon,
@@ -42,6 +45,7 @@ import {
 
 interface EnergyLogFormData {
   device_id: string
+  device_ids?: string[]
   usage_date: string
   start_time: string
   end_time: string
@@ -102,13 +106,18 @@ export default function EnergyLogs() {
   const { users: householdUsers } = useHouseholdUsers()
   const { user } = useAuth()
   const { addTemplate } = useTemplates()
+  const { deviceGroups, addDeviceGroup } = useDeviceGroups()
   const [showForm, setShowForm] = useState(false)
   const [expandedLog, setExpandedLog] = useState<string | null>(null)
   const [editingLog, setEditingLog] = useState<string | null>(null)
+  const [useMultiDevice, setUseMultiDevice] = useState(false)
+  const [showSaveGroupModal, setShowSaveGroupModal] = useState(false)
+  const [pendingGroupDevices, setPendingGroupDevices] = useState<string[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const logsPerPage = 10
   const [formData, setFormData] = useState<EnergyLogFormData>({
     device_id: '',
+    device_ids: [],
     usage_date: new Date().toISOString().split('T')[0],
     start_time: '',
     end_time: '',
@@ -176,40 +185,81 @@ export default function EnergyLogs() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!validateForm()) return
-
-    setSubmitting(true)
-    setSubmitError(null)
-    try {
-      if (editingLog) {
-        // Update existing log
-        await updateEnergyLog(editingLog, {
-          ...formData,
-          assigned_users: formData.assigned_users.length > 0 ? formData.assigned_users : undefined
-        })
-      } else {
-        // Add new log
-        await addEnergyLog({
-          ...formData,
-          assigned_users: formData.assigned_users.length > 0 ? formData.assigned_users : undefined
-        })
+    
+    // Validate device selection
+    if (useMultiDevice) {
+      if (!formData.device_ids || formData.device_ids.length === 0) {
+        toast.error('Please select at least one device')
+        return
       }
-      toast.success(editingLog ? 'Energy log updated successfully!' : 'Energy log added successfully!')
-      resetForm()
-    } catch (err) {
-      console.error(editingLog ? 'Error updating energy log:' : 'Error adding energy log:', err)
-      const errorMessage = err instanceof Error ? err.message : `Failed to ${editingLog ? 'update' : 'add'} energy log. Please try again.`
-      setSubmitError(errorMessage)
-      toast.error(errorMessage)
-      // Don't close the form on error
-    } finally {
-      setSubmitting(false)
+      
+      // Validate other fields manually for multi-device
+      if (!formData.usage_date || !formData.start_time || !formData.end_time) {
+        toast.error('Please fill in all required fields')
+        return
+      }
+      
+      // Create multiple logs (one per device)
+      setSubmitting(true)
+      setSubmitError(null)
+      try {
+        for (const deviceId of formData.device_ids) {
+          await addEnergyLog({
+            device_id: deviceId,
+            usage_date: formData.usage_date,
+            start_time: formData.start_time,
+            end_time: formData.end_time,
+            assigned_users: formData.assigned_users.length > 0 ? formData.assigned_users : undefined
+          })
+        }
+        toast.success(`${formData.device_ids.length} energy log(s) created successfully!`)
+        resetForm()
+      } catch (err) {
+        console.error('Error adding energy logs:', err)
+        const errorMessage = err instanceof Error ? err.message : 'Failed to add energy logs. Please try again.'
+        setSubmitError(errorMessage)
+        toast.error(errorMessage)
+      } finally {
+        setSubmitting(false)
+      }
+    } else {
+      // Single device mode
+      if (!validateForm()) return
+
+      setSubmitting(true)
+      setSubmitError(null)
+      try {
+        if (editingLog) {
+          // Update existing log
+          await updateEnergyLog(editingLog, {
+            ...formData,
+            assigned_users: formData.assigned_users.length > 0 ? formData.assigned_users : undefined
+          })
+        } else {
+          // Add new log
+          await addEnergyLog({
+            ...formData,
+            assigned_users: formData.assigned_users.length > 0 ? formData.assigned_users : undefined
+          })
+        }
+        toast.success(editingLog ? 'Energy log updated successfully!' : 'Energy log added successfully!')
+        resetForm()
+      } catch (err) {
+        console.error(editingLog ? 'Error updating energy log:' : 'Error adding energy log:', err)
+        const errorMessage = err instanceof Error ? err.message : `Failed to ${editingLog ? 'update' : 'add'} energy log. Please try again.`
+        setSubmitError(errorMessage)
+        toast.error(errorMessage)
+        // Don't close the form on error
+      } finally {
+        setSubmitting(false)
+      }
     }
   }
 
   const resetForm = () => {
     setFormData({
       device_id: '',
+      device_ids: [],
       usage_date: new Date().toISOString().split('T')[0],
       start_time: '',
       end_time: '',
@@ -219,6 +269,7 @@ export default function EnergyLogs() {
     setSubmitError(null)
     setShowForm(false)
     setEditingLog(null)
+    setUseMultiDevice(false)
   }
 
   const toggleUserAssignment = (userId: string) => {
@@ -230,22 +281,24 @@ export default function EnergyLogs() {
     }))
   }
 
-  // Calculate totals using live rate calculator instead of database values
-  const totalUsage = useMemo(() => {
-    return energyLogs.reduce((totals, log) => {
-      const calc = calculateUsageCost(
-        log.device_wattage || 0,
-        log.start_time,
-        log.end_time,
-        log.usage_date
-      )
-      return {
-        totalKwh: totals.totalKwh + calc.totalKwh,
-        totalCost: totals.totalCost + calc.totalCost
-      }
-    }, { totalKwh: 0, totalCost: 0 })
-  }, [energyLogs])
-  
+  const handleSaveAsGroup = (deviceIds: string[]) => {
+    setPendingGroupDevices(deviceIds)
+    setShowSaveGroupModal(true)
+  }
+
+  const handleConfirmSaveGroup = async (groupName: string) => {
+    try {
+      await addDeviceGroup({
+        group_name: groupName,
+        device_ids: pendingGroupDevices
+      })
+      setPendingGroupDevices([])
+    } catch (err) {
+      // Error handled in hook
+    }
+  }
+
+  // Filter logs first before calculating totals
   const filteredLogs = useMemo(() => {
     let filtered = [...energyLogs]
     
@@ -291,6 +344,48 @@ export default function EnergyLogs() {
     
     return filtered
   }, [energyLogs, filters])
+
+  // Calculate overall totals (filtered logs)
+  const totalUsage = useMemo(() => {
+    return filteredLogs.reduce((totals, log) => {
+      const calc = calculateUsageCost(
+        log.device_wattage || 0,
+        log.start_time,
+        log.end_time,
+        log.usage_date
+      )
+      return {
+        totalKwh: totals.totalKwh + calc.totalKwh,
+        totalCost: totals.totalCost + calc.totalCost
+      }
+    }, { totalKwh: 0, totalCost: 0 })
+  }, [filteredLogs])
+
+  // Calculate monthly totals (current month only)
+  const monthlyUsage = useMemo(() => {
+    const currentDate = new Date()
+    const monthlyLogs = energyLogs.filter(log => {
+      const logDate = new Date(log.usage_date)
+      return logDate.getMonth() === currentDate.getMonth() && 
+             logDate.getFullYear() === currentDate.getFullYear()
+    })
+    
+    return monthlyLogs.reduce((totals, log) => {
+      const calc = calculateUsageCost(
+        log.device_wattage || 0,
+        log.start_time,
+        log.end_time,
+        log.usage_date
+      )
+      return {
+        totalKwh: totals.totalKwh + calc.totalKwh,
+        totalCost: totals.totalCost + calc.totalCost
+      }
+    }, { totalKwh: 0, totalCost: 0 })
+  }, [energyLogs])
+
+  // Get current month name
+  const currentMonthName = new Date().toLocaleString('en-US', { month: 'long' })
 
   // Pagination
   const totalPages = Math.ceil(filteredLogs.length / logsPerPage)
@@ -387,15 +482,20 @@ export default function EnergyLogs() {
       </header>
 
       {/* Summary Statistics - Color Coded */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6 slide-up">
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-6 slide-up">
         <Card className="energy-card bg-gradient-to-br from-slate-500/10 to-gray-500/10 border-slate-500/30">
           <CardContent className="p-3 md:p-4">
             <div className="flex items-center gap-2 mb-1 md:mb-2">
               <ChartBarIcon className="w-6 h-6 md:w-7 md:h-7 text-blue-400" />
-              <span className="text-xs text-muted-foreground font-semibold">Total Entries</span>
+              <span className="text-xs text-muted-foreground font-semibold">Entries (Filtered / Total)</span>
             </div>
-            <div className="text-2xl md:text-3xl font-bold text-slate-300">
-              {filteredLogs.length}
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <div className="text-2xl md:text-3xl font-bold text-blue-400">
+                {filteredLogs.length}
+              </div>
+              <div className="text-xl md:text-2xl font-bold text-slate-400">
+                / {energyLogs.length}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -404,22 +504,32 @@ export default function EnergyLogs() {
           <CardContent className="p-3 md:p-4">
             <div className="flex items-center gap-2 mb-1 md:mb-2">
               <BoltIcon className="w-6 h-6 md:w-7 md:h-7 text-orange-400" />
-              <span className="text-xs text-muted-foreground font-semibold">Total Energy</span>
+              <span className="text-xs text-muted-foreground font-semibold">Total Energy & Cost</span>
             </div>
-            <div className="text-2xl md:text-3xl font-bold text-green-400">
-              {totalUsage.totalKwh.toFixed(1)} kWh
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <div className="text-2xl md:text-3xl font-bold text-green-400">
+                {totalUsage.totalKwh.toFixed(1)} kWh
+              </div>
+              <div className="text-xl md:text-2xl font-bold text-red-400">
+                ${totalUsage.totalCost.toFixed(2)}
+              </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="energy-card bg-gradient-to-br from-red-500/10 to-orange-500/10 border-red-500/30">
+        <Card className="energy-card bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border-cyan-500/30">
           <CardContent className="p-3 md:p-4">
             <div className="flex items-center gap-2 mb-1 md:mb-2">
-              <CurrencyDollarIcon className="w-6 h-6 md:w-7 md:h-7 text-green-400" />
-              <span className="text-xs text-muted-foreground font-semibold">Total Cost</span>
+              <CalendarIcon className="w-6 h-6 md:w-7 md:h-7 text-cyan-400" />
+              <span className="text-xs text-muted-foreground font-semibold">{currentMonthName} Total</span>
             </div>
-            <div className="text-2xl md:text-3xl font-bold text-red-400">
-              ${totalUsage.totalCost.toFixed(2)}
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <div className="text-2xl md:text-3xl font-bold text-cyan-400">
+                {monthlyUsage.totalKwh.toFixed(1)} kWh
+              </div>
+              <div className="text-xl md:text-2xl font-bold text-purple-400">
+                ${monthlyUsage.totalCost.toFixed(2)}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -694,27 +804,66 @@ export default function EnergyLogs() {
                     <div>You may not be assigned to a household. Contact your administrator.</div>
                   </div>
                 )}
+                {/* Device Selection Mode Toggle */}
+                {!editingLog && (
+                  <div className="flex items-center gap-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={useMultiDevice}
+                        onChange={(e) => {
+                          setUseMultiDevice(e.target.checked)
+                          if (e.target.checked) {
+                            setFormData({ ...formData, device_ids: formData.device_id ? [formData.device_id] : [] })
+                          } else {
+                            setFormData({ ...formData, device_id: formData.device_ids?.[0] || '' })
+                          }
+                        }}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm font-bold text-blue-300">
+                        Multi-Device Mode
+                      </span>
+                    </label>
+                    <span className="text-xs text-blue-200">
+                      {useMultiDevice ? '✓ Select multiple devices at once (creates separate log for each)' : '○ Single device only'}
+                    </span>
+                  </div>
+                )}
+
                 {/* Device Selection */}
                 <div>
                   <label className="block mb-2 text-sm sm:text-base font-semibold text-foreground">
-                    Device *
+                    Device{useMultiDevice ? 's' : ''} *
                   </label>
-                  <select
-                    value={formData.device_id}
-                    onChange={(e) => setFormData({...formData, device_id: e.target.value})}
-                    className={`w-full p-2 sm:p-3 text-sm sm:text-base border rounded-lg bg-background text-foreground ${formErrors.device_id ? 'border-red-500' : 'border-border'}`}
-                  >
-                    <option value="">Select a device</option>
-                    {devices.map(device => (
-                      <option key={device.id} value={device.id}>
-                        {device.name} ({device.wattage}W)
-                      </option>
-                    ))}
-                  </select>
-                  {formErrors.device_id && (
-                    <div className="text-red-500 text-xs sm:text-sm mt-1">
-                      {formErrors.device_id}
-                    </div>
+                  {useMultiDevice ? (
+                    <MultiDeviceSelector
+                      devices={devices}
+                      selectedDeviceIds={formData.device_ids || []}
+                      onSelectionChange={(ids) => setFormData({ ...formData, device_ids: ids })}
+                      deviceGroups={deviceGroups}
+                      onSaveAsGroup={handleSaveAsGroup}
+                    />
+                  ) : (
+                    <>
+                      <select
+                        value={formData.device_id}
+                        onChange={(e) => setFormData({...formData, device_id: e.target.value})}
+                        className={`w-full p-2 sm:p-3 text-sm sm:text-base border rounded-lg bg-background text-foreground ${formErrors.device_id ? 'border-red-500' : 'border-border'}`}
+                      >
+                        <option value="">Select a device</option>
+                        {devices.map(device => (
+                          <option key={device.id} value={device.id}>
+                            {device.name} ({device.wattage}W)
+                          </option>
+                        ))}
+                      </select>
+                      {formErrors.device_id && (
+                        <div className="text-red-500 text-xs sm:text-sm mt-1">
+                          {formErrors.device_id}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 
@@ -1294,6 +1443,14 @@ export default function EnergyLogs() {
       <RecurringSchedulesModal
         isOpen={showSchedules}
         onClose={() => setShowSchedules(false)}
+      />
+
+      {/* Save Group Modal */}
+      <SaveGroupModal
+        isOpen={showSaveGroupModal}
+        onClose={() => setShowSaveGroupModal(false)}
+        onSave={handleConfirmSaveGroup}
+        deviceCount={pendingGroupDevices.length}
       />
 
       {/* User Filter Modal */}

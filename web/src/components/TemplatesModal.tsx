@@ -2,10 +2,14 @@ import { useState } from 'react'
 import { useTemplates } from '../hooks/useTemplates'
 import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
+import { useDeviceGroups } from '../hooks/useDeviceGroups'
 import { Button } from './ui/Button'
 import { Input } from './ui/Input'
 import { Card, CardContent } from './ui/Card'
+import { MultiDeviceSelector } from './MultiDeviceSelector'
+import { SaveGroupModal } from './SaveGroupModal'
 import type { TemplateFormData } from '../types'
+import { toast } from 'sonner'
 import {
   XMarkIcon,
   ClockIcon,
@@ -28,12 +32,17 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
   const { templates, loading, addTemplate, updateTemplate, deleteTemplate, useTemplate } = useTemplates()
   const { devices } = useDevices()
   const { users: householdUsers } = useHouseholdUsers()
+  const { deviceGroups, addDeviceGroup } = useDeviceGroups()
   
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [useMultiDevice, setUseMultiDevice] = useState(false)
+  const [showSaveGroupModal, setShowSaveGroupModal] = useState(false)
+  const [pendingGroupDevices, setPendingGroupDevices] = useState<string[]>([])
   const [formData, setFormData] = useState<TemplateFormData>({
     template_name: '',
     device_id: '',
+    device_ids: [],
     default_start_time: '',
     default_end_time: '',
     assigned_users: []
@@ -43,15 +52,52 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    try {
-      if (editingId) {
-        await updateTemplate(editingId, formData)
-      } else {
-        await addTemplate(formData)
+    
+    // Validate device selection
+    if (useMultiDevice) {
+      if (!formData.device_ids || formData.device_ids.length === 0) {
+        toast.error('Please select at least one device')
+        return
       }
-      resetForm()
-    } catch (err) {
-      // Error handled in hook
+      
+      // Create multiple templates (one per device)
+      try {
+        const today = new Date().toISOString().split('T')[0]
+        for (const deviceId of formData.device_ids) {
+          const device = devices.find(d => d.id === deviceId)
+          const templateData = {
+            template_name: formData.device_ids.length > 1 
+              ? `${formData.template_name} - ${device?.name}`
+              : formData.template_name,
+            device_id: deviceId,
+            default_start_time: formData.default_start_time,
+            default_end_time: formData.default_end_time,
+            assigned_users: formData.assigned_users
+          }
+          
+          if (editingId && formData.device_ids.length === 1) {
+            await updateTemplate(editingId, templateData)
+          } else {
+            await addTemplate(templateData)
+          }
+        }
+        toast.success(`${formData.device_ids.length} template(s) created successfully!`)
+        resetForm()
+      } catch (err) {
+        // Error handled in hook
+      }
+    } else {
+      // Single device mode
+      try {
+        if (editingId) {
+          await updateTemplate(editingId, formData)
+        } else {
+          await addTemplate(formData)
+        }
+        resetForm()
+      } catch (err) {
+        // Error handled in hook
+      }
     }
   }
 
@@ -59,23 +105,27 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
     setFormData({
       template_name: '',
       device_id: '',
+      device_ids: [],
       default_start_time: '',
       default_end_time: '',
       assigned_users: []
     })
     setShowForm(false)
     setEditingId(null)
+    setUseMultiDevice(false)
   }
 
   const handleEdit = (template: typeof templates[0]) => {
     setFormData({
       template_name: template.template_name,
       device_id: template.device_id,
+      device_ids: [template.device_id],
       default_start_time: template.default_start_time,
       default_end_time: template.default_end_time,
       assigned_users: template.assigned_users
     })
     setEditingId(template.id)
+    setUseMultiDevice(false)
     setShowForm(true)
   }
 
@@ -94,6 +144,23 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
         ? prev.assigned_users.filter(id => id !== userId)
         : [...prev.assigned_users, userId]
     }))
+  }
+
+  const handleSaveAsGroup = (deviceIds: string[]) => {
+    setPendingGroupDevices(deviceIds)
+    setShowSaveGroupModal(true)
+  }
+
+  const handleConfirmSaveGroup = async (groupName: string) => {
+    try {
+      await addDeviceGroup({
+        group_name: groupName,
+        device_ids: pendingGroupDevices
+      })
+      setPendingGroupDevices([])
+    } catch (err) {
+      // Error handled in hook
+    }
   }
 
   return (
@@ -224,23 +291,60 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
                 />
               </div>
 
+              {/* Device Selection Mode Toggle */}
+              <div className="flex items-center gap-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useMultiDevice}
+                    onChange={(e) => {
+                      setUseMultiDevice(e.target.checked)
+                      if (e.target.checked) {
+                        setFormData({ ...formData, device_ids: formData.device_id ? [formData.device_id] : [] })
+                      } else {
+                        setFormData({ ...formData, device_id: formData.device_ids?.[0] || '' })
+                      }
+                    }}
+                    className="w-4 h-4"
+                    disabled={!!editingId}
+                  />
+                  <span className="text-sm font-bold text-blue-300">
+                    Multi-Device Mode
+                  </span>
+                </label>
+                <span className="text-xs text-blue-200">
+                  {useMultiDevice ? '✓ Select multiple devices at once (creates separate template for each)' : '○ Single device only'}
+                </span>
+              </div>
+
+              {/* Device Selection */}
               <div>
                 <label className="block mb-2 text-sm font-semibold text-foreground">
-                  Device *
+                  Device{useMultiDevice ? 's' : ''} *
                 </label>
-                <select
-                  value={formData.device_id}
-                  onChange={(e) => setFormData({ ...formData, device_id: e.target.value })}
-                  className="w-full p-3 border rounded-lg bg-background text-foreground border-border"
-                  required
-                >
-                  <option value="">Select a device</option>
-                  {devices.map(device => (
-                    <option key={device.id} value={device.id}>
-                      {device.name} ({device.wattage}W)
-                    </option>
-                  ))}
-                </select>
+                {useMultiDevice ? (
+                  <MultiDeviceSelector
+                    devices={devices}
+                    selectedDeviceIds={formData.device_ids || []}
+                    onSelectionChange={(ids) => setFormData({ ...formData, device_ids: ids })}
+                    deviceGroups={deviceGroups}
+                    onSaveAsGroup={handleSaveAsGroup}
+                  />
+                ) : (
+                  <select
+                    value={formData.device_id}
+                    onChange={(e) => setFormData({ ...formData, device_id: e.target.value })}
+                    className="w-full p-3 border rounded-lg bg-background text-foreground border-border"
+                    required
+                  >
+                    <option value="">Select a device</option>
+                    {devices.map(device => (
+                      <option key={device.id} value={device.id}>
+                        {device.name} ({device.wattage}W)
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -316,6 +420,14 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
           </div>
         </div>
       </div>
+
+      {/* Save Group Modal */}
+      <SaveGroupModal
+        isOpen={showSaveGroupModal}
+        onClose={() => setShowSaveGroupModal(false)}
+        onSave={handleConfirmSaveGroup}
+        deviceCount={pendingGroupDevices.length}
+      />
     </div>
   )
 }
