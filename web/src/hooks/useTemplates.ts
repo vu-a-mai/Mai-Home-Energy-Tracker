@@ -161,6 +161,138 @@ export function useTemplates() {
     }
   }
 
+  const bulkUseTemplate = async (
+    templateId: string,
+    startDate: string,
+    endDate: string,
+    daysOfWeek: number[],
+    replaceExisting: boolean = false
+  ) => {
+    try {
+      const template = templates.find(t => t.id === templateId)
+      if (!template) throw new Error('Template not found')
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const { data: userData } = await supabase
+        .from('users')
+        .select('household_id')
+        .eq('id', user.id)
+        .single()
+
+      if (!userData?.household_id) throw new Error('No household found')
+
+      // Calculate all matching dates
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      const today = new Date()
+      
+      // Don't generate logs for future dates
+      const actualEndDate = end > today ? today : end
+
+      const matchingDates: string[] = []
+      const currentDate = new Date(start)
+
+      while (currentDate <= actualEndDate) {
+        const dayOfWeek = currentDate.getDay()
+        if (daysOfWeek.includes(dayOfWeek)) {
+          matchingDates.push(currentDate.toISOString().split('T')[0])
+        }
+        currentDate.setDate(currentDate.getDate() + 1)
+      }
+
+      if (matchingDates.length === 0) {
+        toast.info('No matching dates found for the selected days')
+        return { success: 0, failed: 0, skipped: 0 }
+      }
+
+      // Generate logs for all matching dates
+      let successCount = 0
+      let failedCount = 0
+      let skippedCount = 0
+
+      toast.info(`Generating ${matchingDates.length} log(s) from template...`)
+
+      for (const date of matchingDates) {
+        try {
+          // Check if log already exists
+          const { data: existingLog } = await supabase
+            .from('energy_logs')
+            .select('id')
+            .eq('device_id', template.device_id)
+            .eq('usage_date', date)
+            .eq('start_time', template.default_start_time)
+            .eq('end_time', template.default_end_time)
+            .single()
+
+          if (existingLog) {
+            if (replaceExisting) {
+              // Delete existing log first
+              const { error: deleteError } = await supabase
+                .from('energy_logs')
+                .delete()
+                .eq('id', existingLog.id)
+
+              if (deleteError) {
+                console.error(`Failed to delete existing log for ${date}:`, deleteError)
+                failedCount++
+                continue
+              }
+            } else {
+              // Skip if not replacing
+              skippedCount++
+              continue
+            }
+          }
+
+          // Create the log
+          const { error: insertError } = await supabase
+            .from('energy_logs')
+            .insert({
+              household_id: userData.household_id,
+              device_id: template.device_id,
+              usage_date: date,
+              start_time: template.default_start_time,
+              end_time: template.default_end_time,
+              assigned_users: template.assigned_users,
+              created_by: user.id,
+              source_type: 'template',
+              source_id: templateId
+            })
+
+          if (insertError) {
+            console.error(`Failed to create log for ${date}:`, insertError)
+            failedCount++
+          } else {
+            successCount++
+          }
+        } catch (err) {
+          console.error(`Error processing date ${date}:`, err)
+          failedCount++
+        }
+      }
+
+      // Show results
+      if (successCount > 0) {
+        toast.success(`✅ Generated ${successCount} log(s) from template!`)
+      }
+      if (skippedCount > 0) {
+        toast.info(`⏭️ Skipped ${skippedCount} existing log(s)`)
+      }
+      if (failedCount > 0) {
+        toast.error(`❌ Failed to generate ${failedCount} log(s)`)
+      }
+
+      return { success: successCount, failed: failedCount, skipped: skippedCount }
+    } catch (err) {
+      console.error('Error bulk using template:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Failed to bulk generate logs from template'
+      toast.error(errorMessage)
+      throw err
+    }
+  }
+
   return {
     templates,
     loading,
@@ -169,6 +301,7 @@ export function useTemplates() {
     updateTemplate,
     deleteTemplate,
     useTemplate,
+    bulkUseTemplate,
     refreshTemplates: fetchTemplates
   }
 }

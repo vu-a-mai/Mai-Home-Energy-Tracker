@@ -37,7 +37,7 @@ export default function Dashboard() {
   const { isDemoMode, disableDemoMode } = useDemoMode()
   const navigate = useNavigate()
   const [currentTime, setCurrentTime] = useState(new Date())
-  const [usageTimeframe, setUsageTimeframe] = useState<'all' | 'month'>('all')
+  const [usageTimeframe, setUsageTimeframe] = useState<'all' | 'month' | 'lastMonth'>('all')
   
   // Use the same hooks as other pages for consistency
   const { energyLogs, loading: logsLoading } = useEnergyLogs()
@@ -53,8 +53,9 @@ export default function Dashboard() {
 
   // Filter logs based on timeframe
   const filteredLogs = useMemo(() => {
+    const now = new Date()
+    
     if (usageTimeframe === 'month') {
-      const now = new Date()
       const currentMonth = now.getMonth()
       const currentYear = now.getFullYear()
       return energyLogs.filter(log => {
@@ -62,6 +63,17 @@ export default function Dashboard() {
         return logDate.getMonth() === currentMonth && logDate.getFullYear() === currentYear
       })
     }
+    
+    if (usageTimeframe === 'lastMonth') {
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      const lastMonthNum = lastMonth.getMonth()
+      const lastMonthYear = lastMonth.getFullYear()
+      return energyLogs.filter(log => {
+        const logDate = new Date(log.usage_date)
+        return logDate.getMonth() === lastMonthNum && logDate.getFullYear() === lastMonthYear
+      })
+    }
+    
     return energyLogs
   }, [energyLogs, usageTimeframe])
 
@@ -710,7 +722,17 @@ export default function Dashboard() {
                         : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
                     }`}
                   >
-                    This Month
+                    Current Month
+                  </button>
+                  <button
+                    onClick={() => setUsageTimeframe('lastMonth')}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                      usageTimeframe === 'lastMonth'
+                        ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/50'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+                    }`}
+                  >
+                    Previous Month
                   </button>
                 </div>
               </div>

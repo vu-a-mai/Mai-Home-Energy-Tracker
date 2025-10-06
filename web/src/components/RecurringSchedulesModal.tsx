@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRecurringSchedules } from '../hooks/useRecurringSchedules'
 import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
@@ -10,6 +10,7 @@ import { MultiDeviceSelector } from './MultiDeviceSelector'
 import { SaveGroupModal } from './SaveGroupModal'
 import type { ScheduleFormData } from '../types'
 import { toast } from 'sonner'
+import { supabase } from '../lib/supabase'
 import {
   XMarkIcon,
   ClockIcon,
@@ -21,7 +22,8 @@ import {
   ArrowPathIcon,
   PlayIcon,
   PauseIcon,
-  UserIcon
+  UserIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline'
 
 interface RecurringSchedulesModalProps {
@@ -40,7 +42,7 @@ const DAYS_OF_WEEK = [
 ]
 
 export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesModalProps) {
-  const { schedules, loading, addSchedule, updateSchedule, toggleScheduleActive, deleteSchedule, generateLogsFromSchedule } = useRecurringSchedules()
+  const { schedules, loading, addSchedule, updateSchedule, toggleScheduleActive, deleteSchedule, generateLogsFromSchedule, bulkGenerateLogsForSchedule } = useRecurringSchedules()
   const { devices } = useDevices()
   const { users: householdUsers } = useHouseholdUsers()
   const { deviceGroups, addDeviceGroup } = useDeviceGroups()
@@ -50,6 +52,12 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
   const [useMultiDevice, setUseMultiDevice] = useState(false)
   const [showSaveGroupModal, setShowSaveGroupModal] = useState(false)
   const [pendingGroupDevices, setPendingGroupDevices] = useState<string[]>([])
+  const [showBulkConfirm, setShowBulkConfirm] = useState(false)
+  const [bulkScheduleId, setBulkScheduleId] = useState<string | null>(null)
+  const [replaceExisting, setReplaceExisting] = useState(false)
+  const [existingLogsPreview, setExistingLogsPreview] = useState<any[]>([])
+  const [loadingPreview, setLoadingPreview] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
   const [formData, setFormData] = useState<ScheduleFormData>({
     schedule_name: '',
     device_id: '',
@@ -63,8 +71,6 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
     assigned_users: [],
     auto_create: true
   })
-
-  if (!isOpen) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -229,6 +235,114 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
     return days.map(d => DAYS_OF_WEEK[d].label).join(', ')
   }
 
+  const handleBulkGenerate = (scheduleId: string) => {
+    setBulkScheduleId(scheduleId)
+    setReplaceExisting(false)
+    setExistingLogsPreview([])
+    setShowPreview(false)
+    setShowBulkConfirm(true)
+  }
+
+  const confirmBulkGenerate = async () => {
+    if (!bulkScheduleId) return
+    
+    try {
+      await bulkGenerateLogsForSchedule(bulkScheduleId, replaceExisting)
+      setShowBulkConfirm(false)
+      setBulkScheduleId(null)
+      setReplaceExisting(false)
+    } catch (err) {
+      // Error handled in hook
+    }
+  }
+
+  const calculateMatchingDays = (schedule: typeof schedules[0]) => {
+    const startDate = new Date(schedule.schedule_start_date)
+    const endDate = schedule.schedule_end_date ? new Date(schedule.schedule_end_date) : new Date()
+    const today = new Date()
+    const actualEndDate = endDate > today ? today : endDate
+    
+    let count = 0
+    const currentDate = new Date(startDate)
+    
+    while (currentDate <= actualEndDate) {
+      const dayOfWeek = currentDate.getDay()
+      if (schedule.days_of_week.includes(dayOfWeek)) {
+        count++
+      }
+      currentDate.setDate(currentDate.getDate() + 1)
+    }
+    
+    return count
+  }
+
+  const fetchExistingLogsPreview = async () => {
+    if (!replaceExisting || !bulkScheduleId) {
+      setExistingLogsPreview([])
+      return
+    }
+    
+    const schedule = schedules.find(s => s.id === bulkScheduleId)
+    if (!schedule) return
+    
+    setLoadingPreview(true)
+    try {
+      // Calculate matching dates
+      const startDate = new Date(schedule.schedule_start_date)
+      const endDate = schedule.schedule_end_date ? new Date(schedule.schedule_end_date) : new Date()
+      const today = new Date()
+      const actualEndDate = endDate > today ? today : endDate
+      
+      const matchingDates: string[] = []
+      const currentDate = new Date(startDate)
+      
+      while (currentDate <= actualEndDate) {
+        const dayOfWeek = currentDate.getDay()
+        if (schedule.days_of_week.includes(dayOfWeek)) {
+          matchingDates.push(currentDate.toISOString().split('T')[0])
+        }
+        currentDate.setDate(currentDate.getDate() + 1)
+      }
+      
+      if (matchingDates.length === 0) {
+        setExistingLogsPreview([])
+        return
+      }
+      
+      // Query existing logs
+      const { data, error } = await supabase
+        .from('energy_logs')
+        .select('usage_date, start_time, end_time')
+        .eq('source_type', 'recurring')
+        .eq('source_id', bulkScheduleId)
+        .in('usage_date', matchingDates)
+        .order('usage_date', { ascending: true })
+      
+      if (error) throw error
+      
+      setExistingLogsPreview(data || [])
+    } catch (err) {
+      console.error('Error fetching preview:', err)
+      setExistingLogsPreview([])
+    } finally {
+      setLoadingPreview(false)
+    }
+  }
+
+  // Fetch preview when replace mode is enabled
+  useEffect(() => {
+    if (replaceExisting && bulkScheduleId) {
+      fetchExistingLogsPreview()
+    } else {
+      setExistingLogsPreview([])
+      setShowPreview(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [replaceExisting, bulkScheduleId])
+
+  // Early return after all hooks
+  if (!isOpen) return null
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
       <div className="w-full max-w-5xl my-4 min-h-0">
@@ -337,13 +451,22 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                               {schedule.is_active ? <PauseIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4" />}
                             </Button>
                             <Button
+                              onClick={() => handleBulkGenerate(schedule.id)}
+                              variant="outline"
+                              size="sm"
+                              className="p-2 border-purple-300 text-purple-500 hover:bg-purple-500/10"
+                              title="Generate all logs for date range"
+                            >
+                              <CalendarIcon className="w-4 h-4" />
+                            </Button>
+                            <Button
                               onClick={() => handleGenerateLog(schedule.id)}
                               variant="outline"
                               size="sm"
                               className="p-2 border-cyan-300 text-cyan-500 hover:bg-cyan-500/10"
                               title={schedule.schedule_end_date && new Date().toISOString().split('T')[0] > schedule.schedule_end_date 
                                 ? `Schedule ended ${schedule.schedule_end_date}. Use Quick kWh Entry to backfill.` 
-                                : "Generate log now"}
+                                : "Generate log for today"}
                               disabled={schedule.schedule_end_date ? new Date().toISOString().split('T')[0] > schedule.schedule_end_date : false}
                             >
                               <PlusIcon className="w-4 h-4" />
@@ -611,6 +734,152 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
         onSave={handleConfirmSaveGroup}
         deviceCount={pendingGroupDevices.length}
       />
+
+      {/* Bulk Generate Confirmation Modal */}
+      {showBulkConfirm && bulkScheduleId && (() => {
+        const schedule = schedules.find(s => s.id === bulkScheduleId)
+        if (!schedule) return null
+        
+        const matchingDays = calculateMatchingDays(schedule)
+        
+        return (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+            <div className="energy-card bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-purple-500/50 rounded-2xl shadow-2xl shadow-purple-500/20 max-w-lg w-full p-6 animate-in fade-in zoom-in duration-200">
+              <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
+                <div className="p-2 bg-purple-500/20 rounded-lg">
+                  <CalendarIcon className="w-7 h-7 text-purple-400" />
+                </div>
+                Generate All Logs?
+              </h3>
+              
+              <p className="text-slate-300 mb-6 text-sm">
+                This will create energy logs for all matching dates in the schedule range.
+              </p>
+              
+              <div className="space-y-4 mb-6">
+                <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-500/30 p-5 rounded-xl space-y-3">
+                  <div className="grid grid-cols-[100px_1fr] gap-3 items-start">
+                    <span className="text-slate-400 text-sm">Schedule:</span>
+                    <span className="font-bold text-white break-words">
+                      {schedule.schedule_name}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[100px_1fr] gap-3 items-start">
+                    <span className="text-slate-400 text-sm">Device:</span>
+                    <span className="font-semibold text-orange-400 break-words">
+                      {schedule.device_name}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[100px_1fr] gap-3 items-start">
+                    <span className="text-slate-400 text-sm">Date Range:</span>
+                    <span className="font-semibold text-cyan-400 text-right">
+                      {schedule.schedule_start_date} to {schedule.schedule_end_date || 'today'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[100px_1fr] gap-3 items-start">
+                    <span className="text-slate-400 text-sm">Days:</span>
+                    <span className="font-semibold text-blue-400 text-right">{getDaysLabel(schedule.days_of_week)}</span>
+                  </div>
+                  <div className="grid grid-cols-[auto_1fr] gap-3 items-center border-t border-purple-500/30 pt-3 mt-3">
+                    <span className="text-slate-300 font-semibold">Total Logs to Create:</span>
+                    <span className="font-bold text-purple-400 text-2xl text-right">{matchingDays}</span>
+                  </div>
+                </div>
+                
+                <div className="bg-yellow-500/10 border border-yellow-500/30 p-4 rounded-lg space-y-3">
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={replaceExisting}
+                      onChange={(e) => setReplaceExisting(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 cursor-pointer"
+                    />
+                    <div className="flex-1">
+                      <div className="text-sm font-bold text-yellow-300 group-hover:text-yellow-200 transition-colors">
+                        Replace existing logs
+                      </div>
+                      <div className="text-xs text-yellow-400 mt-1">
+                        ⚠️ This will delete and recreate any logs that already exist for these dates
+                      </div>
+                    </div>
+                  </label>
+
+                  {/* Preview of existing logs */}
+                  {replaceExisting && (
+                    <div className="mt-3">
+                      {loadingPreview ? (
+                        <div className="text-xs text-yellow-300 flex items-center gap-2">
+                          <div className="animate-spin">⏳</div>
+                          <span>Checking for existing logs...</span>
+                        </div>
+                      ) : existingLogsPreview.length > 0 ? (
+                        <div className="bg-red-500/10 border border-red-500/30 p-3 rounded-lg">
+                          <button
+                            type="button"
+                            onClick={() => setShowPreview(!showPreview)}
+                            className="flex items-center justify-between w-full text-sm font-semibold text-red-300 hover:text-red-200 transition-colors"
+                          >
+                            <span className="flex items-center gap-2">
+                              🔄 {existingLogsPreview.length} existing log(s) will be replaced
+                            </span>
+                            <ChevronDownIcon className={`w-4 h-4 transition-transform ${showPreview ? 'rotate-180' : ''}`} />
+                          </button>
+                          
+                          {showPreview && (
+                            <div className="mt-3 space-y-1 max-h-40 overflow-y-auto">
+                              {existingLogsPreview.map((log, idx) => (
+                                <div key={idx} className="text-xs text-red-200 flex items-center gap-2 py-1">
+                                  <CalendarIcon className="w-3 h-3 flex-shrink-0" />
+                                  <span>{new Date(log.usage_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                  <span>•</span>
+                                  <span>{log.start_time} - {log.end_time}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-green-300 flex items-center gap-2">
+                          <span>✓</span>
+                          <span>No existing logs found - all will be new</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {!replaceExisting && (
+                    <p className="text-xs text-slate-400 flex items-start gap-2 pl-7">
+                      <span>💡</span>
+                      <span>
+                        Existing logs will be skipped automatically. This may take a moment for large date ranges.
+                      </span>
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    setShowBulkConfirm(false)
+                    setBulkScheduleId(null)
+                  }}
+                  variant="outline"
+                  className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-500"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmBulkGenerate}
+                  className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-bold shadow-lg shadow-purple-500/30"
+                >
+                  ✨ Generate {matchingDays} Logs
+                </Button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

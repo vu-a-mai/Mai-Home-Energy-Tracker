@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTemplates } from '../hooks/useTemplates'
 import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
@@ -10,6 +10,7 @@ import { MultiDeviceSelector } from './MultiDeviceSelector'
 import { SaveGroupModal } from './SaveGroupModal'
 import type { TemplateFormData } from '../types'
 import { toast } from 'sonner'
+import { supabase } from '../lib/supabase'
 import {
   XMarkIcon,
   ClockIcon,
@@ -19,7 +20,9 @@ import {
   TrashIcon,
   CheckIcon,
   DocumentDuplicateIcon,
-  UserIcon
+  UserIcon,
+  ChevronDownIcon,
+  CalendarIcon
 } from '@heroicons/react/24/outline'
 
 interface TemplatesModalProps {
@@ -28,8 +31,18 @@ interface TemplatesModalProps {
   onUseTemplate?: (templateId: string) => void
 }
 
+const DAYS_OF_WEEK = [
+  { value: 0, label: 'Sun', fullLabel: 'Sunday' },
+  { value: 1, label: 'Mon', fullLabel: 'Monday' },
+  { value: 2, label: 'Tue', fullLabel: 'Tuesday' },
+  { value: 3, label: 'Wed', fullLabel: 'Wednesday' },
+  { value: 4, label: 'Thu', fullLabel: 'Thursday' },
+  { value: 5, label: 'Fri', fullLabel: 'Friday' },
+  { value: 6, label: 'Sat', fullLabel: 'Saturday' }
+]
+
 export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModalProps) {
-  const { templates, loading, addTemplate, updateTemplate, deleteTemplate, useTemplate } = useTemplates()
+  const { templates, loading, addTemplate, updateTemplate, deleteTemplate, useTemplate, bulkUseTemplate } = useTemplates()
   const { devices } = useDevices()
   const { users: householdUsers } = useHouseholdUsers()
   const { deviceGroups, addDeviceGroup } = useDeviceGroups()
@@ -39,6 +52,19 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
   const [useMultiDevice, setUseMultiDevice] = useState(false)
   const [showSaveGroupModal, setShowSaveGroupModal] = useState(false)
   const [pendingGroupDevices, setPendingGroupDevices] = useState<string[]>([])
+  const [showUseTemplateModal, setShowUseTemplateModal] = useState(false)
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
+  const [useDateRange, setUseDateRange] = useState(false)
+  const [useTemplateData, setUseTemplateData] = useState({
+    singleDate: new Date().toISOString().split('T')[0],
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
+    daysOfWeek: [0, 1, 2, 3, 4, 5, 6] as number[],
+    replaceExisting: false
+  })
+  const [existingLogsPreview, setExistingLogsPreview] = useState<any[]>([])
+  const [loadingPreview, setLoadingPreview] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
   const [formData, setFormData] = useState<TemplateFormData>({
     template_name: '',
     device_id: '',
@@ -47,8 +73,6 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
     default_end_time: '',
     assigned_users: []
   })
-
-  if (!isOpen) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -129,13 +153,144 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
     setShowForm(true)
   }
 
-  const handleUseTemplate = async (templateId: string) => {
-    const today = new Date().toISOString().split('T')[0]
-    await useTemplate(templateId, today)
-    if (onUseTemplate) {
-      onUseTemplate(templateId)
+  const handleUseTemplate = (templateId: string) => {
+    setSelectedTemplateId(templateId)
+    setShowUseTemplateModal(true)
+  }
+
+  const confirmUseTemplate = async () => {
+    if (!selectedTemplateId) return
+
+    try {
+      if (useDateRange) {
+        await bulkUseTemplate(
+          selectedTemplateId,
+          useTemplateData.startDate,
+          useTemplateData.endDate,
+          useTemplateData.daysOfWeek,
+          useTemplateData.replaceExisting
+        )
+      } else {
+        await useTemplate(selectedTemplateId, useTemplateData.singleDate)
+      }
+      
+      setShowUseTemplateModal(false)
+      setSelectedTemplateId(null)
+      setUseDateRange(false)
+      setUseTemplateData({
+        singleDate: new Date().toISOString().split('T')[0],
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date().toISOString().split('T')[0],
+        daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+        replaceExisting: false
+      })
+      
+      if (onUseTemplate) {
+        onUseTemplate(selectedTemplateId)
+      }
+    } catch (err) {
+      // Error handled in hook
     }
   }
+
+  const toggleDay = (day: number) => {
+    setUseTemplateData(prev => ({
+      ...prev,
+      daysOfWeek: prev.daysOfWeek.includes(day)
+        ? prev.daysOfWeek.filter(d => d !== day)
+        : [...prev.daysOfWeek, day].sort((a, b) => a - b)
+    }))
+  }
+
+  const calculateMatchingDays = () => {
+    if (!useDateRange || !selectedTemplateId) return 0
+    
+    const startDate = new Date(useTemplateData.startDate)
+    const endDate = new Date(useTemplateData.endDate)
+    const today = new Date()
+    const actualEndDate = endDate > today ? today : endDate
+    
+    let count = 0
+    const currentDate = new Date(startDate)
+    
+    while (currentDate <= actualEndDate) {
+      const dayOfWeek = currentDate.getDay()
+      if (useTemplateData.daysOfWeek.includes(dayOfWeek)) {
+        count++
+      }
+      currentDate.setDate(currentDate.getDate() + 1)
+    }
+    
+    return count
+  }
+
+  const fetchExistingLogsPreview = async () => {
+    if (!useTemplateData.replaceExisting || !useDateRange || !selectedTemplateId) {
+      setExistingLogsPreview([])
+      return
+    }
+    
+    const template = templates.find(t => t.id === selectedTemplateId)
+    if (!template) return
+    
+    setLoadingPreview(true)
+    try {
+      // Calculate matching dates
+      const startDate = new Date(useTemplateData.startDate)
+      const endDate = new Date(useTemplateData.endDate)
+      const today = new Date()
+      const actualEndDate = endDate > today ? today : endDate
+      
+      const matchingDates: string[] = []
+      const currentDate = new Date(startDate)
+      
+      while (currentDate <= actualEndDate) {
+        const dayOfWeek = currentDate.getDay()
+        if (useTemplateData.daysOfWeek.includes(dayOfWeek)) {
+          matchingDates.push(currentDate.toISOString().split('T')[0])
+        }
+        currentDate.setDate(currentDate.getDate() + 1)
+      }
+      
+      if (matchingDates.length === 0) {
+        setExistingLogsPreview([])
+        return
+      }
+      
+      // Query existing logs
+      const { data, error } = await supabase
+        .from('energy_logs')
+        .select('usage_date, start_time, end_time')
+        .eq('device_id', template.device_id)
+        .in('usage_date', matchingDates)
+        .eq('start_time', template.default_start_time)
+        .eq('end_time', template.default_end_time)
+        .order('usage_date', { ascending: true })
+      
+      if (error) throw error
+      
+      setExistingLogsPreview(data || [])
+    } catch (err) {
+      console.error('Error fetching preview:', err)
+      setExistingLogsPreview([])
+    } finally {
+      setLoadingPreview(false)
+    }
+  }
+
+  // Fetch preview when replace mode is enabled
+  useEffect(() => {
+    if (useTemplateData.replaceExisting && useDateRange && selectedTemplateId) {
+      fetchExistingLogsPreview()
+    } else {
+      setExistingLogsPreview([])
+      setShowPreview(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useTemplateData.replaceExisting, useTemplateData.startDate, useTemplateData.endDate, useTemplateData.daysOfWeek, useDateRange, selectedTemplateId])
+
+  // Early return after all hooks
+  if (!isOpen) return null
 
   const toggleUserAssignment = (userId: string) => {
     setFormData(prev => ({
@@ -428,6 +583,270 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
         onSave={handleConfirmSaveGroup}
         deviceCount={pendingGroupDevices.length}
       />
+
+      {/* Use Template Modal */}
+      {showUseTemplateModal && selectedTemplateId && (() => {
+        const template = templates.find(t => t.id === selectedTemplateId)
+        if (!template) return null
+        
+        const matchingDays = calculateMatchingDays()
+        
+        return (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+            <div className="energy-card bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-blue-500/50 rounded-2xl shadow-2xl shadow-blue-500/20 max-w-lg w-full p-6 animate-in fade-in zoom-in duration-200">
+              <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <DocumentDuplicateIcon className="w-7 h-7 text-blue-400" />
+                </div>
+                Use Template
+              </h3>
+              
+              <p className="text-slate-300 mb-6 text-sm">
+                Create energy log(s) from: <span className="font-bold text-blue-400">{template.template_name}</span>
+              </p>
+              
+              <div className="space-y-4 mb-6">
+                {/* Mode Selection */}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setUseDateRange(false)}
+                    className={`flex-1 p-4 rounded-xl border-2 transition-all ${
+                      !useDateRange
+                        ? 'bg-blue-500/20 border-blue-400 shadow-lg shadow-blue-500/30'
+                        : 'bg-slate-800/50 border-slate-600 hover:border-slate-500'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-2xl mb-1">📅</div>
+                      <div className={`font-bold ${!useDateRange ? 'text-blue-400' : 'text-slate-400'}`}>
+                        Single Date
+                      </div>
+                      <div className="text-xs text-slate-400 mt-1">Quick log for one day</div>
+                    </div>
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setUseDateRange(true)}
+                    className={`flex-1 p-4 rounded-xl border-2 transition-all ${
+                      useDateRange
+                        ? 'bg-purple-500/20 border-purple-400 shadow-lg shadow-purple-500/30'
+                        : 'bg-slate-800/50 border-slate-600 hover:border-slate-500'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-2xl mb-1">📆</div>
+                      <div className={`font-bold ${useDateRange ? 'text-purple-400' : 'text-slate-400'}`}>
+                        Date Range
+                      </div>
+                      <div className="text-xs text-slate-400 mt-1">Bulk generate logs</div>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Single Date Mode */}
+                {!useDateRange && (
+                  <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/30 p-5 rounded-xl">
+                    <label className="block mb-2 text-sm font-semibold text-slate-300">
+                      Select Date
+                    </label>
+                    <Input
+                      type="date"
+                      value={useTemplateData.singleDate}
+                      onChange={(e) => setUseTemplateData({ ...useTemplateData, singleDate: e.target.value })}
+                      className="w-full"
+                    />
+                  </div>
+                )}
+
+                {/* Date Range Mode */}
+                {useDateRange && (
+                  <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-500/30 p-5 rounded-xl space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block mb-2 text-sm font-semibold text-slate-300">
+                          Start Date
+                        </label>
+                        <Input
+                          type="date"
+                          value={useTemplateData.startDate}
+                          onChange={(e) => setUseTemplateData({ ...useTemplateData, startDate: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block mb-2 text-sm font-semibold text-slate-300">
+                          End Date
+                        </label>
+                        <Input
+                          type="date"
+                          value={useTemplateData.endDate}
+                          onChange={(e) => setUseTemplateData({ ...useTemplateData, endDate: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block mb-2 text-sm font-semibold text-slate-300">
+                        Select Days
+                      </label>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {DAYS_OF_WEEK.map(day => (
+                          <button
+                            key={day.value}
+                            type="button"
+                            onClick={() => toggleDay(day.value)}
+                            className={`px-3 py-2 rounded-lg border-2 transition-all font-bold text-sm ${
+                              useTemplateData.daysOfWeek.includes(day.value)
+                                ? 'bg-cyan-500 border-cyan-400 text-white shadow-lg shadow-cyan-500/50'
+                                : 'bg-slate-800 border-slate-600 text-slate-400 hover:border-slate-500'
+                            }`}
+                          >
+                            {day.label}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setUseTemplateData({ ...useTemplateData, daysOfWeek: [1, 2, 3, 4, 5] })}
+                          className="px-3 py-1.5 text-xs font-semibold bg-blue-500/20 border border-blue-500/40 text-blue-300 rounded-md hover:bg-blue-500/30"
+                        >
+                          📅 Weekdays
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setUseTemplateData({ ...useTemplateData, daysOfWeek: [0, 6] })}
+                          className="px-3 py-1.5 text-xs font-semibold bg-purple-500/20 border border-purple-500/40 text-purple-300 rounded-md hover:bg-purple-500/30"
+                        >
+                          🎉 Weekends
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setUseTemplateData({ ...useTemplateData, daysOfWeek: [0, 1, 2, 3, 4, 5, 6] })}
+                          className="px-3 py-1.5 text-xs font-semibold bg-green-500/20 border border-green-500/40 text-green-300 rounded-md hover:bg-green-500/30"
+                        >
+                          🌟 Every Day
+                        </button>
+                      </div>
+                    </div>
+
+                    {matchingDays > 0 && (
+                      <div className="bg-purple-500/20 border border-purple-500/40 p-3 rounded-lg">
+                        <div className="text-center">
+                          <div className="text-sm text-slate-300 mb-1">Total Logs to Create</div>
+                          <div className="text-3xl font-bold text-purple-400">{matchingDays}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Replace Mode Checkbox */}
+                    <div className="bg-yellow-500/10 border border-yellow-500/30 p-4 rounded-lg">
+                      <label className="flex items-start gap-3 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={useTemplateData.replaceExisting}
+                          onChange={(e) => setUseTemplateData({ ...useTemplateData, replaceExisting: e.target.checked })}
+                          className="mt-0.5 w-4 h-4 cursor-pointer"
+                        />
+                        <div className="flex-1">
+                          <div className="text-sm font-bold text-yellow-300 group-hover:text-yellow-200 transition-colors">
+                            Replace existing logs
+                          </div>
+                          <div className="text-xs text-yellow-400 mt-1">
+                            ⚠️ This will delete and recreate any logs that already exist for these dates
+                          </div>
+                        </div>
+                      </label>
+
+                      {/* Preview of existing logs */}
+                      {useTemplateData.replaceExisting && (
+                        <div className="mt-3">
+                          {loadingPreview ? (
+                            <div className="text-xs text-yellow-300 flex items-center gap-2">
+                              <div className="animate-spin">⏳</div>
+                              <span>Checking for existing logs...</span>
+                            </div>
+                          ) : existingLogsPreview.length > 0 ? (
+                            <div className="bg-red-500/10 border border-red-500/30 p-3 rounded-lg">
+                              <button
+                                type="button"
+                                onClick={() => setShowPreview(!showPreview)}
+                                className="flex items-center justify-between w-full text-sm font-semibold text-red-300 hover:text-red-200 transition-colors"
+                              >
+                                <span className="flex items-center gap-2">
+                                  🔄 {existingLogsPreview.length} existing log(s) will be replaced
+                                </span>
+                                <ChevronDownIcon className={`w-4 h-4 transition-transform ${showPreview ? 'rotate-180' : ''}`} />
+                              </button>
+                              
+                              {showPreview && (
+                                <div className="mt-3 space-y-1 max-h-40 overflow-y-auto">
+                                  {existingLogsPreview.map((log, idx) => (
+                                    <div key={idx} className="text-xs text-red-200 flex items-center gap-2 py-1">
+                                      <CalendarIcon className="w-3 h-3 flex-shrink-0" />
+                                      <span>{new Date(log.usage_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                      <span>•</span>
+                                      <span>{log.start_time} - {log.end_time}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-xs text-green-300 flex items-center gap-2">
+                              <span>✓</span>
+                              <span>No existing logs found - all will be new</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Template Info */}
+                <div className="bg-slate-800/50 border border-slate-600 p-4 rounded-lg space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Device:</span>
+                    <span className="font-semibold text-orange-400">{template.device_name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Time:</span>
+                    <span className="font-semibold text-cyan-400">
+                      {template.default_start_time} - {template.default_end_time}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    setShowUseTemplateModal(false)
+                    setSelectedTemplateId(null)
+                    setUseDateRange(false)
+                  }}
+                  variant="outline"
+                  className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700 hover:border-slate-500"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmUseTemplate}
+                  className={`flex-1 font-bold shadow-lg ${
+                    useDateRange
+                      ? 'bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-purple-500/30'
+                      : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-blue-500/30'
+                  } text-white`}
+                >
+                  {useDateRange ? `✨ Generate ${matchingDays} Logs` : '✓ Create Log'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
