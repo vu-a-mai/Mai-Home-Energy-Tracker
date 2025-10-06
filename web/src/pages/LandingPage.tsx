@@ -13,7 +13,8 @@ import {
   CircleStackIcon,
   DocumentDuplicateIcon,
   ArrowPathIcon,
-  SparklesIcon
+  SparklesIcon,
+  FolderPlusIcon
 } from '@heroicons/react/24/outline'
 
 export default function LandingPage() {
@@ -47,6 +48,10 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-wrap justify-center gap-3 mb-4 md:mb-6">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 text-purple-300 rounded-full text-xs md:text-sm font-medium">
+              <FolderPlusIcon className="w-4 h-4" />
+              Multi-Device
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 rounded-full text-xs md:text-sm font-medium">
               <SparklesIcon className="w-4 h-4" />
               Quick kWh Entry
             </span>
@@ -72,7 +77,6 @@ export default function LandingPage() {
       {/* Features Section */}
       <section className="py-8 md:py-10 px-3 md:px-5 bg-muted/30 slide-up">
         <div className="max-w-6xl mx-auto">
-          <div className="py-4 md:py-8"></div>
           <h2 className="text-center text-xl sm:text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-foreground">
             Why Choose Mai Energy Tracker?
           </h2>
@@ -150,7 +154,7 @@ export default function LandingPage() {
       {/* New Features Highlight */}
       <section className="py-8 md:py-10 px-3 md:px-5 bg-gradient-to-br from-primary/5 to-primary/10 slide-up">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
+          <div className="flex flex-col items-center text-center mb-6 md:mb-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/20 border border-primary/30 rounded-full mb-4">
               <SparklesIcon className="w-5 h-5 text-primary" />
               <span className="text-sm font-bold text-primary">NEW FEATURES</span>
@@ -158,15 +162,39 @@ export default function LandingPage() {
             <h2 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">
               Logging Made Effortless
             </h2>
-            <p className="text-muted-foreground max-w-3xl mx-auto">
+            <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-3xl px-4">
               Save 80% of your time with automation features. Enhanced dashboard with real-time insights and beautiful visualizations.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-card border border-border rounded-xl p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-card border border-border rounded-xl p-6 bg-gradient-to-br from-purple-500/5 to-purple-600/5 border-purple-500/20">
               <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4">
-                <SparklesIcon className="w-6 h-6 text-purple-400" />
+                <FolderPlusIcon className="w-6 h-6 text-purple-400" />
+              </div>
+              <h3 className="text-lg font-bold mb-2 text-foreground">Multi-Device Selection</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Select multiple devices at once! Save 5x time when logging simultaneous usage.
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-2">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Select 3+ devices instantly</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Save as device groups</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Quick-select saved groups</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-card border border-border rounded-xl p-6">
+              <div className="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center mb-4">
+                <SparklesIcon className="w-6 h-6 text-cyan-400" />
               </div>
               <h3 className="text-lg font-bold mb-2 text-foreground">Quick kWh Entry</h3>
               <p className="text-sm text-muted-foreground mb-4">
@@ -194,7 +222,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-lg font-bold mb-2 text-foreground">Templates</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Save common patterns and reuse with one click. Perfect for repeated usage.
+                Save common patterns and reuse with one click. Multi-device support included!
               </p>
               <ul className="text-xs text-muted-foreground space-y-2">
                 <li className="flex items-start gap-2">
@@ -203,7 +231,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-400 mt-0.5">✓</span>
-                  <span>Save any log as template</span>
+                  <span>Multi-device templates</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-400 mt-0.5">✓</span>
@@ -218,7 +246,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-lg font-bold mb-2 text-foreground">Auto-Recurring</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Set up once, logs generate automatically. Zero manual effort!
+                Set up once, logs generate automatically. Multi-device schedules supported!
               </p>
               <ul className="text-xs text-muted-foreground space-y-2">
                 <li className="flex items-start gap-2">
@@ -227,11 +255,11 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-400 mt-0.5">✓</span>
-                  <span>Pause/resume anytime</span>
+                  <span>Multi-device automation</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-400 mt-0.5">✓</span>
-                  <span>Perfect for 24/7 appliances</span>
+                  <span>Pause/resume anytime</span>
                 </li>
               </ul>
             </div>
@@ -242,7 +270,6 @@ export default function LandingPage() {
       {/* Rate Information */}
       <section className="py-8 md:py-10 px-3 md:px-5 bg-card slide-up">
         <div className="max-w-6xl mx-auto">
-          <div className="py-4 md:py-8"></div>
           <div className="flex flex-col items-center text-center mb-6 md:mb-8">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 md:mb-4 text-foreground">
               TOU-D-PRIME Rate Structure
