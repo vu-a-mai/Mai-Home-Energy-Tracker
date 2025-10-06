@@ -172,28 +172,34 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
 
           <CardContent className="p-4 md:p-6 overflow-y-auto flex-1 min-h-0">
           {/* Mode Toggle */}
-          <div className="flex gap-2 mb-6 p-1 bg-muted rounded-lg">
+          <div className="flex gap-3 mb-6">
             <button
               type="button"
               onClick={() => setMode('bulk')}
-              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 px-4 py-3 rounded-lg text-sm font-bold transition-all border-2 ${
                 mode === 'bulk' 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-purple-500 text-white border-purple-400 shadow-lg shadow-purple-500/50' 
+                  : 'bg-slate-800/50 text-slate-400 border-slate-700 hover:border-slate-600 hover:text-slate-300'
               }`}
             >
-              Bulk Entry (Monthly Total)
+              <div className="flex items-center justify-center gap-2">
+                <CalendarIcon className="w-4 h-4" />
+                <span>Bulk Entry (Monthly Total)</span>
+              </div>
             </button>
             <button
               type="button"
               onClick={() => setMode('daily')}
-              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 px-4 py-3 rounded-lg text-sm font-bold transition-all border-2 ${
                 mode === 'daily' 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-cyan-500 text-white border-cyan-400 shadow-lg shadow-cyan-500/50' 
+                  : 'bg-slate-800/50 text-slate-400 border-slate-700 hover:border-slate-600 hover:text-slate-300'
               }`}
             >
-              Daily Entry (Per Day)
+              <div className="flex items-center justify-center gap-2">
+                <CalendarIcon className="w-4 h-4" />
+                <span>Daily Entry (Per Day)</span>
+              </div>
             </button>
           </div>
 
