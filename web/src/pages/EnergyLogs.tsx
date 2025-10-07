@@ -238,15 +238,17 @@ export default function EnergyLogs() {
       setSubmitError(null)
       try {
         if (editingLog) {
-          // Update existing log
+          // Update existing log - exclude device_ids
+          const { device_ids, ...updateData } = formData
           await updateEnergyLog(editingLog, {
-            ...formData,
+            ...updateData,
             assigned_users: formData.assigned_users.length > 0 ? formData.assigned_users : undefined
           })
         } else {
-          // Add new log
+          // Add new log - exclude device_ids
+          const { device_ids, ...logData } = formData
           await addEnergyLog({
-            ...formData,
+            ...logData,
             assigned_users: formData.assigned_users.length > 0 ? formData.assigned_users : undefined
           })
         }
@@ -365,9 +367,12 @@ export default function EnergyLogs() {
         log.end_time,
         log.usage_date
       )
+      // Use stored values if available (from bulk entry), otherwise use calculated values
+      const kwh = log.total_kwh ?? calc.totalKwh
+      const cost = log.calculated_cost ?? calc.totalCost
       return {
-        totalKwh: totals.totalKwh + calc.totalKwh,
-        totalCost: totals.totalCost + calc.totalCost
+        totalKwh: totals.totalKwh + kwh,
+        totalCost: totals.totalCost + cost
       }
     }, { totalKwh: 0, totalCost: 0 })
   }, [filteredLogs])
@@ -388,9 +393,12 @@ export default function EnergyLogs() {
         log.end_time,
         log.usage_date
       )
+      // Use stored values if available (from bulk entry), otherwise use calculated values
+      const kwh = log.total_kwh ?? calc.totalKwh
+      const cost = log.calculated_cost ?? calc.totalCost
       return {
-        totalKwh: totals.totalKwh + calc.totalKwh,
-        totalCost: totals.totalCost + calc.totalCost
+        totalKwh: totals.totalKwh + kwh,
+        totalCost: totals.totalCost + cost
       }
     }, { totalKwh: 0, totalCost: 0 })
   }, [energyLogs])
@@ -1221,14 +1229,21 @@ export default function EnergyLogs() {
       {/* Energy Logs List - Compact with Expandable Details */}
       <section className="space-y-3 slide-up">
         {paginatedLogs.map(log => {
-          // Use calculated values for display (more accurate than stored values)
-          const usageCalc = calculateUsageCost(
+          // Calculate usage from time range
+          const calculation = calculateUsageCost(
             log.device_wattage || 0,
             log.start_time,
             log.end_time,
             log.usage_date
           )
-          // Use calculated values instead of potentially outdated database values
+          
+          // Use stored values if available (from bulk entry), otherwise use calculated values
+          const usageCalc = {
+            totalKwh: log.total_kwh ?? calculation.totalKwh,
+            totalCost: log.calculated_cost ?? calculation.totalCost,
+            durationHours: calculation.durationHours,
+            breakdown: log.total_kwh ? [] : calculation.breakdown // No breakdown for bulk entries
+          }
           
           const isExpanded = expandedLog === log.id
           
@@ -1286,7 +1301,7 @@ export default function EnergyLogs() {
                   )}
                   
                   <div className="flex flex-wrap items-center gap-1 mb-2">
-                    {usageCalc.breakdown.map((period, idx) => (
+                    {usageCalc.breakdown.map((period: any, idx: number) => (
                       <div key={idx} className={`px-1.5 py-0.5 rounded text-xs font-semibold flex items-center gap-1 ${
                         period.ratePeriod === 'Off-Peak' ? 'bg-green-500/20 text-green-400' :
                         period.ratePeriod === 'Mid-Peak' ? 'bg-yellow-500/20 text-yellow-400' :
@@ -1389,7 +1404,7 @@ export default function EnergyLogs() {
                   
                   {/* Center: Quick Rate Summary */}
                   <div className="flex items-center gap-2">
-                    {usageCalc.breakdown.map((period, idx) => (
+                    {usageCalc.breakdown.map((period: any, idx: number) => (
                       <div key={idx} className={`px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 ${
                         period.ratePeriod === 'Off-Peak' ? 'bg-green-500/20 text-green-400' :
                         period.ratePeriod === 'Mid-Peak' ? 'bg-yellow-500/20 text-yellow-400' :
@@ -1464,7 +1479,7 @@ export default function EnergyLogs() {
                   <div className="mt-4 pt-4 border-t border-border space-y-3">
                     <div className="text-sm font-bold text-foreground">Detailed Rate Breakdown:</div>
                     <div className="space-y-2">
-                      {usageCalc.breakdown.map((period, idx) => {
+                      {usageCalc.breakdown.map((period: any, idx: number) => {
                         const bgColor = period.ratePeriod === 'Off-Peak' ? 'bg-green-500/10' :
                                        period.ratePeriod === 'Mid-Peak' ? 'bg-yellow-500/10' :
                                        period.ratePeriod === 'On-Peak' ? 'bg-red-500/10' : 'bg-blue-500/10'
@@ -1701,7 +1716,8 @@ export default function EnergyLogs() {
             log.end_time,
             log.usage_date
           )
-          return calc.totalCost
+          // Use stored cost if available (from bulk entry), otherwise use calculated
+          return log.calculated_cost ?? calc.totalCost
         }}
         onConfirm={handleBulkDelete}
         onCancel={() => setShowDeleteModal(false)}

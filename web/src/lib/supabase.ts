@@ -47,6 +47,12 @@ export interface EnergyLog {
   created_at: string
   updated_at: string
   assigned_users?: string[]
+  source_type?: string  // 'manual', 'template', or 'recurring'
+  source_id?: string
+  deleted_at?: string | null
+  deleted_by?: string | null
+  deletion_mode?: string
+  permanent_delete_at?: string | null
 }
 
 export interface EnergyLogUser {

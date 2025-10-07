@@ -45,7 +45,7 @@ export default function LandingPage() {
             for the Family
           </h2>
           <p className="text-sm sm:text-base md:text-lg max-w-2xl mx-auto mb-4 md:mb-6 leading-relaxed text-muted-foreground px-4 text-center">
-            Track household energy usage, automate logging with templates & schedules, calculate costs with TOU-D-PRIME rates, and fairly split electricity bills between family members.
+            Track household energy usage, automate logging with templates & schedules, calculate costs with TOU-D-PRIME rates, and fairly split electricity bills. Now with year-based analytics and fully responsive mobile design!
           </p>
           <div className="flex flex-wrap justify-center gap-3 mb-4 md:mb-6">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 text-purple-300 rounded-full text-xs md:text-sm font-medium">
@@ -63,6 +63,10 @@ export default function LandingPage() {
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-500/20 border border-green-500/30 text-green-300 rounded-full text-xs md:text-sm font-medium">
               <ArrowPathIcon className="w-4 h-4" />
               Auto-Recurring
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/20 border border-orange-500/30 text-orange-300 rounded-full text-xs md:text-sm font-medium">
+              <ChartPieIcon className="w-4 h-4" />
+              Year Analytics
             </span>
           </div>
           <div className="mt-2 md:mt-4"></div>
@@ -164,7 +168,7 @@ export default function LandingPage() {
               Logging Made Effortless
             </h2>
             <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-3xl px-4">
-              Save 80% of your time with automation features. Enhanced dashboard with real-time insights and beautiful visualizations.
+              Save 80% of your time with automation features. Enhanced dashboard with year-based filtering, real-time insights, and fully responsive mobile design.
             </p>
           </div>
 
@@ -288,6 +292,54 @@ export default function LandingPage() {
                 </li>
               </ul>
             </div>
+
+            <div className="bg-card border border-border rounded-xl p-6 bg-gradient-to-br from-orange-500/5 to-orange-600/5 border-orange-500/20">
+              <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center mb-4">
+                <ChartPieIcon className="w-6 h-6 text-orange-400" />
+              </div>
+              <h3 className="text-lg font-bold mb-2 text-foreground">Year-Based Analytics</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Compare energy usage year-over-year with smart filtering and insights!
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-2">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Current Year & Last Year filters</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Year-to-Date personal analytics</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Annual budgeting & planning</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-card border border-border rounded-xl p-6 bg-gradient-to-br from-pink-500/5 to-pink-600/5 border-pink-500/20">
+              <div className="w-12 h-12 bg-pink-500/20 rounded-lg flex items-center justify-center mb-4">
+                <BoltIcon className="w-6 h-6 text-pink-400" />
+              </div>
+              <h3 className="text-lg font-bold mb-2 text-foreground">Fully Responsive</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Perfect experience on mobile, tablet, and desktop with adaptive layouts!
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-2">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Mobile-first design approach</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Touch-friendly interfaces</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Optimized for all screen sizes</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
@@ -343,7 +395,7 @@ export default function LandingPage() {
             Ready to Start Tracking?
           </h2>
           <p className="text-sm sm:text-base md:text-lg mb-4 md:mb-6 opacity-90 max-w-3xl px-4 leading-relaxed">
-            Join the Mai family in smart energy management. Access templates, auto-recurring schedules, quick kWh entry, enhanced dashboard analytics, and more!
+            Join the Mai family in smart energy management. Access templates, auto-recurring schedules, quick kWh entry, year-based analytics, responsive mobile design, and more!
           </p>
           <Link 
             to="/login"

@@ -111,6 +111,7 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
         device_wattage: log.devices?.wattage
       })) || []
 
+      console.log('🔍 Fetched energy logs:', transformedLogs.slice(0, 3)) // Log first 3 entries
       setEnergyLogs(transformedLogs)
     } catch (err) {
       logger.error('Error fetching energy logs:', err)

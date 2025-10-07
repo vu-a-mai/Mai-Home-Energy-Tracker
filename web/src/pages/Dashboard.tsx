@@ -37,7 +37,7 @@ export default function Dashboard() {
   const { isDemoMode, disableDemoMode } = useDemoMode()
   const navigate = useNavigate()
   const [currentTime, setCurrentTime] = useState(new Date())
-  const [usageTimeframe, setUsageTimeframe] = useState<'all' | 'month' | 'lastMonth'>('all')
+  const [usageTimeframe, setUsageTimeframe] = useState<'all' | 'month' | 'lastMonth' | 'currentYear' | 'lastYear'>('currentYear')
   
   // Use the same hooks as other pages for consistency
   const { energyLogs, loading: logsLoading } = useEnergyLogs()
@@ -74,6 +74,22 @@ export default function Dashboard() {
       })
     }
     
+    if (usageTimeframe === 'currentYear') {
+      const currentYear = now.getFullYear()
+      return energyLogs.filter(log => {
+        const logDate = new Date(log.usage_date)
+        return logDate.getFullYear() === currentYear
+      })
+    }
+    
+    if (usageTimeframe === 'lastYear') {
+      const lastYear = now.getFullYear() - 1
+      return energyLogs.filter(log => {
+        const logDate = new Date(log.usage_date)
+        return logDate.getFullYear() === lastYear
+      })
+    }
+    
     return energyLogs
   }, [energyLogs, usageTimeframe])
 
@@ -84,7 +100,8 @@ export default function Dashboard() {
         personalUsage: {
           daily: { kwh: 0, cost: 0 },
           weekly: { kwh: 0, cost: 0 },
-          monthly: { kwh: 0, cost: 0 }
+          monthly: { kwh: 0, cost: 0 },
+          yearToDate: { kwh: 0, cost: 0 }
         },
         householdUsage: {
           total: { kwh: 0, cost: 0 },
@@ -138,9 +155,13 @@ export default function Dashboard() {
         log.usage_date
       )
 
+      // Use stored values if available (from bulk entry), otherwise use calculated values
+      const kwh = log.total_kwh ?? calculation.totalKwh
+      const cost = log.calculated_cost ?? calculation.totalCost
+
       // Add to household totals
-      totalKwh += calculation.totalKwh
-      totalCost += calculation.totalCost
+      totalKwh += kwh
+      totalCost += cost
 
       // Determine assigned users (same logic as Bill Split)
       const assignedUsers = log.assigned_users && log.assigned_users.length > 0 
@@ -152,8 +173,8 @@ export default function Dashboard() {
       // Distribute usage among assigned users
       assignedUsers.forEach((userId: string) => {
         if (userTotals[userId]) {
-          userTotals[userId].kwh += calculation.totalKwh / splitCount
-          userTotals[userId].cost += calculation.totalCost / splitCount
+          userTotals[userId].kwh += kwh / splitCount
+          userTotals[userId].cost += cost / splitCount
         }
       })
 
@@ -165,25 +186,69 @@ export default function Dashboard() {
           cost: 0
         }
       }
-      deviceTotals[log.device_id].kwh += calculation.totalKwh
-      deviceTotals[log.device_id].cost += calculation.totalCost
+      deviceTotals[log.device_id].kwh += kwh
+      deviceTotals[log.device_id].cost += cost
 
       // Track rate period totals
-      calculation.breakdown.forEach(period => {
-        if (period.ratePeriod === 'Off-Peak') {
-          ratePeriods.offPeak.kwh += period.kwh
-          ratePeriods.offPeak.cost += period.cost
-        } else if (period.ratePeriod === 'On-Peak') {
-          ratePeriods.onPeak.kwh += period.kwh
-          ratePeriods.onPeak.cost += period.cost
-        } else if (period.ratePeriod === 'Mid-Peak') {
-          ratePeriods.midPeak.kwh += period.kwh
-          ratePeriods.midPeak.cost += period.cost
-        } else if (period.ratePeriod === 'Super Off-Peak') {
-          ratePeriods.superOffPeak.kwh += period.kwh
-          ratePeriods.superOffPeak.cost += period.cost
+      // For bulk entries, distribute across rate periods based on rate_breakdown if available
+      if (log.total_kwh && log.rate_breakdown) {
+        try {
+          const breakdown = typeof log.rate_breakdown === 'string' 
+            ? JSON.parse(log.rate_breakdown) 
+            : log.rate_breakdown
+          
+          if (breakdown.rate_period) {
+            const period = breakdown.rate_period
+            if (period === 'off_peak') {
+              ratePeriods.offPeak.kwh += kwh
+              ratePeriods.offPeak.cost += cost
+            } else if (period === 'on_peak') {
+              ratePeriods.onPeak.kwh += kwh
+              ratePeriods.onPeak.cost += cost
+            } else if (period === 'mid_peak') {
+              ratePeriods.midPeak.kwh += kwh
+              ratePeriods.midPeak.cost += cost
+            } else if (period === 'super_off_peak') {
+              ratePeriods.superOffPeak.kwh += kwh
+              ratePeriods.superOffPeak.cost += cost
+            }
+          }
+        } catch (e) {
+          // If parsing fails, use calculated breakdown
+          calculation.breakdown.forEach(period => {
+            if (period.ratePeriod === 'Off-Peak') {
+              ratePeriods.offPeak.kwh += period.kwh
+              ratePeriods.offPeak.cost += period.cost
+            } else if (period.ratePeriod === 'On-Peak') {
+              ratePeriods.onPeak.kwh += period.kwh
+              ratePeriods.onPeak.cost += period.cost
+            } else if (period.ratePeriod === 'Mid-Peak') {
+              ratePeriods.midPeak.kwh += period.kwh
+              ratePeriods.midPeak.cost += period.cost
+            } else if (period.ratePeriod === 'Super Off-Peak') {
+              ratePeriods.superOffPeak.kwh += period.kwh
+              ratePeriods.superOffPeak.cost += period.cost
+            }
+          })
         }
-      })
+      } else {
+        // Use calculated breakdown for normal entries
+        calculation.breakdown.forEach(period => {
+          if (period.ratePeriod === 'Off-Peak') {
+            ratePeriods.offPeak.kwh += period.kwh
+            ratePeriods.offPeak.cost += period.cost
+          } else if (period.ratePeriod === 'On-Peak') {
+            ratePeriods.onPeak.kwh += period.kwh
+            ratePeriods.onPeak.cost += period.cost
+          } else if (period.ratePeriod === 'Mid-Peak') {
+            ratePeriods.midPeak.kwh += period.kwh
+            ratePeriods.midPeak.cost += period.cost
+          } else if (period.ratePeriod === 'Super Off-Peak') {
+            ratePeriods.superOffPeak.kwh += period.kwh
+            ratePeriods.superOffPeak.cost += period.cost
+          }
+        })
+      }
     })
 
     // Convert to member array
@@ -203,7 +268,7 @@ export default function Dashboard() {
         cost: device.cost
       }))
 
-    // Calculate personal usage for current user (current month only)
+    // Calculate personal usage for current user
     const now = new Date()
     const today = now.toISOString().split('T')[0]
     
@@ -213,6 +278,9 @@ export default function Dashboard() {
     // Get first day of current week (Sunday)
     const currentDay = now.getDay()
     const firstDayOfWeek = new Date(now.getTime() - currentDay * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    
+    // Get first day of current year
+    const firstDayOfYear = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0]
 
     const calculatePersonalUsage = (startDate: string, endDate: string = today) => {
       let kwh = 0
@@ -231,14 +299,18 @@ export default function Dashboard() {
             log.usage_date
           )
 
+          // Use stored values if available (from bulk entry), otherwise use calculated values
+          const logKwh = log.total_kwh ?? calculation.totalKwh
+          const logCost = log.calculated_cost ?? calculation.totalCost
+
           const assignedUsers = log.assigned_users && log.assigned_users.length > 0 
             ? log.assigned_users 
             : [log.created_by]
 
           if (assignedUsers.includes(user?.id || '')) {
             const splitCount = assignedUsers.length
-            kwh += calculation.totalKwh / splitCount
-            cost += calculation.totalCost / splitCount
+            kwh += logKwh / splitCount
+            cost += logCost / splitCount
           }
         })
 
@@ -249,7 +321,8 @@ export default function Dashboard() {
       personalUsage: {
         daily: calculatePersonalUsage(today, today), // Today only
         weekly: calculatePersonalUsage(firstDayOfWeek), // This week (from Sunday)
-        monthly: calculatePersonalUsage(firstDayOfMonth) // This month (from 1st)
+        monthly: calculatePersonalUsage(firstDayOfMonth), // This month (from 1st)
+        yearToDate: calculatePersonalUsage(firstDayOfYear) // Year-to-date
       },
       householdUsage: {
         total: { kwh: totalKwh, cost: totalCost },
@@ -350,6 +423,9 @@ export default function Dashboard() {
           log.usage_date
         )
 
+        // Use stored values if available (from bulk entry), otherwise use calculated values
+        const logKwh = log.total_kwh ?? calculation.totalKwh
+
         const assignedUsers = log.assigned_users && log.assigned_users.length > 0 
           ? log.assigned_users 
           : [log.created_by]
@@ -359,7 +435,7 @@ export default function Dashboard() {
         assignedUsers.forEach((userId: string) => {
           const member = householdMembers.find(m => m.id === userId)
           if (member) {
-            dayData[member.name] = Number((dayData[member.name] + (calculation.totalKwh / splitCount)).toFixed(2))
+            dayData[member.name] = Number((dayData[member.name] + (logKwh / splitCount)).toFixed(2))
           }
         })
       })
@@ -402,8 +478,9 @@ export default function Dashboard() {
             log.end_time,
             log.usage_date
           )
-          totalKwh += calculation.totalKwh
-          totalCost += calculation.totalCost
+          // Use stored values if available (from bulk entry), otherwise use calculated values
+          totalKwh += log.total_kwh ?? calculation.totalKwh
+          totalCost += log.calculated_cost ?? calculation.totalCost
         }
       })
       
@@ -628,7 +705,7 @@ export default function Dashboard() {
           <UserGroupIcon className="w-6 h-6 text-purple-400" />
           Personal Usage Analytics
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <Card className="energy-card bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/30 hover:border-green-500/50 transition-all">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -685,6 +762,25 @@ export default function Dashboard() {
               </Badge>
             </CardContent>
           </Card>
+
+          <Card className="energy-card bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/30 hover:border-purple-500/50 transition-all">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <ChartBarIcon className="w-6 h-6 text-purple-400" />
+                <span className="text-xs text-muted-foreground font-semibold">Year-to-Date Usage</span>
+              </div>
+              <div className="text-2xl font-bold text-purple-400 mb-1">
+                {dashboardData.personalUsage.yearToDate.kwh.toFixed(1)} kWh
+              </div>
+              <div className="text-sm text-muted-foreground mb-2">
+                Cost: <strong className="text-purple-400">${dashboardData.personalUsage.yearToDate.cost.toFixed(2)}</strong>
+              </div>
+              <Badge variant="on-peak" className="text-xs flex items-center gap-1 w-fit">
+                <CalendarDaysIcon className="w-3 h-3" />
+                {new Date().getFullYear()} Total
+              </Badge>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
@@ -703,20 +799,20 @@ export default function Dashboard() {
                   <HomeIcon className="w-5 h-5 text-cyan-400" />
                   Total Household Usage
                 </CardTitle>
-                <div className="flex gap-1 bg-slate-800/50 rounded-lg p-1 border border-slate-700/50">
+                <div className="flex flex-wrap gap-1 bg-slate-800/50 rounded-lg p-1 border border-slate-700/50">
                   <button
-                    onClick={() => setUsageTimeframe('all')}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                      usageTimeframe === 'all'
+                    onClick={() => setUsageTimeframe('currentYear')}
+                    className={`px-2 sm:px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
+                      usageTimeframe === 'currentYear'
                         ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/50'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
                     }`}
                   >
-                    All Time
+                    Current Year
                   </button>
                   <button
                     onClick={() => setUsageTimeframe('month')}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                    className={`px-2 sm:px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
                       usageTimeframe === 'month'
                         ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/50'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
@@ -726,13 +822,33 @@ export default function Dashboard() {
                   </button>
                   <button
                     onClick={() => setUsageTimeframe('lastMonth')}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                    className={`px-2 sm:px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
                       usageTimeframe === 'lastMonth'
                         ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/50'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
                     }`}
                   >
-                    Previous Month
+                    Last Month
+                  </button>
+                  <button
+                    onClick={() => setUsageTimeframe('lastYear')}
+                    className={`px-2 sm:px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
+                      usageTimeframe === 'lastYear'
+                        ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/50'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+                    }`}
+                  >
+                    Last Year
+                  </button>
+                  <button
+                    onClick={() => setUsageTimeframe('all')}
+                    className={`px-2 sm:px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
+                      usageTimeframe === 'all'
+                        ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/50'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+                    }`}
+                  >
+                    All Time
                   </button>
                 </div>
               </div>

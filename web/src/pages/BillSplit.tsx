@@ -177,7 +177,7 @@ export default function BillSplit() {
     periodLogs.forEach(log => {
       const device = devices.find(d => d.id === log.device_id)
       
-      // Calculate actual cost using rate calculator instead of database value
+      // Calculate actual cost using rate calculator
       const calc = calculateUsageCost(
         device?.wattage || 0,
         log.start_time,
@@ -185,38 +185,42 @@ export default function BillSplit() {
         log.usage_date
       )
       
+      // Use stored values if available (from bulk entry), otherwise use calculated values
+      const totalCost = log.calculated_cost ?? calc.totalCost
+      const totalKwh = log.total_kwh ?? calc.totalKwh
+      
       // Check both is_shared (boolean) and sharing_type (text) for compatibility
       const isSharedDevice = device?.is_shared === true || (device as any)?.sharing_type === 'shared'
       
       // If device is shared AND has assigned users, split among them
       if (device && isSharedDevice && log.assigned_users && log.assigned_users.length > 0) {
-        const costPerUser = calc.totalCost / log.assigned_users.length
-        const kwhPerUser = calc.totalKwh / log.assigned_users.length
+        const costPerUser = totalCost / log.assigned_users.length
+        const kwhPerUser = totalKwh / log.assigned_users.length
         
         log.assigned_users.forEach((userId: string) => {
           personalCosts[userId] = (personalCosts[userId] || 0) + costPerUser
           personalKwh[userId] = (personalKwh[userId] || 0) + kwhPerUser
         })
         
-        totalTrackedCosts += calc.totalCost
-        totalSharedDeviceCosts += calc.totalCost
+        totalTrackedCosts += totalCost
+        totalSharedDeviceCosts += totalCost
       } else if (log.assigned_users && log.assigned_users.length > 0) {
         // Has assigned users (personal device) - credit to assigned user(s)
-        const costPerUser = calc.totalCost / log.assigned_users.length
-        const kwhPerUser = calc.totalKwh / log.assigned_users.length
+        const costPerUser = totalCost / log.assigned_users.length
+        const kwhPerUser = totalKwh / log.assigned_users.length
         
         log.assigned_users.forEach((userId: string) => {
           personalCosts[userId] = (personalCosts[userId] || 0) + costPerUser
           personalKwh[userId] = (personalKwh[userId] || 0) + kwhPerUser
         })
         
-        totalTrackedCosts += calc.totalCost
+        totalTrackedCosts += totalCost
       } else {
         // Fallback: no assigned users - credit to creator
         const userId = log.created_by || householdUsers[0]?.id || 'unknown'
-        personalCosts[userId] = (personalCosts[userId] || 0) + calc.totalCost
-        personalKwh[userId] = (personalKwh[userId] || 0) + calc.totalKwh
-        totalTrackedCosts += calc.totalCost
+        personalCosts[userId] = (personalCosts[userId] || 0) + totalCost
+        personalKwh[userId] = (personalKwh[userId] || 0) + totalKwh
+        totalTrackedCosts += totalCost
       }
     })
 
