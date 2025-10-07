@@ -1,4 +1,4 @@
-# Release Notes - Latest Update
+# Release Notes - October 6, 2025 Update
 
 ## 🎉 Major Features Added
 
@@ -110,12 +110,79 @@ Potential future enhancements:
 3. Run development: `npm run dev`
 4. Build for production: `npm run build`
 
+## 🐛 Critical Bug Fixes (October 6, 2025)
+
+### **RLS Policy Issues**
+- **Fixed circular RLS dependency** on users table causing infinite recursion
+- Removed `users_select_household` policy that called `get_user_household_id()`
+- Created security definer function for safe household member queries
+- Fixed "User has no household_id" errors in contexts
+- Fixed "No Household Members Found" error in user assignments
+
+### **Database Trigger Issues**
+- **Disabled `energy_logs_calculate_cost` trigger** causing statement timeouts
+- Trigger was timing out during bulk operations (error code 57014)
+- Frontend already handles cost calculations, trigger was redundant
+- Bulk template generation now works without 500 errors
+
+### **Query Fixes**
+- Added `household_id` filter to TemplatesModal existing log queries
+- Added `household_id` filter to useTemplates bulk generation queries
+- Fixed 406 (Not Acceptable) errors when checking for existing logs
+- All queries now properly comply with RLS policies
+
+### **SQL Diagnostic Scripts Added**
+- Scripts 30-46 for troubleshooting RLS and trigger issues
+- Easy verification of policies, triggers, and user data
+- Helpful for future debugging
+
+## 🔧 Technical Improvements
+
+### **RLS Policies**
+```sql
+-- Safe policies without circular dependencies
+users_select_own: (id = auth.uid())
+users_select_household_members: (household_id = get_user_household_id())
+users_update_own: (id = auth.uid())
+```
+
+### **Security Definer Function**
+```sql
+CREATE FUNCTION get_user_household_id()
+RETURNS UUID
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT household_id FROM users WHERE id = auth.uid() LIMIT 1;
+$$;
+```
+
+### **Trigger Management**
+- Removed: `energy_logs_calculate_cost` (caused timeouts)
+- Kept: `energy_logs_updated_at` (harmless, updates timestamps)
+
+## 📦 Deployment History
+
+**Latest Commits:**
+- `ca70b3c` - Disable database trigger causing bulk entry timeouts
+- `38f6faf` - Use security definer function for household members RLS
+- `dbdc537` - Add household_id filter to bulk template existing log check
+- `cc1954a` - Resolve RLS circular dependency and bulk template generation errors
+- `0f81bee` - Add year-based analytics, responsive design, and bulk entry fixes
+
 ## 🙏 Credits
 
 **App Idea & Design**: Vu Mai
 **Development**: Vu Mai with AI assistance
 **Tech Stack**: React, TypeScript, Supabase, Tailwind CSS
+**Database**: PostgreSQL with Row Level Security (RLS)
 
 ---
 
 **Happy Energy Tracking! ⚡**
+
+## 📝 Known Issues
+
+- Browser cache may require hard refresh (Ctrl+Shift+R) after updates
+- 406 errors may appear until cache is cleared
