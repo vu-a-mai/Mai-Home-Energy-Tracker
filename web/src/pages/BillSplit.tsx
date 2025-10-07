@@ -53,6 +53,7 @@ interface BillFormData {
   startDate: string
   endDate: string
   totalAmount: number
+  splitMethod: 'even' | 'usage_based'
 }
 
 // Helper function to get user icon
@@ -94,7 +95,8 @@ export default function BillSplit() {
   const [formData, setFormData] = useState<BillFormData>({
     startDate: currentMonth.start,
     endDate: currentMonth.end,
-    totalAmount: isDemoMode ? 555 : 0 // Demo mode shows 555, live mode starts at 0
+    totalAmount: isDemoMode ? 555 : 0, // Demo mode shows 555, live mode starts at 0
+    splitMethod: 'usage_based' // Default to usage-based split
   })
   const [formErrors, setFormErrors] = useState<Partial<BillFormData>>({})
   const [showResults, setShowResults] = useState(false)
@@ -173,7 +175,28 @@ export default function BillSplit() {
       personalKwh[user.id] = 0
     })
 
-    // Calculate costs from energy logs using live rate calculator
+    // If split method is "even", just divide total bill evenly
+    if (formData.splitMethod === 'even') {
+      const evenSplit = formData.totalAmount / householdUsers.length
+      const finalAmounts: { [userId: string]: number } = {}
+      
+      householdUsers.forEach(user => {
+        finalAmounts[user.id] = evenSplit
+      })
+
+      return {
+        billingPeriod: `${formData.startDate} to ${formData.endDate}`,
+        totalBillAmount: formData.totalAmount,
+        personalCosts,
+        personalKwh,
+        sharedCost: formData.totalAmount, // All is shared in even split
+        finalAmounts,
+        totalTrackedCosts: 0,
+        totalTrackedKwh: 0
+      }
+    }
+
+    // Usage-based split: Calculate costs from energy logs using live rate calculator
     periodLogs.forEach(log => {
       const device = devices.find(d => d.id === log.device_id)
       
@@ -283,8 +306,8 @@ export default function BillSplit() {
         }
       })
       
-      // Extract month and year from start date (parse directly to avoid timezone issues)
-      const [yearStr, monthStr] = formData.startDate.split('-')
+      // Extract month and year from END date (when bill is received)
+      const [yearStr, monthStr] = formData.endDate.split('-')
       const month = parseInt(monthStr, 10)
       const year = parseInt(yearStr, 10)
       
@@ -294,6 +317,7 @@ export default function BillSplit() {
         billing_period_start: formData.startDate,
         billing_period_end: formData.endDate,
         total_bill_amount: formData.totalAmount,
+        split_method: formData.splitMethod,
         user_allocations: userAllocations
       })
       
@@ -304,7 +328,8 @@ export default function BillSplit() {
       setFormData({
         startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
         endDate: new Date().toISOString().split('T')[0],
-        totalAmount: 0
+        totalAmount: 0,
+        splitMethod: 'usage_based'
       })
     } catch (error) {
       logger.error('Error saving bill split:', error)
@@ -494,50 +519,48 @@ ${householdUsers.map(user =>
         <Card className="energy-card">
           <CardContent className="p-3 md:p-4">
             <form onSubmit={handleSubmit}>
-              {/* Mobile: Stacked Layout, Desktop: Horizontal */}
-              <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4">
-                {/* Title */}
-                <div className="flex items-center gap-2 text-foreground font-semibold text-sm md:text-base">
-                  <CalendarIcon className="w-5 h-5 text-blue-400" />
-                  <span>Bill Period:</span>
-                </div>
-                
-                {/* Form Fields Container */}
-                <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 flex-1">
+              {/* Title */}
+              <div className="flex items-center gap-2 text-foreground font-semibold text-sm md:text-base mb-3">
+                <CalendarIcon className="w-5 h-5 text-blue-400" />
+                <span>Bill Period:</span>
+              </div>
+              
+              {/* Form Fields Grid - Fully Responsive */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-3">
                 {/* Billing Period Start */}
-                  <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                    <label className="text-xs md:text-sm text-muted-foreground whitespace-nowrap flex items-center gap-1">
-                      <CalendarIcon className="w-3 h-3 text-blue-400" />
-                      From:
-                    </label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs md:text-sm text-muted-foreground font-medium flex items-center gap-1">
+                    <CalendarIcon className="w-3 h-3 text-blue-400" />
+                    From:
+                  </label>
                   <Input
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => setFormData({...formData, startDate: e.target.value})}
-                      className={`px-2 md:px-3 py-1.5 text-xs md:text-sm h-auto flex-1 ${formErrors.startDate ? 'border-red-500' : ''}`}
+                    className={`px-2 md:px-3 py-2 text-xs md:text-sm ${formErrors.startDate ? 'border-red-500' : ''}`}
                   />
                 </div>
 
                 {/* Billing Period End */}
-                  <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                    <label className="text-xs md:text-sm text-muted-foreground whitespace-nowrap flex items-center gap-1">
-                      <CalendarIcon className="w-3 h-3 text-blue-400" />
-                      To:
-                    </label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs md:text-sm text-muted-foreground font-medium flex items-center gap-1">
+                    <CalendarIcon className="w-3 h-3 text-blue-400" />
+                    To:
+                  </label>
                   <Input
                     type="date"
                     value={formData.endDate}
                     onChange={(e) => setFormData({...formData, endDate: e.target.value})}
-                      className={`px-2 md:px-3 py-1.5 text-xs md:text-sm h-auto flex-1 ${formErrors.endDate ? 'border-red-500' : ''}`}
+                    className={`px-2 md:px-3 py-2 text-xs md:text-sm ${formErrors.endDate ? 'border-red-500' : ''}`}
                   />
                 </div>
 
                 {/* Total Bill Amount */}
-                  <div className="flex items-center gap-2 flex-1 min-w-[180px]">
-                    <label className="text-xs md:text-sm text-muted-foreground whitespace-nowrap flex items-center gap-1">
-                      <CurrencyDollarIcon className="w-4 h-4 text-green-400" />
-                      Total:
-                    </label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs md:text-sm text-muted-foreground font-medium flex items-center gap-1">
+                    <CurrencyDollarIcon className="w-4 h-4 text-green-400" />
+                    Total:
+                  </label>
                   <Input
                     type="number"
                     step="0.01"
@@ -545,24 +568,42 @@ ${householdUsers.map(user =>
                     value={formData.totalAmount || ''}
                     onChange={(e) => setFormData({...formData, totalAmount: parseFloat(e.target.value) || 0})}
                     placeholder="e.g., 245.67"
-                      className={`px-2 md:px-3 py-1.5 text-xs md:text-sm h-auto flex-1 ${formErrors.totalAmount ? 'border-red-500' : ''}`}
+                    className={`px-2 md:px-3 py-2 text-xs md:text-sm ${formErrors.totalAmount ? 'border-red-500' : ''}`}
                   />
-                  </div>
+                </div>
+
+                {/* Split Method */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs md:text-sm text-muted-foreground font-medium flex items-center gap-1">
+                    <UsersIcon className="w-4 h-4 text-cyan-400" />
+                    Method:
+                  </label>
+                  <select
+                    value={formData.splitMethod}
+                    onChange={(e) => setFormData({...formData, splitMethod: e.target.value as 'even' | 'usage_based'})}
+                    className="px-2 md:px-3 py-2 text-xs md:text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring h-[38px]"
+                  >
+                    <option value="usage_based">Usage-Based</option>
+                    <option value="even">Even Split</option>
+                  </select>
                 </div>
 
                 {/* Calculate Button */}
-                <Button
-                  type="submit"
-                  className="energy-action-btn px-4 md:px-6 py-2 md:py-1.5 text-sm w-full sm:w-auto"
-                >
-                  <ChartBarIcon className="w-5 h-5 inline-block mr-1" />
-                  Calculate Split
-                </Button>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs md:text-sm text-transparent font-medium">Action</label>
+                  <Button
+                    type="submit"
+                    className="energy-action-btn px-4 py-2 text-xs md:text-sm w-full h-[38px]"
+                  >
+                    <ChartBarIcon className="w-4 h-4 inline-block mr-1" />
+                    Calculate
+                  </Button>
+                </div>
               </div>
               
               {/* Error Messages */}
               {(formErrors.startDate || formErrors.endDate || formErrors.totalAmount) && (
-                <div className="mt-3 text-sm text-red-500">
+                <div className="mt-2 text-sm text-red-500">
                   {formErrors.startDate || formErrors.endDate || formErrors.totalAmount}
                 </div>
               )}
@@ -578,6 +619,16 @@ ${householdUsers.map(user =>
             <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
                   <ArrowTrendingUpIcon className="w-7 h-7 text-green-400" />
                   Bill Split Results
+                  <Badge 
+                    variant={formData.splitMethod === 'even' ? 'secondary' : 'default'}
+                    className={`text-sm ${
+                      formData.splitMethod === 'even' 
+                        ? 'bg-purple-500/20 text-purple-300 border-purple-500/50' 
+                        : 'bg-blue-500/20 text-blue-300 border-blue-500/50'
+                    }`}
+                  >
+                    {formData.splitMethod === 'even' ? '⚖️ Even Split' : '⚡ Usage-Based'}
+                  </Badge>
             </DialogTitle>
             <DialogDescription className="text-slate-300">
               Detailed breakdown of energy costs for the billing period
@@ -856,6 +907,24 @@ ${householdUsers.map(user =>
                     {/* Bill Split Data */}
                     {split ? (
                       <div className="space-y-2">
+                        {/* Split Method Badge */}
+                        <div className="flex flex-col gap-1">
+                          <Badge 
+                            variant={split.split_method === 'even' ? 'secondary' : 'default'}
+                            className={`text-[8px] md:text-[9px] px-1.5 py-0.5 w-fit ${
+                              split.split_method === 'even' 
+                                ? 'bg-purple-500/20 text-purple-300 border-purple-500/50' 
+                                : 'bg-blue-500/20 text-blue-300 border-blue-500/50'
+                            }`}
+                          >
+                            {split.split_method === 'even' ? '⚖️ Even' : '⚡ Usage'}
+                          </Badge>
+                          {/* Billing Cycle Dates */}
+                          <div className="text-[10px] md:text-xs text-slate-300 font-medium">
+                            📅 {split.billing_period_start.split('-').slice(1).join('/')} - {split.billing_period_end.split('-').slice(1).join('/')}
+                          </div>
+                        </div>
+                        
                         {/* Total Bill - Prominent */}
                         <div className="bg-black/30 backdrop-blur-sm rounded-lg p-2 md:p-2.5 border border-emerald-500/30">
                           <div className="flex items-baseline justify-between">
@@ -933,6 +1002,16 @@ ${householdUsers.map(user =>
                   <DialogTitle className="text-lg md:text-xl flex items-center gap-2 text-white">
                     <ChartBarIcon className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
                     {monthNames[viewingBillSplit.month - 1]} {viewingBillSplit.year}
+                    <Badge 
+                      variant={viewingBillSplit.split_method === 'even' ? 'secondary' : 'default'}
+                      className={`text-xs ${
+                        viewingBillSplit.split_method === 'even' 
+                          ? 'bg-purple-500/20 text-purple-300 border-purple-500/50' 
+                          : 'bg-blue-500/20 text-blue-300 border-blue-500/50'
+                      }`}
+                    >
+                      {viewingBillSplit.split_method === 'even' ? '⚖️ Even Split' : '⚡ Usage-Based'}
+                    </Badge>
                   </DialogTitle>
                   <DialogDescription className="text-slate-400">
                     Billing Period: {viewingBillSplit.billing_period_start} to {viewingBillSplit.billing_period_end}
