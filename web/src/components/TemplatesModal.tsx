@@ -319,36 +319,36 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="w-full max-w-4xl my-8">
-        <div className="energy-card w-full bg-card border border-border rounded-lg shadow-xl">
+    <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
+      <div className="w-full sm:max-w-4xl min-h-screen sm:min-h-0 sm:my-8">
+        <div className="energy-card w-full bg-card border-0 sm:border border-border rounded-none sm:rounded-lg shadow-xl min-h-screen sm:min-h-0">
           {/* Header */}
-          <div className="p-6 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <DocumentDuplicateIcon className="w-7 h-7 text-blue-400" />
-              Energy Log Templates
+          <div className="p-4 sm:p-5 md:p-6 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+              <DocumentDuplicateIcon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-blue-400 flex-shrink-0" />
+              <span className="truncate">Energy Log Templates</span>
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 hidden sm:block">
               Save and reuse common usage patterns
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 h-10 w-10 border border-border rounded hover:bg-muted"
+            className="p-2 h-9 w-9 sm:h-10 sm:w-10 border border-border rounded hover:bg-muted flex-shrink-0"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 md:p-6">
           {!showForm ? (
             <>
               {/* Add Template Button */}
               <Button
                 onClick={() => setShowForm(true)}
-                className="w-full mb-4 energy-action-btn"
+                className="w-full mb-3 sm:mb-4 energy-action-btn py-2.5 sm:py-2 text-sm sm:text-base"
               >
                 <PlusIcon className="w-5 h-5 inline-block mr-2" />
                 Create New Template
@@ -356,33 +356,33 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
 
               {/* Templates List */}
               {loading ? (
-                <div className="text-center py-8 text-muted-foreground">Loading templates...</div>
+                <div className="text-center py-6 sm:py-8 text-sm sm:text-base text-muted-foreground">Loading templates...</div>
               ) : templates.length === 0 ? (
-                <div className="text-center py-12">
-                  <DocumentDuplicateIcon className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <p className="text-muted-foreground">No templates yet. Create your first one!</p>
+                <div className="text-center py-8 sm:py-12">
+                  <DocumentDuplicateIcon className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-muted-foreground opacity-50" />
+                  <p className="text-sm sm:text-base text-muted-foreground">No templates yet. Create your first one!</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {templates.map(template => (
                     <Card key={template.id} className="energy-card hover:border-primary/50 transition-all">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <h3 className="font-bold text-foreground mb-1">{template.template_name}</h3>
-                            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-sm sm:text-base text-foreground mb-1 truncate">{template.template_name}</h3>
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
                               <span className="flex items-center gap-1">
-                                <BoltIcon className="w-4 h-4 text-orange-400" />
-                                {template.device_name} ({template.device_wattage}W)
+                                <BoltIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400 flex-shrink-0" />
+                                <span className="truncate">{template.device_name} ({template.device_wattage}W)</span>
                               </span>
                               <span className="flex items-center gap-1">
-                                <ClockIcon className="w-4 h-4 text-blue-400" />
-                                {template.default_start_time} - {template.default_end_time}
+                                <ClockIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400 flex-shrink-0" />
+                                <span className="whitespace-nowrap">{template.default_start_time} - {template.default_end_time}</span>
                               </span>
                             </div>
                             {template.assigned_users.length > 0 && (
-                              <div className="flex items-center gap-2 mt-2">
-                                <UserIcon className="w-4 h-4 text-cyan-400" />
+                              <div className="flex items-center gap-1.5 sm:gap-2 mt-2">
+                                <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400 flex-shrink-0" />
                                 <div className="flex flex-wrap gap-1">
                                   {template.assigned_users.map(userId => {
                                     const user = householdUsers.find(u => u.id === userId)
@@ -396,31 +396,32 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
                               </div>
                             )}
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap sm:flex-nowrap gap-1.5 sm:gap-2 w-full sm:w-auto">
                             <Button
                               onClick={() => handleUseTemplate(template.id)}
                               variant="outline"
                               size="sm"
-                              className="px-3 py-2 border-green-300 text-green-500 hover:bg-green-500/10"
+                              className="flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border-green-300 text-green-500 hover:bg-green-500/10"
                             >
-                              <CheckIcon className="w-4 h-4 mr-1" />
-                              Use
+                              <CheckIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
+                              <span className="hidden sm:inline">Use</span>
+                              <span className="sm:hidden">Use</span>
                             </Button>
                             <Button
                               onClick={() => handleEdit(template)}
                               variant="outline"
                               size="sm"
-                              className="p-2 border-blue-300 text-blue-500 hover:bg-blue-500/10"
+                              className="p-1.5 sm:p-2 border-blue-300 text-blue-500 hover:bg-blue-500/10"
                             >
-                              <PencilIcon className="w-4 h-4" />
+                              <PencilIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </Button>
                             <Button
                               onClick={() => deleteTemplate(template.id)}
                               variant="outline"
                               size="sm"
-                              className="p-2 border-red-300 text-red-500 hover:bg-red-500/10"
+                              className="p-1.5 sm:p-2 border-red-300 text-red-500 hover:bg-red-500/10"
                             >
-                              <TrashIcon className="w-4 h-4" />
+                              <TrashIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </Button>
                           </div>
                         </div>
@@ -432,9 +433,9 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
             </>
           ) : (
             /* Template Form */
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block mb-2 text-sm font-semibold text-foreground">
+                <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-semibold text-foreground">
                   Template Name *
                 </label>
                 <Input
@@ -442,12 +443,13 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
                   value={formData.template_name}
                   onChange={(e) => setFormData({ ...formData, template_name: e.target.value })}
                   placeholder="e.g., Morning Coffee Maker"
+                  className="text-sm sm:text-base"
                   required
                 />
               </div>
 
               {/* Device Selection Mode Toggle */}
-              <div className="flex items-center gap-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -467,14 +469,14 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
                     Multi-Device Mode
                   </span>
                 </label>
-                <span className="text-xs text-blue-200">
+                <span className="text-xs text-blue-200 break-words">
                   {useMultiDevice ? '✓ Select multiple devices at once (creates separate template for each)' : '○ Single device only'}
                 </span>
               </div>
 
               {/* Device Selection */}
               <div>
-                <label className="block mb-2 text-sm font-semibold text-foreground">
+                <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-semibold text-foreground">
                   Device{useMultiDevice ? 's' : ''} *
                 </label>
                 {useMultiDevice ? (
@@ -489,7 +491,7 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
                   <select
                     value={formData.device_id}
                     onChange={(e) => setFormData({ ...formData, device_id: e.target.value })}
-                    className="w-full p-3 border rounded-lg bg-background text-foreground border-border"
+                    className="w-full p-2.5 sm:p-3 text-sm sm:text-base border rounded-lg bg-background text-foreground border-border"
                     required
                   >
                     <option value="">Select a device</option>
@@ -502,26 +504,28 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block mb-2 text-sm font-semibold text-foreground">
+                  <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-semibold text-foreground">
                     Start Time *
                   </label>
                   <Input
                     type="time"
                     value={formData.default_start_time}
                     onChange={(e) => setFormData({ ...formData, default_start_time: e.target.value })}
+                    className="text-sm sm:text-base"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block mb-2 text-sm font-semibold text-foreground">
+                  <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-semibold text-foreground">
                     End Time *
                   </label>
                   <Input
                     type="time"
                     value={formData.default_end_time}
                     onChange={(e) => setFormData({ ...formData, default_end_time: e.target.value })}
+                    className="text-sm sm:text-base"
                     required
                   />
                 </div>
@@ -529,13 +533,13 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
 
               {householdUsers.length > 0 && (
                 <div>
-                  <label className="block mb-2 text-sm font-semibold text-foreground">
+                  <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-semibold text-foreground">
                     Assign to Users (optional)
                   </label>
-                  <div className="bg-muted/50 p-3 rounded-lg border border-border">
-                    <div className="flex flex-wrap gap-2">
+                  <div className="bg-muted/50 p-2 sm:p-3 rounded-lg border border-border">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {householdUsers.map(user => (
-                        <label key={user.id} className={`flex items-center cursor-pointer px-3 py-1.5 rounded border transition-colors ${
+                        <label key={user.id} className={`flex items-center cursor-pointer px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded border transition-colors ${
                           formData.assigned_users.includes(user.id) 
                             ? 'bg-blue-100 border-blue-300 text-blue-800' 
                             : 'bg-background border-border hover:bg-muted/30'
@@ -554,18 +558,18 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
                 </div>
               )}
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 sticky bottom-0 sm:static bg-card pb-2 sm:pb-0 -mx-4 sm:mx-0 px-4 sm:px-0 border-t sm:border-t-0 border-border">
                 <Button
                   type="button"
                   onClick={resetForm}
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 py-2.5 sm:py-2 text-sm sm:text-base"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 energy-action-btn"
+                  className="flex-1 energy-action-btn py-2.5 sm:py-2 text-sm sm:text-base"
                 >
                   {editingId ? 'Update Template' : 'Create Template'}
                 </Button>

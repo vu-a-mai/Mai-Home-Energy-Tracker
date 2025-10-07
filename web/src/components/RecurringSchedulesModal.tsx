@@ -344,36 +344,36 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
-      <div className="w-full max-w-5xl my-4 min-h-0">
-        <div className="energy-card w-full bg-card border border-border rounded-lg shadow-xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
+      <div className="w-full sm:max-w-5xl min-h-screen sm:min-h-0 sm:my-4">
+        <div className="energy-card w-full bg-card border-0 sm:border border-border rounded-none sm:rounded-lg shadow-xl min-h-screen sm:min-h-0 sm:max-h-[90vh] flex flex-col">
           {/* Header */}
-          <div className="p-6 border-b border-border flex items-center justify-between flex-shrink-0">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <ArrowPathIcon className="w-7 h-7 text-green-400" />
-              Recurring Schedules
+          <div className="p-4 sm:p-5 md:p-6 border-b border-border flex items-center justify-between flex-shrink-0 sticky top-0 bg-card z-10">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+              <ArrowPathIcon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-green-400 flex-shrink-0" />
+              <span className="truncate">Recurring Schedules</span>
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 hidden sm:block">
               Automatically generate logs for regular usage patterns
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 h-10 w-10 border border-border rounded hover:bg-muted"
+            className="p-2 h-9 w-9 sm:h-10 sm:w-10 border border-border rounded hover:bg-muted flex-shrink-0"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 md:p-6">
           {!showForm ? (
             <>
               {/* Add Schedule Button */}
               <Button
                 onClick={() => setShowForm(true)}
-                className="w-full mb-4 energy-action-btn"
+                className="w-full mb-3 sm:mb-4 energy-action-btn py-2.5 sm:py-2 text-sm sm:text-base"
               >
                 <PlusIcon className="w-5 h-5 inline-block mr-2" />
                 Create New Schedule
@@ -381,21 +381,21 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
 
               {/* Schedules List */}
               {loading ? (
-                <div className="text-center py-8 text-muted-foreground">Loading schedules...</div>
+                <div className="text-center py-6 sm:py-8 text-sm sm:text-base text-muted-foreground">Loading schedules...</div>
               ) : schedules.length === 0 ? (
-                <div className="text-center py-12">
-                  <ArrowPathIcon className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <p className="text-muted-foreground">No recurring schedules yet. Create your first one!</p>
+                <div className="text-center py-8 sm:py-12">
+                  <ArrowPathIcon className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-muted-foreground opacity-50" />
+                  <p className="text-sm sm:text-base text-muted-foreground">No recurring schedules yet. Create your first one!</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {schedules.map(schedule => (
                     <Card key={schedule.id} className={`energy-card transition-all ${schedule.is_active ? 'hover:border-primary/50' : 'opacity-60'}`}>
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-bold text-foreground">{schedule.schedule_name}</h3>
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex flex-col lg:flex-row items-start justify-between gap-3 sm:gap-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <h3 className="font-bold text-sm sm:text-base text-foreground truncate">{schedule.schedule_name}</h3>
                               {!schedule.is_active && (
                                 <span className="text-xs px-2 py-0.5 bg-gray-500/20 text-gray-400 rounded-full">
                                   Paused
@@ -407,26 +407,26 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                                 </span>
                               )}
                             </div>
-                            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mb-2">
                               <span className="flex items-center gap-1">
-                                <BoltIcon className="w-4 h-4 text-orange-400" />
-                                {schedule.device_name} ({schedule.device_wattage}W)
+                                <BoltIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400 flex-shrink-0" />
+                                <span className="truncate">{schedule.device_name} ({schedule.device_wattage}W)</span>
                               </span>
                               <span className="flex items-center gap-1">
-                                <ClockIcon className="w-4 h-4 text-blue-400" />
-                                {schedule.start_time} - {schedule.end_time}
+                                <ClockIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400 flex-shrink-0" />
+                                <span className="whitespace-nowrap">{schedule.start_time} - {schedule.end_time}</span>
                               </span>
                               <span className="flex items-center gap-1">
-                                <CalendarIcon className="w-4 h-4 text-purple-400" />
-                                {getDaysLabel(schedule.days_of_week)}
+                                <CalendarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400 flex-shrink-0" />
+                                <span className="truncate">{getDaysLabel(schedule.days_of_week)}</span>
                               </span>
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {schedule.schedule_start_date} {schedule.schedule_end_date ? `to ${schedule.schedule_end_date}` : '(ongoing)'}
                             </div>
                             {schedule.assigned_users.length > 0 && (
-                              <div className="flex items-center gap-2 mt-2">
-                                <UserIcon className="w-4 h-4 text-cyan-400" />
+                              <div className="flex items-center gap-1.5 sm:gap-2 mt-2">
+                                <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400 flex-shrink-0" />
                                 <div className="flex flex-wrap gap-1">
                                   {schedule.assigned_users.map(userId => {
                                     const user = householdUsers.find(u => u.id === userId)
@@ -440,52 +440,52 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                               </div>
                             )}
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full lg:w-auto">
                             <Button
                               onClick={() => toggleScheduleActive(schedule.id, !schedule.is_active)}
                               variant="outline"
                               size="sm"
-                              className={`p-2 ${schedule.is_active ? 'border-yellow-300 text-yellow-500 hover:bg-yellow-500/10' : 'border-green-300 text-green-500 hover:bg-green-500/10'}`}
+                              className={`p-1.5 sm:p-2 ${schedule.is_active ? 'border-yellow-300 text-yellow-500 hover:bg-yellow-500/10' : 'border-green-300 text-green-500 hover:bg-green-500/10'}`}
                               title={schedule.is_active ? 'Pause schedule' : 'Activate schedule'}
                             >
-                              {schedule.is_active ? <PauseIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4" />}
+                              {schedule.is_active ? <PauseIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <PlayIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                             </Button>
                             <Button
                               onClick={() => handleBulkGenerate(schedule.id)}
                               variant="outline"
                               size="sm"
-                              className="p-2 border-purple-300 text-purple-500 hover:bg-purple-500/10"
+                              className="p-1.5 sm:p-2 border-purple-300 text-purple-500 hover:bg-purple-500/10"
                               title="Generate all logs for date range"
                             >
-                              <CalendarIcon className="w-4 h-4" />
+                              <CalendarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </Button>
                             <Button
                               onClick={() => handleGenerateLog(schedule.id)}
                               variant="outline"
                               size="sm"
-                              className="p-2 border-cyan-300 text-cyan-500 hover:bg-cyan-500/10"
+                              className="p-1.5 sm:p-2 border-cyan-300 text-cyan-500 hover:bg-cyan-500/10"
                               title={schedule.schedule_end_date && new Date().toISOString().split('T')[0] > schedule.schedule_end_date 
                                 ? `Schedule ended ${schedule.schedule_end_date}. Use Quick kWh Entry to backfill.` 
                                 : "Generate log for today"}
                               disabled={schedule.schedule_end_date ? new Date().toISOString().split('T')[0] > schedule.schedule_end_date : false}
                             >
-                              <PlusIcon className="w-4 h-4" />
+                              <PlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </Button>
                             <Button
                               onClick={() => handleEdit(schedule)}
                               variant="outline"
                               size="sm"
-                              className="p-2 border-blue-300 text-blue-500 hover:bg-blue-500/10"
+                              className="p-1.5 sm:p-2 border-blue-300 text-blue-500 hover:bg-blue-500/10"
                             >
-                              <PencilIcon className="w-4 h-4" />
+                              <PencilIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </Button>
                             <Button
                               onClick={() => deleteSchedule(schedule.id)}
                               variant="outline"
                               size="sm"
-                              className="p-2 border-red-300 text-red-500 hover:bg-red-500/10"
+                              className="p-1.5 sm:p-2 border-red-300 text-red-500 hover:bg-red-500/10"
                             >
-                              <TrashIcon className="w-4 h-4" />
+                              <TrashIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </Button>
                           </div>
                         </div>
@@ -497,9 +497,9 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
             </>
           ) : (
             /* Schedule Form */
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block mb-2 text-sm font-semibold text-foreground">
+                <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-semibold text-foreground">
                   Schedule Name *
                 </label>
                 <Input
@@ -507,12 +507,13 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                   value={formData.schedule_name}
                   onChange={(e) => setFormData({ ...formData, schedule_name: e.target.value })}
                   placeholder="e.g., Weekday Work Computer"
+                  className="text-sm sm:text-base"
                   required
                 />
               </div>
 
               {/* Device Selection Mode Toggle */}
-              <div className="flex items-center gap-3 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -532,14 +533,14 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                     Multi-Device Mode
                   </span>
                 </label>
-                <span className="text-xs text-blue-200">
+                <span className="text-xs text-blue-200 break-words">
                   {useMultiDevice ? '✓ Select multiple devices at once (creates separate schedule for each)' : '○ Single device only'}
                 </span>
               </div>
 
               {/* Device Selection */}
               <div>
-                <label className="block mb-2 text-sm font-semibold text-foreground">
+                <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-semibold text-foreground">
                   Device{useMultiDevice ? 's' : ''} *
                 </label>
                 {useMultiDevice ? (
@@ -554,7 +555,7 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                   <select
                     value={formData.device_id}
                     onChange={(e) => setFormData({ ...formData, device_id: e.target.value })}
-                    className="w-full p-3 border rounded-lg bg-background text-foreground border-border"
+                    className="w-full p-2.5 sm:p-3 text-sm sm:text-base border rounded-lg bg-background text-foreground border-border"
                     required
                   >
                     <option value="">Select a device</option>
@@ -568,10 +569,10 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
               </div>
 
               <div>
-                <label className="block mb-2 text-sm font-semibold text-foreground">
+                <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-semibold text-foreground">
                   Days of Week *
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {DAYS_OF_WEEK.map(day => (
                     <button
                       key={day.value}
@@ -587,7 +588,7 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                     </button>
                   ))}
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-2 sm:mt-3 flex flex-wrap gap-1.5 sm:gap-2">
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, days_of_week: [1, 2, 3, 4, 5] })}
@@ -612,64 +613,68 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block mb-2 text-sm font-semibold text-foreground">
+                  <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-semibold text-foreground">
                     Start Time *
                   </label>
                   <Input
                     type="time"
                     value={formData.start_time}
                     onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                    className="text-sm sm:text-base"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block mb-2 text-sm font-semibold text-foreground">
+                  <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-semibold text-foreground">
                     End Time *
                   </label>
                   <Input
                     type="time"
                     value={formData.end_time}
                     onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                    className="text-sm sm:text-base"
                     required
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block mb-2 text-sm font-semibold text-foreground">
+                  <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-semibold text-foreground">
                     Start Date *
                   </label>
                   <Input
                     type="date"
                     value={formData.schedule_start_date}
                     onChange={(e) => setFormData({ ...formData, schedule_start_date: e.target.value })}
+                    className="text-sm sm:text-base"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block mb-2 text-sm font-semibold text-foreground">
+                  <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-semibold text-foreground">
                     End Date (optional)
                   </label>
                   <Input
                     type="date"
                     value={formData.schedule_end_date || ''}
                     onChange={(e) => setFormData({ ...formData, schedule_end_date: e.target.value || null })}
+                    className="text-sm sm:text-base"
                   />
                 </div>
               </div>
 
               {householdUsers.length > 0 && (
                 <div>
-                  <label className="block mb-2 text-sm font-semibold text-foreground">
+                  <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-semibold text-foreground">
                     Assign to Users (optional)
                   </label>
-                  <div className="bg-muted/50 p-3 rounded-lg border border-border">
-                    <div className="flex flex-wrap gap-2">
+                  <div className="bg-muted/50 p-2 sm:p-3 rounded-lg border border-border">
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
                       {householdUsers.map(user => (
-                        <label key={user.id} className={`flex items-center cursor-pointer px-3 py-1.5 rounded border transition-colors ${
+                        <label key={user.id} className={`flex items-center cursor-pointer px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded border transition-colors ${
                           formData.assigned_users.includes(user.id) 
                             ? 'bg-blue-100 border-blue-300 text-blue-800' 
                             : 'bg-background border-border hover:bg-muted/30'
@@ -705,18 +710,18 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                 </p>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 sticky bottom-0 sm:static bg-card pb-2 sm:pb-0 -mx-4 sm:mx-0 px-4 sm:px-0 border-t sm:border-t-0 border-border">
                 <Button
                   type="button"
                   onClick={resetForm}
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 py-2.5 sm:py-2 text-sm sm:text-base"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 energy-action-btn"
+                  className="flex-1 energy-action-btn py-2.5 sm:py-2 text-sm sm:text-base"
                 >
                   {editingId ? 'Update Schedule' : 'Create Schedule'}
                 </Button>
