@@ -23,7 +23,9 @@ import {
   DocumentDuplicateIcon,
   UserIcon,
   ChevronDownIcon,
-  CalendarIcon
+  CalendarIcon,
+  Squares2X2Icon,
+  ListBulletIcon
 } from '@heroicons/react/24/outline'
 
 interface TemplatesModalProps {
@@ -50,6 +52,28 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
   const { deviceGroups, addDeviceGroup } = useDeviceGroups()
   
   const [showForm, setShowForm] = useState(false)
+  const [activeTab, setActiveTab] = useState<'my' | 'all'>('my')
+  const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set([user?.id || '']))
+  const [viewMode, setViewMode] = useState<'card' | 'list'>(() => {
+    // Load from localStorage or default to 'list' for space efficiency
+    return (localStorage.getItem('templatesViewMode') as 'card' | 'list') || 'list'
+  })
+  
+  // Save view mode preference
+  const toggleViewMode = () => {
+    const newMode = viewMode === 'card' ? 'list' : 'card'
+    setViewMode(newMode)
+    localStorage.setItem('templatesViewMode', newMode)
+  }
+  
+  // Reset modal state when closing
+  const handleClose = () => {
+    setShowForm(false)
+    setEditingId(null)
+    setUseMultiDevice(false)
+    setActiveTab('my')
+    onClose()
+  }
   const [editingId, setEditingId] = useState<string | null>(null)
   const [useMultiDevice, setUseMultiDevice] = useState(false)
   const [showSaveGroupModal, setShowSaveGroupModal] = useState(false)
@@ -75,6 +99,137 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
     default_end_time: '',
     assigned_users: []
   })
+
+  // Group templates by user
+  const myTemplates = templates.filter(t => t.created_by === user?.id)
+  const otherTemplates = templates.filter(t => t.created_by !== user?.id)
+  
+  // Group other templates by user
+  const templatesByUser = otherTemplates.reduce((acc, template) => {
+    const userId = template.created_by
+    if (!acc[userId]) {
+      acc[userId] = []
+    }
+    acc[userId].push(template)
+    return acc
+  }, {} as Record<string, typeof templates>)
+  
+  const toggleUserExpanded = (userId: string) => {
+    setExpandedUsers(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(userId)) {
+        newSet.delete(userId)
+      } else {
+        newSet.add(userId)
+      }
+      return newSet
+    })
+  }
+  
+  // Compact list view rendering
+  const renderTemplateListItem = (template: typeof templates[0]) => (
+    <div 
+      key={template.id}
+      className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50 rounded-lg border border-border/50 transition-all group"
+    >
+      <BoltIcon className="w-4 h-4 text-orange-400 flex-shrink-0" />
+      <div className="flex-1 min-w-0 flex items-center gap-2">
+        <span className="font-medium text-sm text-foreground truncate">{template.template_name}</span>
+        <span className="text-xs text-muted-foreground hidden sm:inline">({template.device_wattage}W)</span>
+      </div>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <ClockIcon className="w-3.5 h-3.5 text-blue-400" />
+        <span className="whitespace-nowrap">{template.default_start_time}-{template.default_end_time}</span>
+      </div>
+      <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={() => handleUseTemplate(template.id)}
+          className="p-1.5 rounded hover:bg-green-500/20 text-green-500"
+          title="Use template"
+        >
+          <CheckIcon className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => handleEdit(template)}
+          className="p-1.5 rounded hover:bg-blue-500/20 text-blue-500"
+          title="Edit"
+        >
+          <PencilIcon className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => deleteTemplate(template.id)}
+          className="p-1.5 rounded hover:bg-red-500/20 text-red-500"
+          title="Delete"
+        >
+          <TrashIcon className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  )
+
+  const renderTemplateCard = (template: typeof templates[0]) => (
+    <Card key={template.id} className="energy-card hover:border-primary/50 transition-all">
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-sm sm:text-base text-foreground mb-1 truncate">{template.template_name}</h3>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <BoltIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400 flex-shrink-0" />
+                <span className="truncate">{template.device_name} ({template.device_wattage}W)</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <ClockIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400 flex-shrink-0" />
+                <span className="whitespace-nowrap">{template.default_start_time} - {template.default_end_time}</span>
+              </span>
+            </div>
+            {template.assigned_users.length > 0 && (
+              <div className="flex items-center gap-1.5 sm:gap-2 mt-2">
+                <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400 flex-shrink-0" />
+                <div className="flex flex-wrap gap-1">
+                  {template.assigned_users.map(userId => {
+                    const assignedUser = householdUsers.find(u => u.id === userId)
+                    return assignedUser ? (
+                      <span key={userId} className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full">
+                        {assignedUser.name}
+                      </span>
+                    ) : null
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-wrap sm:flex-nowrap gap-1.5 sm:gap-2 w-full sm:w-auto">
+            <Button
+              onClick={() => handleUseTemplate(template.id)}
+              variant="outline"
+              size="sm"
+              className="flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border-green-300 text-green-500 hover:bg-green-500/10"
+            >
+              <CheckIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
+              Use
+            </Button>
+            <Button
+              onClick={() => handleEdit(template)}
+              variant="outline"
+              size="sm"
+              className="p-1.5 sm:p-2 border-blue-300 text-blue-500 hover:bg-blue-500/10"
+            >
+              <PencilIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </Button>
+            <Button
+              onClick={() => deleteTemplate(template.id)}
+              variant="outline"
+              size="sm"
+              className="p-1.5 sm:p-2 border-red-300 text-red-500 hover:bg-red-500/10"
+            >
+              <TrashIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -349,7 +504,7 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-2 h-9 w-9 sm:h-10 sm:w-10 border border-border rounded hover:bg-muted flex-shrink-0"
           >
             <XMarkIcon className="w-6 h-6" />
@@ -369,6 +524,70 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
                 Create New Template
               </Button>
 
+              {/* Tabs and View Toggle */}
+              <div className="flex items-center justify-between mb-4 border-b border-border">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setActiveTab('my')}
+                    className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+                      activeTab === 'my'
+                        ? 'text-primary border-b-2 border-primary'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <span className="hidden sm:inline">My Templates</span>
+                    <span className="sm:hidden">My</span>
+                    {myTemplates.length > 0 && (
+                      <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-primary/20 text-primary rounded-full">
+                        {myTemplates.length}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('all')}
+                    className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+                      activeTab === 'all'
+                        ? 'text-primary border-b-2 border-primary'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <span className="hidden sm:inline">All Templates</span>
+                    <span className="sm:hidden">All</span>
+                    {templates.length > 0 && (
+                      <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-primary/20 text-primary rounded-full">
+                        {templates.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+                
+                {/* View Mode Toggle */}
+                <div className="flex gap-1 pb-2">
+                  <button
+                    onClick={toggleViewMode}
+                    className={`p-2 rounded transition-colors ${
+                      viewMode === 'card'
+                        ? 'bg-primary/20 text-primary'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                    title="Card view"
+                  >
+                    <Squares2X2Icon className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={toggleViewMode}
+                    className={`p-2 rounded transition-colors ${
+                      viewMode === 'list'
+                        ? 'bg-primary/20 text-primary'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                    title="List view"
+                  >
+                    <ListBulletIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
               {/* Templates List */}
               {loading ? (
                 <div className="text-center py-6 sm:py-8 text-sm sm:text-base text-muted-foreground">Loading templates...</div>
@@ -378,71 +597,77 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
                   <p className="text-sm sm:text-base text-muted-foreground">No templates yet. Create your first one!</p>
                 </div>
               ) : (
-                <div className="space-y-2 sm:space-y-3">
-                  {templates.map(template => (
-                    <Card key={template.id} className="energy-card hover:border-primary/50 transition-all">
-                      <CardContent className="p-3 sm:p-4">
-                        <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-sm sm:text-base text-foreground mb-1 truncate">{template.template_name}</h3>
-                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <BoltIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400 flex-shrink-0" />
-                                <span className="truncate">{template.device_name} ({template.device_wattage}W)</span>
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <ClockIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400 flex-shrink-0" />
-                                <span className="whitespace-nowrap">{template.default_start_time} - {template.default_end_time}</span>
-                              </span>
-                            </div>
-                            {template.assigned_users.length > 0 && (
-                              <div className="flex items-center gap-1.5 sm:gap-2 mt-2">
-                                <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400 flex-shrink-0" />
-                                <div className="flex flex-wrap gap-1">
-                                  {template.assigned_users.map(userId => {
-                                    const user = householdUsers.find(u => u.id === userId)
-                                    return user ? (
-                                      <span key={userId} className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full">
-                                        {user.name}
-                                      </span>
-                                    ) : null
-                                  })}
-                                </div>
+                <div className="space-y-3">
+                  {/* My Templates Tab */}
+                  {activeTab === 'my' && (
+                    myTemplates.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-sm text-muted-foreground">You haven't created any templates yet.</p>
+                      </div>
+                    ) : (
+                      <div className={viewMode === 'list' ? 'space-y-1' : 'space-y-2'}>
+                        {myTemplates.map(template => 
+                          viewMode === 'list' ? renderTemplateListItem(template) : renderTemplateCard(template)
+                        )}
+                      </div>
+                    )
+                  )}
+
+                  {/* All Templates Tab */}
+                  {activeTab === 'all' && (
+                    <div className="space-y-4">
+                      {/* My Templates Section */}
+                      {myTemplates.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-2 px-2">
+                            <UserIcon className="w-4 h-4 text-primary" />
+                            <h3 className="text-sm font-semibold text-foreground">
+                              My Templates ({myTemplates.length})
+                            </h3>
+                          </div>
+                          <div className={viewMode === 'list' ? 'space-y-1' : 'space-y-2'}>
+                            {myTemplates.map(template => 
+                              viewMode === 'list' ? renderTemplateListItem(template) : renderTemplateCard(template)
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Other Users' Templates */}
+                      {Object.entries(templatesByUser).map(([userId, userTemplates]) => {
+                        const templateUser = householdUsers.find(u => u.id === userId)
+                        if (!templateUser) return null
+                        
+                        const isExpanded = expandedUsers.has(userId)
+                        
+                        return (
+                          <div key={userId}>
+                            <button
+                              onClick={() => toggleUserExpanded(userId)}
+                              className="flex items-center gap-2 w-full px-2 py-2 hover:bg-muted/50 rounded transition-colors"
+                            >
+                              <ChevronDownIcon 
+                                className={`w-4 h-4 text-muted-foreground transition-transform ${
+                                  isExpanded ? 'rotate-0' : '-rotate-90'
+                                }`}
+                              />
+                              <UserIcon className="w-4 h-4 text-blue-400" />
+                              <h3 className="text-sm font-semibold text-foreground">
+                                {templateUser.name}'s Templates ({userTemplates.length})
+                              </h3>
+                            </button>
+                            {isExpanded && (
+                              <div className={viewMode === 'list' ? 'space-y-1 mt-2' : 'space-y-2 mt-2'}>
+                                {userTemplates.map(template => 
+                                  viewMode === 'list' ? renderTemplateListItem(template) : renderTemplateCard(template)
+                                )}
                               </div>
                             )}
                           </div>
-                          <div className="flex flex-wrap sm:flex-nowrap gap-1.5 sm:gap-2 w-full sm:w-auto">
-                            <Button
-                              onClick={() => handleUseTemplate(template.id)}
-                              variant="outline"
-                              size="sm"
-                              className="flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm border-green-300 text-green-500 hover:bg-green-500/10"
-                            >
-                              <CheckIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
-                              <span className="hidden sm:inline">Use</span>
-                              <span className="sm:hidden">Use</span>
-                            </Button>
-                            <Button
-                              onClick={() => handleEdit(template)}
-                              variant="outline"
-                              size="sm"
-                              className="p-1.5 sm:p-2 border-blue-300 text-blue-500 hover:bg-blue-500/10"
-                            >
-                              <PencilIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            </Button>
-                            <Button
-                              onClick={() => deleteTemplate(template.id)}
-                              variant="outline"
-                              size="sm"
-                              className="p-1.5 sm:p-2 border-red-300 text-red-500 hover:bg-red-500/10"
-                            >
-                              <TrashIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </>

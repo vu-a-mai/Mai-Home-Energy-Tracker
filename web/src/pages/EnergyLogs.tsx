@@ -1237,12 +1237,16 @@ export default function EnergyLogs() {
             log.usage_date
           )
           
-          // Use stored values if available (from bulk entry), otherwise use calculated values
+          // Use stored values if available (from bulk entry or template), otherwise use calculated values
+          const storedBreakdown = log.rate_breakdown
+          const calculatedBreakdown = calculation.breakdown
+          
           const usageCalc = {
             totalKwh: log.total_kwh ?? calculation.totalKwh,
             totalCost: log.calculated_cost ?? calculation.totalCost,
             durationHours: calculation.durationHours,
-            breakdown: log.total_kwh ? [] : calculation.breakdown // No breakdown for bulk entries
+            breakdown: Array.isArray(storedBreakdown) ? storedBreakdown : 
+                      Array.isArray(calculatedBreakdown) ? calculatedBreakdown : []
           }
           
           const isExpanded = expandedLog === log.id
@@ -1301,19 +1305,22 @@ export default function EnergyLogs() {
                   )}
                   
                   <div className="flex flex-wrap items-center gap-1 mb-2">
-                    {usageCalc.breakdown.map((period: any, idx: number) => (
-                      <div key={idx} className={`px-1.5 py-0.5 rounded text-xs font-semibold flex items-center gap-1 ${
-                        period.ratePeriod === 'Off-Peak' ? 'bg-green-500/20 text-green-400' :
-                        period.ratePeriod === 'Mid-Peak' ? 'bg-yellow-500/20 text-yellow-400' :
-                        period.ratePeriod === 'On-Peak' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'
-                      }`}>
-                        <ClockIcon className="w-3 h-3" />
-                        {period.ratePeriod === 'On-Peak' && (
-                          <ExclamationTriangleIcon className="w-3 h-3" title="Peak pricing!" />
-                        )}
-                        {period.hours.toFixed(1)}h {period.ratePeriod}
-                      </div>
-                    ))}
+                    {usageCalc.breakdown.map((period: any, idx: number) => {
+                      if (!period || !period.ratePeriod) return null
+                      return (
+                        <div key={idx} className={`px-1.5 py-0.5 rounded text-xs font-semibold flex items-center gap-1 ${
+                          period.ratePeriod === 'Off-Peak' ? 'bg-green-500/20 text-green-400' :
+                          period.ratePeriod === 'Mid-Peak' ? 'bg-yellow-500/20 text-yellow-400' :
+                          period.ratePeriod === 'On-Peak' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'
+                        }`}>
+                          <ClockIcon className="w-3 h-3" />
+                          {period.ratePeriod === 'On-Peak' && (
+                            <ExclamationTriangleIcon className="w-3 h-3" title="Peak pricing!" />
+                          )}
+                          {period.hours?.toFixed(1) || '0.0'}h {period.ratePeriod}
+                        </div>
+                      )
+                    })}
                   </div>
                   
                   <div className="flex gap-1">
@@ -1404,19 +1411,22 @@ export default function EnergyLogs() {
                   
                   {/* Center: Quick Rate Summary */}
                   <div className="flex items-center gap-2">
-                    {usageCalc.breakdown.map((period: any, idx: number) => (
-                      <div key={idx} className={`px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 ${
-                        period.ratePeriod === 'Off-Peak' ? 'bg-green-500/20 text-green-400' :
-                        period.ratePeriod === 'Mid-Peak' ? 'bg-yellow-500/20 text-yellow-400' :
-                        period.ratePeriod === 'On-Peak' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'
-                      }`}>
-                        <ClockIcon className="w-3 h-3" />
-                        {period.ratePeriod === 'On-Peak' && (
-                          <ExclamationTriangleIcon className="w-3 h-3" title="Peak pricing!" />
-                        )}
-                        {period.hours.toFixed(1)}h {period.ratePeriod}
-                      </div>
-                    ))}
+                    {usageCalc.breakdown.map((period: any, idx: number) => {
+                      if (!period || !period.ratePeriod) return null
+                      return (
+                        <div key={idx} className={`px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 ${
+                          period.ratePeriod === 'Off-Peak' ? 'bg-green-500/20 text-green-400' :
+                          period.ratePeriod === 'Mid-Peak' ? 'bg-yellow-500/20 text-yellow-400' :
+                          period.ratePeriod === 'On-Peak' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'
+                        }`}>
+                          <ClockIcon className="w-3 h-3" />
+                          {period.ratePeriod === 'On-Peak' && (
+                            <ExclamationTriangleIcon className="w-3 h-3" title="Peak pricing!" />
+                          )}
+                          {period.hours?.toFixed(1) || '0.0'}h {period.ratePeriod}
+                        </div>
+                      )
+                    })}
                   </div>
                   
                   {/* Right: Total & Actions */}
@@ -1480,6 +1490,7 @@ export default function EnergyLogs() {
                     <div className="text-sm font-bold text-foreground">Detailed Rate Breakdown:</div>
                     <div className="space-y-2">
                       {usageCalc.breakdown.map((period: any, idx: number) => {
+                        if (!period || !period.ratePeriod) return null
                         const bgColor = period.ratePeriod === 'Off-Peak' ? 'bg-green-500/10' :
                                        period.ratePeriod === 'Mid-Peak' ? 'bg-yellow-500/10' :
                                        period.ratePeriod === 'On-Peak' ? 'bg-red-500/10' : 'bg-blue-500/10'
@@ -1497,14 +1508,14 @@ export default function EnergyLogs() {
                                 {period.ratePeriod}
                               </span>
                               <span className="text-xs text-muted-foreground font-semibold">
-                                @ ${period.rate.toFixed(2)}/kWh
+                                @ ${period.rate?.toFixed(2) || '0.00'}/kWh
                               </span>
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {formatTime12Hour(period.startTime)} - {formatTime12Hour(period.endTime)} ({period.hours.toFixed(1)}h)
+                              {formatTime12Hour(period.startTime)} - {formatTime12Hour(period.endTime)} ({period.hours?.toFixed(1) || '0.0'}h)
                             </div>
                             <div className="text-sm text-foreground font-mono font-semibold">
-                              {period.kwh.toFixed(2)} kWh × ${period.rate.toFixed(2)} = ${period.cost.toFixed(2)}
+                              {period.kwh?.toFixed(2) || '0.00'} kWh × ${period.rate?.toFixed(2) || '0.00'} = ${period.cost?.toFixed(2) || '0.00'}
                             </div>
                           </div>
                         )

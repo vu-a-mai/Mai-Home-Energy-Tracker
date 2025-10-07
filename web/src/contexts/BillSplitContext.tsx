@@ -12,6 +12,7 @@ export interface BillSplit {
   billing_period_start: string
   billing_period_end: string
   total_bill_amount: number
+  split_method: 'even' | 'usage_based'
   user_allocations: {
     [userId: string]: {
       personalCost: number

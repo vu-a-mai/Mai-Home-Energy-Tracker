@@ -23,7 +23,9 @@ import {
   PlayIcon,
   PauseIcon,
   UserIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  Squares2X2Icon,
+  ListBulletIcon
 } from '@heroicons/react/24/outline'
 
 interface RecurringSchedulesModalProps {
@@ -48,6 +50,41 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
   const { deviceGroups, addDeviceGroup } = useDeviceGroups()
   
   const [showForm, setShowForm] = useState(false)
+  const [activeTab, setActiveTab] = useState<'my' | 'all'>('my')
+  const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set())
+  const [viewMode, setViewMode] = useState<'card' | 'list'>(() => {
+    // Load from localStorage or default to 'list' for space efficiency
+    return (localStorage.getItem('schedulesViewMode') as 'card' | 'list') || 'list'
+  })
+  
+  // Save view mode preference
+  const toggleViewMode = () => {
+    const newMode = viewMode === 'card' ? 'list' : 'card'
+    setViewMode(newMode)
+    localStorage.setItem('schedulesViewMode', newMode)
+  }
+  
+  // Get current user ID from Supabase auth
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setCurrentUserId(user.id)
+        setExpandedUsers(new Set([user.id]))
+      }
+    }
+    getCurrentUser()
+  }, [])
+  
+  // Reset modal state when closing
+  const handleClose = () => {
+    setShowForm(false)
+    setEditingId(null)
+    setUseMultiDevice(false)
+    setActiveTab('my')
+    onClose()
+  }
   const [editingId, setEditingId] = useState<string | null>(null)
   const [useMultiDevice, setUseMultiDevice] = useState(false)
   const [showSaveGroupModal, setShowSaveGroupModal] = useState(false)
@@ -71,6 +108,88 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
     assigned_users: [],
     auto_create: true
   })
+
+  // Group schedules by user
+  const mySchedules = schedules.filter(s => s.created_by === currentUserId)
+  const otherSchedules = schedules.filter(s => s.created_by !== currentUserId)
+  
+  // Group other schedules by user
+  const schedulesByUser = otherSchedules.reduce((acc, schedule) => {
+    const userId = schedule.created_by
+    if (!acc[userId]) {
+      acc[userId] = []
+    }
+    acc[userId].push(schedule)
+    return acc
+  }, {} as Record<string, typeof schedules>)
+  
+  const toggleUserExpanded = (userId: string) => {
+    setExpandedUsers(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(userId)) {
+        newSet.delete(userId)
+      } else {
+        newSet.add(userId)
+      }
+      return newSet
+    })
+  }
+  
+  // Compact list view rendering
+  const renderScheduleListItem = (schedule: typeof schedules[0]) => (
+    <div 
+      key={schedule.id}
+      className={`flex items-center gap-2 px-3 py-2 hover:bg-muted/50 rounded-lg border border-border/50 transition-all group ${
+        !schedule.is_active ? 'opacity-60' : ''
+      }`}
+    >
+      <BoltIcon className="w-4 h-4 text-orange-400 flex-shrink-0" />
+      <div className="flex-1 min-w-0 flex items-center gap-2">
+        <span className="font-medium text-sm text-foreground truncate">{schedule.schedule_name}</span>
+        {schedule.auto_create && schedule.is_active && (
+          <span className="text-[10px] px-1.5 py-0.5 bg-green-500/20 text-green-400 rounded-full">Auto</span>
+        )}
+        {!schedule.is_active && (
+          <span className="text-[10px] px-1.5 py-0.5 bg-gray-500/20 text-gray-400 rounded-full">Paused</span>
+        )}
+      </div>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <ClockIcon className="w-3.5 h-3.5 text-blue-400" />
+        <span className="whitespace-nowrap">{schedule.start_time}-{schedule.end_time}</span>
+      </div>
+      <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={() => toggleScheduleActive(schedule.id, !schedule.is_active)}
+          className={`p-1.5 rounded ${schedule.is_active ? 'hover:bg-yellow-500/20 text-yellow-500' : 'hover:bg-green-500/20 text-green-500'}`}
+          title={schedule.is_active ? 'Pause' : 'Activate'}
+        >
+          {schedule.is_active ? <PauseIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4" />}
+        </button>
+        <button
+          onClick={() => handleGenerateLog(schedule.id)}
+          className="p-1.5 rounded hover:bg-cyan-500/20 text-cyan-500"
+          title="Generate log"
+          disabled={schedule.schedule_end_date ? new Date().toISOString().split('T')[0] > schedule.schedule_end_date : false}
+        >
+          <PlusIcon className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => handleEdit(schedule)}
+          className="p-1.5 rounded hover:bg-blue-500/20 text-blue-500"
+          title="Edit"
+        >
+          <PencilIcon className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => deleteSchedule(schedule.id)}
+          className="p-1.5 rounded hover:bg-red-500/20 text-red-500"
+          title="Delete"
+        >
+          <TrashIcon className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -359,7 +478,7 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-2 h-9 w-9 sm:h-10 sm:w-10 border border-border rounded hover:bg-muted flex-shrink-0"
           >
             <XMarkIcon className="w-6 h-6" />
@@ -379,6 +498,70 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                 Create New Schedule
               </Button>
 
+              {/* Tabs and View Toggle */}
+              <div className="flex items-center justify-between mb-4 border-b border-border">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setActiveTab('my')}
+                    className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+                      activeTab === 'my'
+                        ? 'text-primary border-b-2 border-primary'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <span className="hidden sm:inline">My Schedules</span>
+                    <span className="sm:hidden">My</span>
+                    {mySchedules.length > 0 && (
+                      <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-primary/20 text-primary rounded-full">
+                        {mySchedules.length}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('all')}
+                    className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+                      activeTab === 'all'
+                        ? 'text-primary border-b-2 border-primary'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <span className="hidden sm:inline">All Schedules</span>
+                    <span className="sm:hidden">All</span>
+                    {schedules.length > 0 && (
+                      <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-primary/20 text-primary rounded-full">
+                        {schedules.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+                
+                {/* View Mode Toggle */}
+                <div className="flex gap-1 pb-2">
+                  <button
+                    onClick={toggleViewMode}
+                    className={`p-2 rounded transition-colors ${
+                      viewMode === 'card'
+                        ? 'bg-primary/20 text-primary'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                    title="Card view"
+                  >
+                    <Squares2X2Icon className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={toggleViewMode}
+                    className={`p-2 rounded transition-colors ${
+                      viewMode === 'list'
+                        ? 'bg-primary/20 text-primary'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                    title="List view"
+                  >
+                    <ListBulletIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
               {/* Schedules List */}
               {loading ? (
                 <div className="text-center py-6 sm:py-8 text-sm sm:text-base text-muted-foreground">Loading schedules...</div>
@@ -388,8 +571,19 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                   <p className="text-sm sm:text-base text-muted-foreground">No recurring schedules yet. Create your first one!</p>
                 </div>
               ) : (
-                <div className="space-y-2 sm:space-y-3">
-                  {schedules.map(schedule => (
+                <div className="space-y-3">
+                  {/* My Schedules Tab */}
+                  {activeTab === 'my' && (
+                    mySchedules.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-sm text-muted-foreground">You haven't created any schedules yet.</p>
+                      </div>
+                    ) : (
+                      <div className={viewMode === 'list' ? 'space-y-1' : 'space-y-2'}>
+                        {viewMode === 'list' ? (
+                          mySchedules.map(schedule => renderScheduleListItem(schedule))
+                        ) : (
+                          mySchedules.map(schedule => (
                     <Card key={schedule.id} className={`energy-card transition-all ${schedule.is_active ? 'hover:border-primary/50' : 'opacity-60'}`}>
                       <CardContent className="p-3 sm:p-4">
                         <div className="flex flex-col lg:flex-row items-start justify-between gap-3 sm:gap-4">
@@ -491,7 +685,80 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                          ))
+                        )}
+                      </div>
+                    )
+                  )}
+
+                  {/* All Schedules Tab */}
+                  {activeTab === 'all' && (
+                    <div className="space-y-4">
+                      {/* My Schedules Section */}
+                      {mySchedules.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-2 px-2">
+                            <UserIcon className="w-4 h-4 text-primary" />
+                            <h3 className="text-sm font-semibold text-foreground">
+                              My Schedules ({mySchedules.length})
+                            </h3>
+                          </div>
+                          <div className="space-y-2">
+                            {mySchedules.map(schedule => (
+                              <Card key={schedule.id} className={`energy-card transition-all ${schedule.is_active ? 'hover:border-primary/50' : 'opacity-60'}`}>
+                                <CardContent className="p-3 sm:p-4">
+                                  {/* Same schedule card content - will extract to function later */}
+                                  <div className="text-sm text-foreground">
+                                    {schedule.schedule_name}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Other Users' Schedules */}
+                      {Object.entries(schedulesByUser).map(([userId, userSchedules]) => {
+                        const scheduleUser = householdUsers.find(u => u.id === userId)
+                        if (!scheduleUser) return null
+                        
+                        const isExpanded = expandedUsers.has(userId)
+                        
+                        return (
+                          <div key={userId}>
+                            <button
+                              onClick={() => toggleUserExpanded(userId)}
+                              className="flex items-center gap-2 w-full px-2 py-2 hover:bg-muted/50 rounded transition-colors"
+                            >
+                              <ChevronDownIcon 
+                                className={`w-4 h-4 text-muted-foreground transition-transform ${
+                                  isExpanded ? 'rotate-0' : '-rotate-90'
+                                }`}
+                              />
+                              <UserIcon className="w-4 h-4 text-blue-400" />
+                              <h3 className="text-sm font-semibold text-foreground">
+                                {scheduleUser.name}'s Schedules ({userSchedules.length})
+                              </h3>
+                            </button>
+                            {isExpanded && (
+                              <div className="space-y-2 mt-2">
+                                {userSchedules.map(schedule => (
+                                  <Card key={schedule.id} className={`energy-card transition-all ${schedule.is_active ? 'hover:border-primary/50' : 'opacity-60'}`}>
+                                    <CardContent className="p-3 sm:p-4">
+                                      <div className="text-sm text-foreground">
+                                        {schedule.schedule_name}
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </>

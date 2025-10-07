@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   BoltIcon,
   CpuChipIcon,
@@ -18,7 +18,17 @@ import {
   TrashIcon
 } from '@heroicons/react/24/outline'
 
+import { useDemoMode } from '../contexts/DemoContext'
+
 export default function LandingPage() {
+  const navigate = useNavigate()
+  const { enableDemoMode } = useDemoMode()
+  
+  const handleTryDemo = () => {
+    enableDemoMode()
+    navigate('/dashboard')
+  }
+  
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
       {/* Navigation */}
@@ -41,13 +51,11 @@ export default function LandingPage() {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 md:mb-3 text-foreground energy-pulse leading-tight text-center">
             Smart Energy Management
           </h1>
-          <h2 className="text-lg sm:text-xl md:text-2xl mb-4 md:mb-6 font-normal text-muted-foreground text-center">
-            for the Family
-          </h2>
+          <h2 className="text-lg sm:text-xl md:text-2xl mb-4 md:mb-6 font-normal text-muted-foreground text-center">for the Family</h2>
           <p className="text-sm sm:text-base md:text-lg max-w-2xl mx-auto mb-4 md:mb-6 leading-relaxed text-muted-foreground px-4 text-center">
-            Track household energy usage, automate logging with templates & schedules, calculate costs with TOU-D-PRIME rates, and fairly split electricity bills. Now with year-based analytics and fully responsive mobile design!
+            Track household energy usage, automate logging with templates & schedules, calculate costs with TOU-D-PRIME rates, and fairly split electricity bills. New: multi-device logging, quick kWh entry, reusable templates, and year-based analytics.
           </p>
-          <div className="flex flex-wrap justify-center gap-3 mb-4 md:mb-6">
+          <div className="flex flex-wrap justify-center gap-3 mb-4 md:mb-6" aria-label="Key features">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 text-purple-300 rounded-full text-xs md:text-sm font-medium">
               <FolderPlusIcon className="w-4 h-4" />
               Multi-Device
@@ -70,12 +78,20 @@ export default function LandingPage() {
             </span>
           </div>
           <div className="mt-2 md:mt-4"></div>
-          <Link 
-            to="/login"
-            className="energy-action-btn inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-lg sm:text-xl font-bold shadow-2xl rounded-lg"
-          >
-            Get Started →
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <Link 
+              to="/login"
+              className="energy-action-btn inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-lg sm:text-xl font-bold shadow-2xl rounded-lg"
+            >
+              Login
+            </Link>
+            <button
+              onClick={handleTryDemo}
+              className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 text-lg sm:text-xl font-bold rounded-lg border border-primary/40 bg-card text-foreground hover:bg-card/80 hover:shadow-lg transition-all duration-200"
+            >
+              Try Live Demo
+            </button>
+          </div>
         </div>
       </section>
 
@@ -164,9 +180,7 @@ export default function LandingPage() {
               <SparklesIcon className="w-5 h-5 text-primary" />
               <span className="text-sm font-bold text-primary">NEW FEATURES</span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">
-              Logging Made Effortless
-            </h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">Logging Made Effortless</h2>
             <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-3xl px-4">
               Save 80% of your time with automation features. Enhanced dashboard with year-based filtering, real-time insights, and fully responsive mobile design.
             </p>

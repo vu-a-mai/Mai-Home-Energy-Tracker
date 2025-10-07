@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import type { EnergyLogTemplate, TemplateFormData } from '../types'
 import { toast } from 'sonner'
+import { calculateUsageCost } from '../utils/rateCalculatorFixed'
 
 export function useTemplates() {
   const [templates, setTemplates] = useState<EnergyLogTemplate[]>([])
@@ -135,6 +136,21 @@ export function useTemplates() {
 
       if (!userData?.household_id) throw new Error('No household found')
 
+      // Calculate cost and rate breakdown
+      const device = await supabase
+        .from('devices')
+        .select('wattage')
+        .eq('id', template.device_id)
+        .single()
+      
+      const wattage = device.data?.wattage || 0
+      const costCalc = calculateUsageCost(
+        wattage,
+        template.default_start_time,
+        template.default_end_time,
+        usageDate
+      )
+
       const { error: insertError } = await supabase
         .from('energy_logs')
         .insert({
@@ -143,6 +159,9 @@ export function useTemplates() {
           usage_date: usageDate,
           start_time: template.default_start_time,
           end_time: template.default_end_time,
+          total_kwh: costCalc.totalKwh,
+          calculated_cost: costCalc.totalCost,
+          rate_breakdown: costCalc.breakdown,
           assigned_users: template.assigned_users,
           created_by: user.id,
           source_type: 'template',
@@ -247,7 +266,31 @@ export function useTemplates() {
             }
           }
 
-          // Create the log
+          // Calculate cost and rate breakdown
+          const device = await supabase
+            .from('devices')
+            .select('wattage')
+            .eq('id', template.device_id)
+            .single()
+          
+          const wattage = device.data?.wattage || 0
+          const costCalc = calculateUsageCost(
+            wattage,
+            template.default_start_time,
+            template.default_end_time,
+            date
+          )
+          
+          console.log('📊 Bulk Template - Cost Calculation:', {
+            date,
+            wattage,
+            time: `${template.default_start_time} - ${template.default_end_time}`,
+            totalKwh: costCalc.totalKwh,
+            totalCost: costCalc.totalCost,
+            breakdown: costCalc.breakdown
+          })
+          
+          // Create the log with calculated values
           const { error: insertError } = await supabase
             .from('energy_logs')
             .insert({
@@ -256,6 +299,9 @@ export function useTemplates() {
               usage_date: date,
               start_time: template.default_start_time,
               end_time: template.default_end_time,
+              total_kwh: costCalc.totalKwh,
+              calculated_cost: costCalc.totalCost,
+              rate_breakdown: costCalc.breakdown,
               assigned_users: template.assigned_users,
               created_by: user.id,
               source_type: 'template',
