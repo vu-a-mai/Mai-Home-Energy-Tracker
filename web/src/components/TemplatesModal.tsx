@@ -3,6 +3,7 @@ import { useTemplates } from '../hooks/useTemplates'
 import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
 import { useDeviceGroups } from '../hooks/useDeviceGroups'
+import { useAuth } from '../hooks/useAuth'
 import { Button } from './ui/Button'
 import { Input } from './ui/Input'
 import { Card, CardContent } from './ui/Card'
@@ -42,6 +43,7 @@ const DAYS_OF_WEEK = [
 ]
 
 export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModalProps) {
+  const { user } = useAuth()
   const { templates, loading, addTemplate, updateTemplate, deleteTemplate, useTemplate, bulkUseTemplate } = useTemplates()
   const { devices } = useDevices()
   const { users: householdUsers } = useHouseholdUsers()
@@ -257,10 +259,23 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
         return
       }
       
-      // Query existing logs
+      // Get user's household_id first
+      const { data: userData } = await supabase
+        .from('users')
+        .select('household_id')
+        .eq('id', user?.id)
+        .single()
+      
+      if (!userData?.household_id) {
+        setExistingLogsPreview([])
+        return
+      }
+      
+      // Query existing logs with household_id for RLS
       const { data, error } = await supabase
         .from('energy_logs')
         .select('usage_date, start_time, end_time')
+        .eq('household_id', userData.household_id)
         .eq('device_id', template.device_id)
         .in('usage_date', matchingDates)
         .eq('start_time', template.default_start_time)
