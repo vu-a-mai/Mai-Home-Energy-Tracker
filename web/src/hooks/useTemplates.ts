@@ -216,10 +216,11 @@ export function useTemplates() {
 
       for (const date of matchingDates) {
         try {
-          // Check if log already exists
+          // Check if log already exists (with household_id for RLS)
           const { data: existingLog } = await supabase
             .from('energy_logs')
             .select('id')
+            .eq('household_id', userData.household_id)
             .eq('device_id', template.device_id)
             .eq('usage_date', date)
             .eq('start_time', template.default_start_time)
