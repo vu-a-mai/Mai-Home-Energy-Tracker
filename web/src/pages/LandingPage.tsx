@@ -147,14 +147,14 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Feature 5 - NEW */}
+            {/* Feature 5 - UPDATED */}
             <div className="energy-card text-center p-4 md:p-6 hover:scale-105 transition-transform flex flex-col h-full bg-gradient-to-br from-blue-500/10 to-blue-600/10 border-blue-500/30">
               <DocumentDuplicateIcon className="w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 energy-pulse text-blue-400 mx-auto" />
               <h3 className="text-base md:text-lg font-semibold mb-2 md:mb-3 text-foreground">
-                Reusable Templates
+                Multi-Device Templates
               </h3>
               <p className="text-xs md:text-sm text-muted-foreground leading-relaxed flex-grow">
-                Save common usage patterns and reuse with one click. Create from scratch or save any existing log as a template.
+                Create templates with multiple devices at once! Track your morning routine (coffee + toaster + microwave) with a single click. See grouped usage and totals.
               </p>
             </div>
 
@@ -239,22 +239,26 @@ export default function LandingPage() {
               <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4">
                 <DocumentDuplicateIcon className="w-6 h-6 text-blue-400" />
               </div>
-              <h3 className="text-lg font-bold mb-2 text-foreground">Templates</h3>
+              <h3 className="text-lg font-bold mb-2 text-foreground">Multi-Device Templates</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Save patterns and bulk-generate logs across date ranges with smart preview!
+                Create templates with multiple devices! One click to log your entire routine with grouped totals.
               </p>
               <ul className="text-xs text-muted-foreground space-y-2">
                 <li className="flex items-start gap-2">
                   <span className="text-green-400 mt-0.5">✓</span>
-                  <span>Single date or bulk date range</span>
+                  <span>Select multiple devices at once</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-400 mt-0.5">✓</span>
-                  <span>Select specific days (Mon-Fri)</span>
+                  <span>Grouped display with combined totals</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-green-400 mt-0.5">✓</span>
-                  <span>Preview & replace existing logs</span>
+                  <span>Overlap detection & warnings</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-400 mt-0.5">✓</span>
+                  <span>Bulk date range generation</span>
                 </li>
               </ul>
             </div>

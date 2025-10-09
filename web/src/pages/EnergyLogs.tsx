@@ -1258,9 +1258,18 @@ export default function EnergyLogs() {
                 <div className="lg:hidden">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-sm text-foreground truncate">
-                        {getDeviceIcon(log.device_name || '')} {log.device_name || 'Unknown Device'}
-                      </h4>
+                      <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                        <h4 className="font-bold text-sm text-foreground truncate">
+                          {getDeviceIcon(log.device_name || '')} {log.device_name || 'Unknown Device'}
+                        </h4>
+                        {log.source_type === 'template' && (
+                          <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] sm:text-xs rounded-full flex items-center gap-0.5 sm:gap-1 shrink-0 border border-blue-500/30">
+                            <DocumentDuplicateIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                            <span className="hidden xs:inline">Template</span>
+                            <span className="xs:hidden">T</span>
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground">{log.device_wattage}W</div>
                     </div>
                     <div className="text-right shrink-0">
@@ -1377,11 +1386,17 @@ export default function EnergyLogs() {
                 <div className="hidden lg:flex items-center justify-between gap-4">
                   {/* Left: Device & Basic Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h4 className="font-bold text-foreground truncate">
                         {getDeviceIcon(log.device_name || '')} {log.device_name || 'Unknown Device'}
                       </h4>
                       <span className="text-xs text-muted-foreground">{log.device_wattage}W</span>
+                      {log.source_type === 'template' && (
+                        <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full flex items-center gap-1 border border-blue-500/30">
+                          <DocumentDuplicateIcon className="w-3 h-3" />
+                          Template
+                        </span>
+                      )}
                       {/* Show who used it */}
                       {log.assigned_users && log.assigned_users.length > 0 && (
                         <div className="flex items-center gap-1">
@@ -1487,6 +1502,61 @@ export default function EnergyLogs() {
                 {/* Expanded Details */}
                 {isExpanded && (
                   <div className="mt-4 pt-4 border-t border-border space-y-3">
+                    {/* Show related devices from same template */}
+                    {log.source_type === 'template' && log.source_id && (() => {
+                      const relatedLogs = energyLogs.filter(l => 
+                        l.source_type === 'template' && 
+                        l.source_id === log.source_id && 
+                        l.usage_date === log.usage_date &&
+                        l.start_time === log.start_time &&
+                        l.end_time === log.end_time &&
+                        l.id !== log.id
+                      )
+                      
+                      if (relatedLogs.length > 0) {
+                        const totalKwh = relatedLogs.reduce((sum, l) => sum + (l.total_kwh || 0), 0) + (log.total_kwh || usageCalc.totalKwh)
+                        const totalCost = relatedLogs.reduce((sum, l) => sum + (l.calculated_cost || 0), 0) + (log.calculated_cost || usageCalc.totalCost)
+                        
+                        return (
+                          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 space-y-2">
+                            <div className="flex items-center gap-2 text-sm font-bold text-blue-400">
+                              <DocumentDuplicateIcon className="w-4 h-4" />
+                              Template Group ({relatedLogs.length + 1} devices)
+                            </div>
+                            <div className="space-y-1.5">
+                              {/* Current device */}
+                              <div className="flex items-center justify-between text-xs bg-blue-500/20 rounded px-2 py-1.5 border border-blue-500/40">
+                                <span className="font-semibold text-blue-300 flex items-center gap-1">
+                                  {getDeviceIcon(log.device_name || '')} {log.device_name}
+                                </span>
+                                <span className="text-blue-400 font-mono">
+                                  {(log.total_kwh || usageCalc.totalKwh).toFixed(2)} kWh • ${(log.calculated_cost || usageCalc.totalCost).toFixed(2)}
+                                </span>
+                              </div>
+                              {/* Related devices */}
+                              {relatedLogs.map(relLog => (
+                                <div key={relLog.id} className="flex items-center justify-between text-xs bg-slate-800/50 rounded px-2 py-1.5">
+                                  <span className="text-muted-foreground flex items-center gap-1">
+                                    {getDeviceIcon(relLog.device_name || '')} {relLog.device_name}
+                                  </span>
+                                  <span className="text-foreground font-mono">
+                                    {(relLog.total_kwh || 0).toFixed(2)} kWh • ${(relLog.calculated_cost || 0).toFixed(2)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex items-center justify-between pt-2 border-t border-blue-500/30">
+                              <span className="text-sm font-bold text-blue-300">Total:</span>
+                              <span className="text-sm font-bold text-blue-400 font-mono">
+                                {totalKwh.toFixed(2)} kWh • ${totalCost.toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      }
+                      return null
+                    })()}
+                    
                     <div className="text-sm font-bold text-foreground">Detailed Rate Breakdown:</div>
                     <div className="space-y-2">
                       {usageCalc.breakdown.map((period: any, idx: number) => {

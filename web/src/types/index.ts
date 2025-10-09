@@ -69,7 +69,8 @@ export interface EnergyLogTemplate {
   id: string
   household_id: string
   template_name: string
-  device_id: string
+  device_id: string | null  // Nullable for multi-device templates
+  device_ids: string[] | null  // Array of device IDs for multi-device templates
   default_start_time: string
   default_end_time: string
   assigned_users: string[]
@@ -79,6 +80,7 @@ export interface EnergyLogTemplate {
   // Joined fields (from queries)
   device_name?: string
   device_wattage?: number
+  devices?: Device[]  // For multi-device templates
 }
 
 export interface RecurringSchedule {
@@ -123,7 +125,7 @@ export interface DeviceGroupFormData {
 export interface TemplateFormData {
   template_name: string
   device_id: string
-  device_ids?: string[] // For multi-device support
+  device_ids?: string[]  // For multi-device mode in UI
   default_start_time: string
   default_end_time: string
   assigned_users: string[]
