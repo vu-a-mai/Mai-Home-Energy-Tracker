@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth'
 import { Button } from './ui/Button'
 import { Input } from './ui/Input'
 import { Card, CardContent } from './ui/Card'
+import { Badge } from './ui/badge'
 import { MultiDeviceSelector } from './MultiDeviceSelector'
 import { SaveGroupModal } from './SaveGroupModal'
 import type { TemplateFormData } from '../types'
@@ -176,13 +177,30 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <BoltIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400 flex-shrink-0" />
-                <span className="truncate">{template.device_name} ({template.device_wattage}W)</span>
+                {template.device_ids && template.device_ids.length > 1 ? (
+                  <Badge variant="info" className="text-xs">
+                    {template.device_ids.length} Devices
+                  </Badge>
+                ) : (
+                  <span className="truncate">{template.device_name} ({template.device_wattage}W)</span>
+                )}
               </span>
               <span className="flex items-center gap-1">
                 <ClockIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400 flex-shrink-0" />
                 <span className="whitespace-nowrap">{template.default_start_time} - {template.default_end_time}</span>
               </span>
             </div>
+            {template.device_ids && template.device_ids.length > 1 && template.devices && (
+              <div className="mt-2 text-xs text-muted-foreground">
+                <div className="flex flex-wrap gap-1">
+                  {template.devices.map((device, idx) => (
+                    <span key={device.id} className="px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded-full">
+                      {device.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             {template.assigned_users.length > 0 && (
               <div className="flex items-center gap-1.5 sm:gap-2 mt-2">
                 <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400 flex-shrink-0" />
@@ -240,45 +258,23 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
         toast.error('Please select at least one device')
         return
       }
-      
-      // Create multiple templates (one per device)
-      try {
-        const today = new Date().toISOString().split('T')[0]
-        for (const deviceId of formData.device_ids) {
-          const device = devices.find(d => d.id === deviceId)
-          const templateData = {
-            template_name: formData.device_ids.length > 1 
-              ? `${formData.template_name} - ${device?.name}`
-              : formData.template_name,
-            device_id: deviceId,
-            default_start_time: formData.default_start_time,
-            default_end_time: formData.default_end_time,
-            assigned_users: formData.assigned_users
-          }
-          
-          if (editingId && formData.device_ids.length === 1) {
-            await updateTemplate(editingId, templateData)
-          } else {
-            await addTemplate(templateData)
-          }
-        }
-        toast.success(`${formData.device_ids.length} template(s) created successfully!`)
-        resetForm()
-      } catch (err) {
-        // Error handled in hook
-      }
     } else {
-      // Single device mode
-      try {
-        if (editingId) {
-          await updateTemplate(editingId, formData)
-        } else {
-          await addTemplate(formData)
-        }
-        resetForm()
-      } catch (err) {
-        // Error handled in hook
+      if (!formData.device_id) {
+        toast.error('Please select a device')
+        return
       }
+    }
+    
+    // Submit template (hook handles single vs multi-device storage)
+    try {
+      if (editingId) {
+        await updateTemplate(editingId, formData)
+      } else {
+        await addTemplate(formData)
+      }
+      resetForm()
+    } catch (err) {
+      // Error handled in hook
     }
   }
 
@@ -297,16 +293,19 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
   }
 
   const handleEdit = (template: typeof templates[0]) => {
+    // Determine if this is a multi-device template
+    const isMultiDevice = !!(template.device_ids && template.device_ids.length > 0)
+    
     setFormData({
       template_name: template.template_name,
-      device_id: template.device_id,
-      device_ids: [template.device_id],
+      device_id: isMultiDevice ? '' : (template.device_id || ''),
+      device_ids: isMultiDevice ? (template.device_ids || []) : [],
       default_start_time: template.default_start_time,
       default_end_time: template.default_end_time,
       assigned_users: template.assigned_users
     })
     setEditingId(template.id)
-    setUseMultiDevice(false)
+    setUseMultiDevice(isMultiDevice)
     setShowForm(true)
   }
 
@@ -1052,8 +1051,19 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
                 {/* Template Info */}
                 <div className="bg-slate-800/50 border border-slate-600 p-4 rounded-lg space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Device:</span>
-                    <span className="font-semibold text-orange-400">{template.device_name}</span>
+                    <span className="text-slate-400">Device{template.device_ids && template.device_ids.length > 1 ? 's' : ''}:</span>
+                    {template.device_ids && template.device_ids.length > 1 ? (
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge variant="info" className="text-xs">
+                          {template.device_ids.length} Devices
+                        </Badge>
+                        <div className="text-xs text-orange-400">
+                          {template.devices?.map(d => d.name).join(', ')}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="font-semibold text-orange-400">{template.device_name}</span>
+                    )}
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Time:</span>

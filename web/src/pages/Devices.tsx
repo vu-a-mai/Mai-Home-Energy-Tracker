@@ -77,37 +77,58 @@ interface DeviceFormData {
 
 const DEVICE_TYPES = [
   'Air Conditioner',
+  'Air Fryer',
   'Air Purifier',
+  'Blender',
+  'Ceiling Fan',
   'Coffee Maker',
   'Computer',
   'Dehumidifier',
   'Dishwasher',
   'Dryer',
+  'Electric Blanket',
+  'Electric Stove',
   'EV Charger',
   'Fan',
+  'Food Processor',
   'Freezer',
   'Gaming Console',
   'Hair Dryer',
   'Heater',
   'Humidifier',
+  'Instant Pot',
   'Iron',
   'Kettle',
+  'Laptop',
   'Light',
   'Microwave',
+  'Monitor',
   'Oven',
+  'Phone Charger',
   'Printer',
+  'Projector',
   'Refrigerator',
+  'Rice Cooker',
   'Router',
+  'Slow Cooker',
   'Space Heater',
+  'Speaker System',
+  'Tablet',
   'Toaster',
+  'Toaster Oven',
   'TV',
   'Vacuum Cleaner',
   'Washing Machine',
+  'Water Dispenser',
   'Water Heater',
   'Other'
 ].sort() // Alphabetically sorted
 
 const LOCATIONS = [
+  'Vu Room',
+  'Thuy Room',
+  'Vy Room',
+  'Han Room',
   'Attic',
   'Backyard',
   'Basement',
@@ -130,8 +151,9 @@ const LOCATIONS = [
   'Outdoor',
   'Patio',
   'Utility Room',
-  'Other'
-].sort() // Alphabetically sorted
+  'Other',
+]
+//.sort() // Alphabetically sorted
 
 export default function Devices() {
   const { devices, loading, error, addDevice, updateDevice, deleteDevice } = useDevices()
