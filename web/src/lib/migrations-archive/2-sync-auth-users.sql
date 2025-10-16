@@ -26,31 +26,31 @@ DECLARE
   han_auth_id UUID;
 BEGIN
   -- Get auth user IDs by email
-  SELECT id INTO vu_auth_id FROM auth.users WHERE email = 'vu@maihome.com';
-  SELECT id INTO vy_auth_id FROM auth.users WHERE email = 'vy@maihome.com';
-  SELECT id INTO thuy_auth_id FROM auth.users WHERE email = 'thuy@maihome.com';
-  SELECT id INTO han_auth_id FROM auth.users WHERE email = 'han@maihome.com';
+  SELECT id INTO vu_auth_id FROM auth.users WHERE email = 'user1@example.com';
+  SELECT id INTO vy_auth_id FROM auth.users WHERE email = 'user2@example.com';
+  SELECT id INTO thuy_auth_id FROM auth.users WHERE email = 'user3@example.com';
+  SELECT id INTO han_auth_id FROM auth.users WHERE email = 'user4@example.com';
   
   -- Check if all users exist
   IF vu_auth_id IS NULL THEN
-    RAISE EXCEPTION 'Auth user vu@maihome.com not found';
+    RAISE EXCEPTION 'Auth user user1@example.com not found';
   END IF;
   IF vy_auth_id IS NULL THEN
-    RAISE EXCEPTION 'Auth user vy@maihome.com not found';
+    RAISE EXCEPTION 'Auth user user2@example.com not found';
   END IF;
   IF thuy_auth_id IS NULL THEN
-    RAISE EXCEPTION 'Auth user thuy@maihome.com not found';
+    RAISE EXCEPTION 'Auth user user3@example.com not found';
   END IF;
   IF han_auth_id IS NULL THEN
-    RAISE EXCEPTION 'Auth user han@maihome.com not found';
+    RAISE EXCEPTION 'Auth user user4@example.com not found';
   END IF;
   
   -- Insert users with auth IDs
   INSERT INTO users (id, email, name, household_id) VALUES
-    (vu_auth_id, 'vu@maihome.com', 'Vu Mai', household_uuid),
-    (vy_auth_id, 'vy@maihome.com', 'Vy Mai', household_uuid),
-    (thuy_auth_id, 'thuy@maihome.com', 'Thuy Mai', household_uuid),
-    (han_auth_id, 'han@maihome.com', 'Han Mai', household_uuid);
+    (vu_auth_id, 'user1@example.com', 'User 1', household_uuid),
+    (vy_auth_id, 'user2@example.com', 'User 2', household_uuid),
+    (thuy_auth_id, 'user3@example.com', 'User 3', household_uuid),
+    (han_auth_id, 'user4@example.com', 'User 4', household_uuid);
   
   RAISE NOTICE '✅ Users created successfully!';
   RAISE NOTICE 'Household ID: %', household_uuid;

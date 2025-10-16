@@ -5,7 +5,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card'
-import { BoltIcon, HomeIcon, EyeIcon } from '@heroicons/react/24/outline'
+import { BoltIcon, EyeIcon } from '@heroicons/react/24/outline'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -15,22 +15,6 @@ export default function Login() {
   const { login } = useAuth()
   const { enableDemoMode } = useDemoMode()
   const navigate = useNavigate()
-
-  // Predefined household members for quick email selection
-  const householdMembers = [
-    { name: 'Vu Mai', email: 'Vu@maihome.com' },
-    { name: 'Thuy Mai', email: 'Thuy@maihome.com' },
-    { name: 'Vy Mai', email: 'Vy@maihome.com' },
-    { name: 'Han Mai', email: 'Han@maihome.com' }
-  ]
-
-  const handleQuickEmailSelect = (userEmail: string) => {
-    setEmail(userEmail)
-    // Focus on password field after email is filled
-    setTimeout(() => {
-      document.getElementById('password-input')?.focus()
-    }, 100)
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -131,39 +115,6 @@ export default function Login() {
               )}
             </Button>
           </form>
-          
-          {/* Quick Email Selection */}
-          <div className="bg-muted/50 p-4 md:p-6 rounded-lg border border-border">
-            <h3 className="text-base md:text-lg font-semibold text-foreground mb-2 md:mb-3 flex items-center gap-2">
-              <HomeIcon className="w-5 h-5 text-cyan-400" />
-              Mai Family Accounts
-            </h3>
-            <p className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4">
-              Click on a family member to auto-fill their email:
-            </p>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 mb-3 md:mb-4">
-              {householdMembers.map((member) => (
-                <button
-                  key={member.email}
-                  type="button"
-                  onClick={() => handleQuickEmailSelect(member.email)}
-                  className="bg-card border-2 border-border rounded-lg p-3 cursor-pointer transition-all duration-200 text-left hover:border-primary hover:-translate-y-1 hover:shadow-md"
-                >
-                  <div className="font-semibold text-foreground text-sm">
-                    {member.name}
-                  </div>
-                  <div className="text-muted-foreground text-xs mt-1">
-                    {member.email}
-                  </div>
-                </button>
-              ))}
-            </div>
-            
-            <p className="text-xs text-muted-foreground">
-              You'll need to enter your password after selecting.
-            </p>
-          </div>
 
           {/* View Demo Button */}
           <div className="pt-2 md:pt-4">

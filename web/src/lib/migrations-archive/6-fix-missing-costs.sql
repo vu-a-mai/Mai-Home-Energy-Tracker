@@ -29,8 +29,8 @@ DECLARE
 BEGIN
   -- Get IDs
   SELECT household_id INTO v_household_id FROM users LIMIT 1;
-  SELECT id INTO v_vu_id FROM users WHERE email = 'vu@maihome.com';
-  SELECT id INTO v_thuy_id FROM users WHERE email = 'thuy@maihome.com';
+  SELECT id INTO v_vu_id FROM users WHERE email = 'user1@example.com';
+  SELECT id INTO v_thuy_id FROM users WHERE email = 'user3@example.com';
   
   -- Delete the problematic logs
   DELETE FROM energy_logs WHERE id IN (
