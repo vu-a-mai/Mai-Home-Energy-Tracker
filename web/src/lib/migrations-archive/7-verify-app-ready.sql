@@ -92,7 +92,7 @@ BEGIN
     RAISE NOTICE '';
     RAISE NOTICE '✅ Next Steps:';
     RAISE NOTICE '1. Make sure demo mode is OFF in your app';
-    RAISE NOTICE '2. Login with: vu@maihome.com (or any user)';
+    RAISE NOTICE '2. Login with your user account';
     RAISE NOTICE '3. Check that you see your 12 devices';
     RAISE NOTICE '4. Check that you see your 4 energy logs with costs';
     RAISE NOTICE '5. Verify Dashboard shows correct usage stats';

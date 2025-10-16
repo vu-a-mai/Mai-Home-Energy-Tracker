@@ -39,10 +39,10 @@ DECLARE
 BEGIN
   -- Get IDs
   SELECT household_id INTO v_household_id FROM users LIMIT 1;
-  SELECT id INTO v_vu_id FROM users WHERE email = 'vu@maihome.com';
-  SELECT id INTO v_vy_id FROM users WHERE email = 'vy@maihome.com';
-  SELECT id INTO v_thuy_id FROM users WHERE email = 'thuy@maihome.com';
-  SELECT id INTO v_han_id FROM users WHERE email = 'han@maihome.com';
+  SELECT id INTO v_vu_id FROM users WHERE email = 'user1@example.com';
+  SELECT id INTO v_vy_id FROM users WHERE email = 'user2@example.com';
+  SELECT id INTO v_thuy_id FROM users WHERE email = 'user3@example.com';
+  SELECT id INTO v_han_id FROM users WHERE email = 'user4@example.com';
   
   -- Insert devices
   INSERT INTO devices (household_id, name, device_type, location, wattage, is_shared, created_by)

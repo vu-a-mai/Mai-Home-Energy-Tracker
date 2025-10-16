@@ -43,7 +43,7 @@ export default function NavBar() {
 
   // Get user display name (capitalize first letter of each word)
   const getUserDisplayName = () => {
-    if (isDemoMode) return 'Vu Mai'
+    if (isDemoMode) return 'Demo User'
     
     if (user?.email) {
       const namePart = user.email.split('@')[0]

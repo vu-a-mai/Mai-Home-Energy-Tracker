@@ -17,8 +17,8 @@ FROM users
 GROUP BY household_id
 ORDER BY user_count DESC;
 
--- Check if Thuy can see other users (test the RLS policy)
--- This should return all users in Thuy's household
+-- Check if a user can see other users (test the RLS policy)
+-- This should return all users in the user's household
 SELECT 
   id,
   email,
@@ -28,5 +28,5 @@ FROM users
 WHERE household_id = (
   SELECT household_id 
   FROM users 
-  WHERE email = 'thuy@maihome.com'
+  WHERE email = 'user3@example.com'
 );
