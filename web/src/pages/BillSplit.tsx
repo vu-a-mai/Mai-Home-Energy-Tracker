@@ -42,6 +42,7 @@ interface BillSplitData {
   billingPeriod: string
   totalBillAmount: number
   personalCosts: { [userId: string]: number }
+  personalCostsBeforeDiscount: { [userId: string]: number }
   personalKwh: { [userId: string]: number }
   sharedCost: number
   finalAmounts: { [userId: string]: number }
@@ -54,6 +55,11 @@ interface BillFormData {
   endDate: string
   totalAmount: number
   splitMethod: 'even' | 'usage_based'
+}
+
+interface GlobalDiscount {
+  discountType: 'none' | 'care' | 'fera' | 'custom'
+  customPercentage: number
 }
 
 // Helper function to get user icon
@@ -104,6 +110,10 @@ export default function BillSplit() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [viewingBillSplit, setViewingBillSplit] = useState<typeof savedBillSplits[0] | null>(null)
   const [deletingBillSplit, setDeletingBillSplit] = useState<typeof savedBillSplits[0] | null>(null)
+  const [globalDiscount, setGlobalDiscount] = useState<GlobalDiscount>({
+    discountType: 'none',
+    customPercentage: 0
+  })
 
   // Auto-show results in demo mode only
   useEffect(() => {
@@ -164,6 +174,7 @@ export default function BillSplit() {
     if (!showResults) return null
     
     // Calculate personal costs and kWh for each user
+    const personalCostsBeforeDiscount: { [userId: string]: number } = {}
     const personalCosts: { [userId: string]: number } = {}
     const personalKwh: { [userId: string]: number } = {}
     let totalTrackedCosts = 0
@@ -171,9 +182,26 @@ export default function BillSplit() {
 
     // Initialize personal costs and kWh
     householdUsers.forEach(user => {
+      personalCostsBeforeDiscount[user.id] = 0
       personalCosts[user.id] = 0
       personalKwh[user.id] = 0
     })
+
+    // Helper function to get global discount percentage
+    const getDiscountPercentage = (): number => {
+      if (globalDiscount.discountType === 'none') return 0
+      
+      switch (globalDiscount.discountType) {
+        case 'care':
+          return 32.5 // SCE CARE discount
+        case 'fera':
+          return 18 // SCE FERA discount
+        case 'custom':
+          return globalDiscount.customPercentage || 0
+        default:
+          return 0
+      }
+    }
 
     // If split method is "even", just divide total bill evenly
     if (formData.splitMethod === 'even') {
@@ -188,6 +216,7 @@ export default function BillSplit() {
         billingPeriod: `${formData.startDate} to ${formData.endDate}`,
         totalBillAmount: formData.totalAmount,
         personalCosts,
+        personalCostsBeforeDiscount,
         personalKwh,
         sharedCost: formData.totalAmount, // All is shared in even split
         finalAmounts,
@@ -212,38 +241,37 @@ export default function BillSplit() {
       const totalCost = log.calculated_cost ?? calc.totalCost
       const totalKwh = log.total_kwh ?? calc.totalKwh
       
-      // Check both is_shared (boolean) and sharing_type (text) for compatibility
-      const isSharedDevice = device?.is_shared === true || (device as any)?.sharing_type === 'shared'
-      
-      // If device is shared AND has assigned users, split among them
-      if (device && isSharedDevice && log.assigned_users && log.assigned_users.length > 0) {
-        const costPerUser = totalCost / log.assigned_users.length
-        const kwhPerUser = totalKwh / log.assigned_users.length
-        
-        log.assigned_users.forEach((userId: string) => {
-          personalCosts[userId] = (personalCosts[userId] || 0) + costPerUser
-          personalKwh[userId] = (personalKwh[userId] || 0) + kwhPerUser
-        })
-        
-        totalTrackedCosts += totalCost
-        totalSharedDeviceCosts += totalCost
-      } else if (log.assigned_users && log.assigned_users.length > 0) {
+      // If log has assigned users, charge them (regardless of device shared status)
+      if (log.assigned_users && log.assigned_users.length > 0) {
         // Has assigned users (personal device) - credit to assigned user(s)
         const costPerUser = totalCost / log.assigned_users.length
         const kwhPerUser = totalKwh / log.assigned_users.length
         
+        const discountPercent = getDiscountPercentage()
+        const discountedCostPerUser = costPerUser * (1 - discountPercent / 100)
+        
         log.assigned_users.forEach((userId: string) => {
-          personalCosts[userId] = (personalCosts[userId] || 0) + costPerUser
+          // Store original cost before discount
+          personalCostsBeforeDiscount[userId] = (personalCostsBeforeDiscount[userId] || 0) + costPerUser
+          // Store discounted cost
+          personalCosts[userId] = (personalCosts[userId] || 0) + discountedCostPerUser
           personalKwh[userId] = (personalKwh[userId] || 0) + kwhPerUser
         })
         
-        totalTrackedCosts += totalCost
+        totalTrackedCosts += discountedCostPerUser * log.assigned_users.length
       } else {
         // Fallback: no assigned users - credit to creator
         const userId = log.created_by || householdUsers[0]?.id || 'unknown'
-        personalCosts[userId] = (personalCosts[userId] || 0) + totalCost
+        // Apply CARE/FERA discount to personal device usage
+        const discountPercent = getDiscountPercentage()
+        const discountedCost = totalCost * (1 - discountPercent / 100)
+        
+        // Store original cost before discount
+        personalCostsBeforeDiscount[userId] = (personalCostsBeforeDiscount[userId] || 0) + totalCost
+        // Store discounted cost
+        personalCosts[userId] = (personalCosts[userId] || 0) + discountedCost
         personalKwh[userId] = (personalKwh[userId] || 0) + totalKwh
-        totalTrackedCosts += totalCost
+        totalTrackedCosts += discountedCost
       }
     })
 
@@ -261,6 +289,7 @@ export default function BillSplit() {
       billingPeriod: `${formData.startDate} to ${formData.endDate}`,
       totalBillAmount: formData.totalAmount,
       personalCosts,
+      personalCostsBeforeDiscount,
       personalKwh,
       sharedCost: remainingAmount,
       finalAmounts,
@@ -269,7 +298,7 @@ export default function BillSplit() {
     }
     
     return result
-  }, [showResults, formData, periodLogs, devices, householdUsers])
+  }, [showResults, formData, periodLogs, devices, householdUsers, globalDiscount])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -298,11 +327,18 @@ export default function BillSplit() {
     try {
       // Convert to database format
       const userAllocations: any = {}
+      const discountPercentage = 
+        globalDiscount.discountType === 'care' ? 32.5 : 
+        globalDiscount.discountType === 'fera' ? 18 : 
+        globalDiscount.customPercentage || 0
+      
       householdUsers.forEach(user => {
         userAllocations[user.id] = {
           personalCost: calculateBillSplit.personalCosts[user.id] || 0,
           sharedCost: calculateBillSplit.sharedCost / householdUsers.length,
-          totalOwed: calculateBillSplit.finalAmounts[user.id] || 0
+          totalOwed: calculateBillSplit.finalAmounts[user.id] || 0,
+          discountType: globalDiscount.discountType,
+          discountPercentage: discountPercentage
         }
       })
       
@@ -638,6 +674,51 @@ ${householdUsers.map(user =>
           {calculateBillSplit && (
             <div className="space-y-4">
 
+              {/* CARE/FERA Discount Selector */}
+              <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+                <div className="flex flex-col md:flex-row md:items-center gap-3">
+                  <div className="flex-1">
+                    <h4 className="text-sm font-semibold text-blue-300 mb-1 flex items-center gap-2">
+                      <span>💰</span>
+                      CARE/FERA Discount (Applies to All Personal Usage)
+                    </h4>
+                    <p className="text-xs text-slate-400">
+                      SCE TOU-D-PRIME: CARE (32.5%) • FERA (18%) • Discounts apply only to personal devices
+                    </p>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <select
+                      value={globalDiscount.discountType}
+                      onChange={(e) => setGlobalDiscount({
+                        ...globalDiscount,
+                        discountType: e.target.value as 'none' | 'care' | 'fera' | 'custom'
+                      })}
+                      className="px-3 py-2 text-sm bg-slate-800 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px]"
+                    >
+                      <option value="none">No Discount</option>
+                      <option value="care">CARE (32.5%)</option>
+                      <option value="fera">FERA (18%)</option>
+                      <option value="custom">Custom %</option>
+                    </select>
+                    {globalDiscount.discountType === 'custom' && (
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={globalDiscount.customPercentage}
+                        onChange={(e) => setGlobalDiscount({
+                          ...globalDiscount,
+                          customPercentage: parseFloat(e.target.value) || 0
+                        })}
+                        placeholder="%"
+                        className="w-20 px-2 py-2 text-sm"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Summary - Color Coded */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {/* Billing Period */}
@@ -725,6 +806,19 @@ ${householdUsers.map(user =>
                     <div className="text-muted-foreground">Total Bill</div>
                   </div>
                 </div>
+                {/* Discount Info */}
+                {globalDiscount.discountType !== 'none' && (
+                  <div className="mt-3 pt-3 border-t border-slate-600/50">
+                    <p className="text-xs text-green-300 flex items-center gap-1">
+                      <span>💰</span>
+                      <span className="font-semibold">
+                        {globalDiscount.discountType === 'care' ? 'CARE (32.5%)' :
+                         globalDiscount.discountType === 'fera' ? 'FERA (18%)' :
+                         `${globalDiscount.customPercentage}%`} discount applied to personal device usage
+                      </span>
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Individual Breakdowns - Compact Design */}
@@ -735,7 +829,18 @@ ${householdUsers.map(user =>
                       {/* User Header */}
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-2xl">{getUserIcon(user.name)}</span>
-                        <h3 className="font-bold text-foreground">{user.name}</h3>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-foreground">{user.name}</h3>
+                          {globalDiscount.discountType !== 'none' && (
+                            <Badge className="text-[9px] px-1.5 py-0.5 bg-green-500/20 text-green-300 border-green-500/50 mt-1">
+                              💰 {
+                                globalDiscount.discountType === 'care' ? '32.5%' :
+                                globalDiscount.discountType === 'fera' ? '18%' :
+                                `${globalDiscount.customPercentage}%`
+                              } discount
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       
                       {/* Cost Breakdown */}
@@ -756,9 +861,43 @@ ${householdUsers.map(user =>
                               Personal Cost:
                             </span>
                             <span className="font-semibold text-blue-400">
-                              ${calculateBillSplit.personalCosts[user.id].toFixed(2)}
+                              ${calculateBillSplit.personalCostsBeforeDiscount[user.id].toFixed(2)}
                             </span>
                           </div>
+                          
+                          {/* Discount Breakdown */}
+                          {globalDiscount.discountType !== 'none' && calculateBillSplit.personalKwh[user.id] > 0 && (
+                            <div className="mt-2 p-2 bg-green-900/20 border border-green-700/30 rounded text-xs space-y-1">
+                              {(() => {
+                                const discountPercent = 
+                                  globalDiscount.discountType === 'care' ? 32.5 :
+                                  globalDiscount.discountType === 'fera' ? 18 :
+                                  globalDiscount.customPercentage
+                                
+                                // Use the stored original cost before discount
+                                const withoutDiscount = calculateBillSplit.personalCostsBeforeDiscount[user.id]
+                                const afterDiscount = calculateBillSplit.personalCosts[user.id]
+                                const discountAmount = withoutDiscount - afterDiscount
+                                
+                                return (
+                                  <>
+                                    <div className="flex justify-between text-slate-400">
+                                      <span>Without discount:</span>
+                                      <span>${withoutDiscount.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-red-300">
+                                      <span>Discount ({discountPercent}%):</span>
+                                      <span>-${discountAmount.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-green-300 font-semibold pt-1 border-t border-green-700/30">
+                                      <span>After discount:</span>
+                                      <span>${afterDiscount.toFixed(2)}</span>
+                                    </div>
+                                  </>
+                                )
+                              })()}
+                            </div>
+                          )}
                         </div>
                         <div className="flex justify-between items-center text-sm">
                           <span className="text-muted-foreground flex items-center gap-1">
@@ -999,7 +1138,7 @@ ${householdUsers.map(user =>
             return (
               <>
                 <DialogHeader className="pb-2">
-                  <DialogTitle className="text-lg md:text-xl flex items-center gap-2 text-white">
+                  <DialogTitle className="text-lg md:text-xl flex items-center gap-2 text-white flex-wrap">
                     <ChartBarIcon className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
                     {monthNames[viewingBillSplit.month - 1]} {viewingBillSplit.year}
                     <Badge 
@@ -1012,6 +1151,19 @@ ${householdUsers.map(user =>
                     >
                       {viewingBillSplit.split_method === 'even' ? '⚖️ Even Split' : '⚡ Usage-Based'}
                     </Badge>
+                    {(() => {
+                      const firstUser = Object.values(viewingBillSplit.user_allocations)[0] as any
+                      if (firstUser?.discountType && firstUser.discountType !== 'none') {
+                        return (
+                          <Badge className="text-xs bg-green-500/20 text-green-300 border-green-500/50">
+                            💰 {firstUser.discountType === 'care' ? 'CARE (32.5%)' :
+                                firstUser.discountType === 'fera' ? 'FERA (18%)' :
+                                `${firstUser.discountPercentage}%`} Discount
+                          </Badge>
+                        )
+                      }
+                      return null
+                    })()}
                   </DialogTitle>
                   <DialogDescription className="text-slate-400">
                     Billing Period: {viewingBillSplit.billing_period_start} to {viewingBillSplit.billing_period_end}
@@ -1145,7 +1297,17 @@ ${householdUsers.map(user =>
                                   <CurrencyDollarIcon className="w-3 h-3 text-green-400" />
                                   Personal Cost:
                                 </div>
-                                <div className="text-blue-400 font-bold">${userAllocation.personalCost.toFixed(2)}</div>
+                                <div className="text-blue-400 font-bold">
+                                  ${(() => {
+                                    // If discount was applied, show original cost before discount
+                                    const discountPercent = (userAllocation as any).discountPercentage || 0
+                                    if (discountPercent > 0) {
+                                      const originalCost = userAllocation.personalCost / (1 - discountPercent / 100)
+                                      return originalCost.toFixed(2)
+                                    }
+                                    return userAllocation.personalCost.toFixed(2)
+                                  })()}
+                                </div>
                               </div>
                               <div>
                                 <div className="text-xs text-slate-400 mb-1 flex items-center gap-1">
@@ -1155,6 +1317,38 @@ ${householdUsers.map(user =>
                                 <div className="text-green-400 font-bold">${userAllocation.sharedCost.toFixed(2)}</div>
                               </div>
                             </div>
+
+                            {/* Discount Breakdown */}
+                            {(userAllocation as any).discountType && (userAllocation as any).discountType !== 'none' && userStat.totalKwh > 0 && (
+                              <div className="mb-3 p-2 bg-green-900/20 border border-green-700/30 rounded text-xs space-y-1">
+                                {(() => {
+                                  const discountPercent = (userAllocation as any).discountPercentage || 0
+                                  
+                                  // Personal cost shown is AFTER discount already
+                                  const afterDiscount = userAllocation.personalCost
+                                  // Calculate what it would have been WITHOUT discount
+                                  const withoutDiscount = afterDiscount / (1 - discountPercent / 100)
+                                  const discountAmount = withoutDiscount - afterDiscount
+                                  
+                                  return (
+                                    <>
+                                      <div className="flex justify-between text-slate-400">
+                                        <span>Without discount:</span>
+                                        <span>${withoutDiscount.toFixed(2)}</span>
+                                      </div>
+                                      <div className="flex justify-between text-red-300">
+                                        <span>Discount ({discountPercent}%):</span>
+                                        <span>-${discountAmount.toFixed(2)}</span>
+                                      </div>
+                                      <div className="flex justify-between text-green-300 font-semibold pt-1 border-t border-green-700/30">
+                                        <span>After discount:</span>
+                                        <span>${afterDiscount.toFixed(2)}</span>
+                                      </div>
+                                    </>
+                                  )
+                                })()}
+                              </div>
+                            )}
 
                             {/* Rate Breakdown Badges */}
                             <div className="flex flex-wrap gap-1.5 mb-3">
