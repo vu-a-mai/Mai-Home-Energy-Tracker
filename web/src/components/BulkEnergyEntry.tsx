@@ -203,7 +203,7 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
             </p>
           </CardHeader>
 
-          <CardContent className="p-4 sm:p-5 md:p-6 overflow-y-auto overscroll-contain flex-1 min-h-0">
+          <CardContent className="px-4 pt-4 pb-0 sm:p-5 md:p-6 overflow-y-auto overscroll-contain flex-1 min-h-0">
           {/* Mode Toggle */}
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4 sm:mb-6">
             <button
@@ -420,7 +420,7 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
             </div>
 
             {/* Submit */}
-            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 sticky bottom-0 sm:static bg-slate-900 pb-2 sm:pb-0 -mx-4 sm:mx-0 px-4 sm:px-0 border-t sm:border-t-0 border-border">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 sticky bottom-0 z-20 sm:static bg-slate-900 py-3 sm:py-0 -mx-4 sm:m-0 px-4 sm:px-0 border-t sm:border-t-0 border-border shadow-[0_-10px_20px_rgba(2,6,23,0.85)] sm:shadow-none">
               <Button
                 type="button"
                 onClick={onClose}

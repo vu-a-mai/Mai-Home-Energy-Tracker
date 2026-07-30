@@ -649,7 +649,7 @@ export default function Dashboard() {
           </div>
         </div>
         {showRateSchedule && (
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-3">
             {(() => {
               const season = getSeason(currentTime)
               const isWeekend = currentTime.getDay() === 0 || currentTime.getDay() === 6
