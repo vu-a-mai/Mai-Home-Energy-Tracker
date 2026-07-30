@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '../components/ui/dialog'
+import { formatLocalDate, todayLocal } from '../utils/dateUtils'
 import { validateAmount, validateDateRange } from '../utils/validation'
 import { calculateUsageCost } from '../utils/rateCalculatorFixed'
 import { logger } from '../utils/logger'
@@ -91,8 +92,8 @@ export default function BillSplit() {
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
     return {
-      start: firstDay.toISOString().split('T')[0],
-      end: lastDay.toISOString().split('T')[0]
+      start: formatLocalDate(firstDay),
+      end: formatLocalDate(lastDay)
     }
   }
   
@@ -172,6 +173,7 @@ export default function BillSplit() {
 
   const calculateBillSplit = useMemo((): BillSplitData | null => {
     if (!showResults) return null
+    if (householdUsers.length === 0) return null
     
     // Calculate personal costs and kWh for each user
     const personalCostsBeforeDiscount: { [userId: string]: number } = {}
@@ -228,10 +230,11 @@ export default function BillSplit() {
     // Usage-based split: Calculate costs from energy logs using live rate calculator
     periodLogs.forEach(log => {
       const device = devices.find(d => d.id === log.device_id)
+      const wattage = device?.wattage ?? log.device_wattage ?? 0
       
       // Calculate actual cost using rate calculator
       const calc = calculateUsageCost(
-        device?.wattage || 0,
+        wattage,
         log.start_time,
         log.end_time,
         log.usage_date
@@ -303,6 +306,11 @@ export default function BillSplit() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateForm()) return
+
+    if (householdUsers.length === 0) {
+      toast.error('No household members found. Add users before calculating a bill split.')
+      return
+    }
     
     // Force refresh devices to clear cache and get latest data
     await refreshDevices(false) // false = bypass cache
@@ -362,8 +370,8 @@ export default function BillSplit() {
       // Reset form
       setShowResults(false)
       setFormData({
-        startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-        endDate: new Date().toISOString().split('T')[0],
+        startDate: formatLocalDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
+        endDate: todayLocal(),
         totalAmount: 0,
         splitMethod: 'usage_based'
       })
@@ -444,24 +452,25 @@ export default function BillSplit() {
 
     logs.forEach(log => {
       const device = devices.find(d => d.id === log.device_id)
-      if (!device) return
+      const wattage = device?.wattage ?? log.device_wattage ?? 0
 
       const assignedUsers = log.assigned_users && log.assigned_users.length > 0 
         ? log.assigned_users 
         : [log.created_by]
 
-      const kwh = log.total_kwh || 0
-      const cost = log.calculated_cost || 0
-      const kwPerUser = kwh / assignedUsers.length
-      const costPerUser = cost / assignedUsers.length
-
-      // Calculate rate breakdown
       const calculation = calculateUsageCost(
-        device.wattage,
+        wattage,
         log.start_time,
         log.end_time,
         log.usage_date
       )
+
+      const kwh = log.total_kwh ?? calculation.totalKwh
+      const cost = log.calculated_cost ?? calculation.totalCost
+      const kwPerUser = assignedUsers.length > 0 ? kwh / assignedUsers.length : 0
+      const costPerUser = assignedUsers.length > 0 ? cost / assignedUsers.length : 0
+
+      // Calculate rate breakdown (for period charts)
 
       assignedUsers.forEach((userId: string) => {
         if (userStats[userId]) {
@@ -536,7 +545,7 @@ ${householdUsers.map(user =>
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-3 md:p-5 min-h-screen bg-background text-foreground font-sans fade-in">
+    <div className="max-w-7xl mx-auto min-h-dvh bg-background text-foreground font-sans fade-in">
       {/* Header */}
       <header className="flex justify-center items-center mb-6 md:mb-8 p-4 md:p-6 energy-header-gradient rounded-2xl text-white shadow-xl energy-glow">
         <div className="text-center">
@@ -650,10 +659,10 @@ ${householdUsers.map(user =>
 
       {/* Bill Split Results Modal */}
       <Dialog open={showResults && !!calculateBillSplit} onOpenChange={(open) => !open && setShowResults(false)}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-slate-900 border-2 border-green-600">
+        <DialogContent className="max-w-6xl max-h-[min(90vh,100dvh)] overflow-y-auto bg-slate-900 border-2 border-green-600">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
-                  <ArrowTrendingUpIcon className="w-7 h-7 text-green-400" />
+            <DialogTitle className="text-xl md:text-2xl font-bold text-white flex flex-wrap items-center gap-2 pr-2">
+                  <ArrowTrendingUpIcon className="w-6 h-6 md:w-7 md:h-7 text-green-400 shrink-0" />
                   Bill Split Results
                   <Badge 
                     variant={formData.splitMethod === 'even' ? 'secondary' : 'default'}
@@ -1035,7 +1044,7 @@ ${householdUsers.map(user =>
                             e.stopPropagation()
                             setDeletingBillSplit(split)
                           }}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-500/20 rounded"
+                          className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity p-2 min-h-11 min-w-11 flex items-center justify-center hover:bg-red-500/20 rounded"
                           title="Delete"
                         >
                           <TrashIcon className="w-4 h-4 text-red-400" />
@@ -1130,7 +1139,7 @@ ${householdUsers.map(user =>
 
       {/* Bill Split Detail Modal */}
       <Dialog open={viewingBillSplit !== null} onOpenChange={() => setViewingBillSplit(null)}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-slate-900 border-slate-700 p-3 md:p-4">
+        <DialogContent className="max-w-5xl max-h-[min(90vh,100dvh)] overflow-y-auto bg-slate-900 border-slate-700 p-3 md:p-4">
           {viewingBillSplit && (() => {
             const usageStats = calculateUsageStats(viewingBillSplit)
             const totalSharedCost = Object.values(viewingBillSplit.user_allocations).reduce((sum, alloc) => sum + alloc.sharedCost, 0)

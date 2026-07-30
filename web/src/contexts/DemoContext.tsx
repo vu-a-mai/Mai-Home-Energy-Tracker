@@ -9,8 +9,16 @@ interface DemoContextType {
 
 const DemoContext = createContext<DemoContextType | undefined>(undefined)
 
+function readStoredDemoMode(): boolean {
+  try {
+    return localStorage.getItem('demo_mode') === 'true'
+  } catch {
+    return false
+  }
+}
+
 export function DemoProvider({ children }: { children: ReactNode }) {
-  const [isDemoMode, setIsDemoMode] = useState(false)
+  const [isDemoMode, setIsDemoMode] = useState(readStoredDemoMode)
 
   const enableDemoMode = () => {
     setIsDemoMode(true)

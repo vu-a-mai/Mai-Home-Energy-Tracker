@@ -85,7 +85,7 @@ export function DeleteConfirmationModal({
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
-      <div className="energy-card bg-gradient-to-br from-slate-900 to-slate-800 border-0 sm:border-2 border-red-500/50 rounded-none sm:rounded-2xl shadow-2xl shadow-red-500/20 max-w-2xl w-full min-h-screen sm:min-h-0 sm:my-4 sm:max-h-[90vh] flex flex-col">
+      <div className="energy-card bg-gradient-to-br from-slate-900 to-slate-800 border-0 sm:border-2 border-red-500/50 rounded-none sm:rounded-2xl shadow-2xl shadow-red-500/20 max-w-2xl w-full min-h-dvh sm:min-h-0 sm:my-4 sm:max-h-[min(90vh,100dvh)] flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between mb-3 sm:mb-4 p-4 sm:p-6 flex-shrink-0 sticky top-0 bg-gradient-to-br from-slate-900 to-slate-800 z-10">
           <div className="flex items-center gap-2 sm:gap-3">

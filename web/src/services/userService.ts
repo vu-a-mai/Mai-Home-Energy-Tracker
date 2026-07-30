@@ -46,9 +46,10 @@ export const syncUserWithDatabase = async (authUser: SupabaseUser): Promise<Data
     }
 
     if (userByEmail) {
-      logger.warn('User email exists with different ID. Auth ID:', authUser.id, 'DB ID:', userByEmail.id)
-      logger.warn('Please run fix-user-id-mismatch.sql to resolve this issue')
-      return userByEmail // Return the existing user to prevent errors
+      logger.error('User email exists with different ID. Auth ID:', authUser.id, 'DB ID:', userByEmail.id)
+      throw new Error(
+        'Your account ID does not match the household profile. Please contact support or run the user ID repair migration before continuing.'
+      )
     }
 
     // User doesn't exist, create them
@@ -82,8 +83,10 @@ export const syncUserWithDatabase = async (authUser: SupabaseUser): Promise<Data
           .maybeSingle()
         
         if (fallbackUser) {
-          logger.warn('Returning existing user due to email conflict')
-          return fallbackUser
+          logger.error('Email conflict with mismatched auth ID — refusing to continue')
+          throw new Error(
+            'Your account ID does not match the household profile. Please contact support before continuing.'
+          )
         }
       }
       

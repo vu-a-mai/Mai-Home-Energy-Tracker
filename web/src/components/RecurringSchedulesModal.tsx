@@ -27,6 +27,7 @@ import {
   Squares2X2Icon,
   ListBulletIcon
 } from '@heroicons/react/24/outline'
+import { formatLocalDate, todayLocal } from '../utils/dateUtils'
 
 interface RecurringSchedulesModalProps {
   isOpen: boolean
@@ -103,7 +104,7 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
     days_of_week: [],
     start_time: '',
     end_time: '',
-    schedule_start_date: new Date().toISOString().split('T')[0],
+    schedule_start_date: todayLocal(),
     schedule_end_date: null,
     assigned_users: [],
     auto_create: true
@@ -169,7 +170,7 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
           onClick={() => handleGenerateLog(schedule.id)}
           className="p-1.5 rounded hover:bg-cyan-500/20 text-cyan-500"
           title="Generate log"
-          disabled={schedule.schedule_end_date ? new Date().toISOString().split('T')[0] > schedule.schedule_end_date : false}
+          disabled={schedule.schedule_end_date ? todayLocal() > schedule.schedule_end_date : false}
         >
           <PlusIcon className="w-4 h-4" />
         </button>
@@ -255,7 +256,7 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
       days_of_week: [],
       start_time: '',
       end_time: '',
-      schedule_start_date: new Date().toISOString().split('T')[0],
+      schedule_start_date: todayLocal(),
       schedule_end_date: null,
       assigned_users: [],
       auto_create: true
@@ -323,7 +324,7 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
     const schedule = schedules.find(s => s.id === scheduleId)
     if (!schedule) return
 
-    const today = new Date().toISOString().split('T')[0]
+    const today = todayLocal()
     
     // Check if today is within schedule range
     if (today < schedule.schedule_start_date) {
@@ -418,7 +419,7 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
       while (currentDate <= actualEndDate) {
         const dayOfWeek = currentDate.getDay()
         if (schedule.days_of_week.includes(dayOfWeek)) {
-          matchingDates.push(currentDate.toISOString().split('T')[0])
+          matchingDates.push(formatLocalDate(currentDate))
         }
         currentDate.setDate(currentDate.getDate() + 1)
       }
@@ -464,8 +465,8 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
-      <div className="w-full sm:max-w-5xl min-h-screen sm:min-h-0 sm:my-4">
-        <div className="energy-card w-full bg-card border-0 sm:border border-border rounded-none sm:rounded-lg shadow-xl min-h-screen sm:min-h-0 sm:max-h-[90vh] flex flex-col">
+      <div className="w-full sm:max-w-5xl min-h-dvh sm:min-h-0 sm:my-4">
+        <div className="energy-card w-full bg-card border-0 sm:border border-border rounded-none sm:rounded-lg shadow-xl min-h-dvh sm:min-h-0 sm:max-h-[min(90vh,100dvh)] flex flex-col">
           {/* Header */}
           <div className="p-4 sm:p-5 md:p-6 border-b border-border flex items-center justify-between flex-shrink-0 sticky top-0 bg-card z-10">
           <div className="flex-1 min-w-0">
@@ -658,10 +659,10 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                               variant="outline"
                               size="sm"
                               className="p-1.5 sm:p-2 border-cyan-300 text-cyan-500 hover:bg-cyan-500/10"
-                              title={schedule.schedule_end_date && new Date().toISOString().split('T')[0] > schedule.schedule_end_date 
+                              title={schedule.schedule_end_date && todayLocal() > schedule.schedule_end_date 
                                 ? `Schedule ended ${schedule.schedule_end_date}. Use Quick kWh Entry to backfill.` 
                                 : "Generate log for today"}
-                              disabled={schedule.schedule_end_date ? new Date().toISOString().split('T')[0] > schedule.schedule_end_date : false}
+                              disabled={schedule.schedule_end_date ? todayLocal() > schedule.schedule_end_date : false}
                             >
                               <PlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                             </Button>

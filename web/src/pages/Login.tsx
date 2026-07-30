@@ -42,7 +42,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans flex items-center justify-center p-3 md:p-5 fade-in">
+    <div className="min-h-dvh bg-background text-foreground font-sans flex items-center justify-center p-3 md:p-5 fade-in">
       <Card className="energy-card w-full max-w-lg shadow-2xl energy-glow">
         <CardHeader className="text-center pb-4 md:pb-6">
           <BoltIcon className="w-16 h-16 md:w-20 md:h-20 mb-3 md:mb-4 energy-pulse text-orange-400 mx-auto" />

@@ -28,6 +28,7 @@ import {
   Squares2X2Icon,
   ListBulletIcon
 } from '@heroicons/react/24/outline'
+import { formatLocalDate, todayLocal } from '../utils/dateUtils'
 
 interface TemplatesModalProps {
   isOpen: boolean
@@ -83,9 +84,9 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [useDateRange, setUseDateRange] = useState(false)
   const [useTemplateData, setUseTemplateData] = useState({
-    singleDate: new Date().toISOString().split('T')[0],
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    singleDate: todayLocal(),
+    startDate: todayLocal(),
+    endDate: todayLocal(),
     daysOfWeek: [0, 1, 2, 3, 4, 5, 6] as number[],
     replaceExisting: false
   })
@@ -334,9 +335,9 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
       setSelectedTemplateId(null)
       setUseDateRange(false)
       setUseTemplateData({
-        singleDate: new Date().toISOString().split('T')[0],
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date().toISOString().split('T')[0],
+        singleDate: todayLocal(),
+        startDate: todayLocal(),
+        endDate: todayLocal(),
         daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
         replaceExisting: false
       })
@@ -403,7 +404,7 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
       while (currentDate <= actualEndDate) {
         const dayOfWeek = currentDate.getDay()
         if (useTemplateData.daysOfWeek.includes(dayOfWeek)) {
-          matchingDates.push(currentDate.toISOString().split('T')[0])
+          matchingDates.push(formatLocalDate(currentDate))
         }
         currentDate.setDate(currentDate.getDate() + 1)
       }
@@ -489,8 +490,8 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
-      <div className="w-full sm:max-w-4xl min-h-screen sm:min-h-0 sm:my-8">
-        <div className="energy-card w-full bg-card border-0 sm:border border-border rounded-none sm:rounded-lg shadow-xl min-h-screen sm:min-h-0">
+      <div className="w-full sm:max-w-4xl min-h-dvh sm:min-h-0 sm:my-8">
+        <div className="energy-card w-full bg-card border-0 sm:border border-border rounded-none sm:rounded-lg shadow-xl min-h-dvh sm:min-h-0">
           {/* Header */}
           <div className="p-4 sm:p-5 md:p-6 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
           <div className="flex-1 min-w-0">

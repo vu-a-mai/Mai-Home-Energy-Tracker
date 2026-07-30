@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import type { RecurringSchedule, ScheduleFormData } from '../types'
 import { toast } from 'sonner'
+import { calculateUsageCost } from '../utils/rateCalculatorFixed'
+import { formatLocalDate, parseLocalDate } from '../utils/dateUtils'
 
 export function useRecurringSchedules() {
   const [schedules, setSchedules] = useState<RecurringSchedule[]>([])
@@ -202,10 +204,11 @@ export function useRecurringSchedules() {
 
       if (!userData?.household_id) throw new Error('No household found')
 
-      // Calculate all matching dates
-      const startDate = new Date(schedule.schedule_start_date)
-      const endDate = schedule.schedule_end_date ? new Date(schedule.schedule_end_date) : new Date()
+      // Calculate all matching dates (local civil dates)
+      const startDate = parseLocalDate(schedule.schedule_start_date)
+      const endDate = schedule.schedule_end_date ? parseLocalDate(schedule.schedule_end_date) : new Date()
       const today = new Date()
+      today.setHours(0, 0, 0, 0)
       
       // Don't generate logs for future dates
       const actualEndDate = endDate > today ? today : endDate
@@ -216,7 +219,7 @@ export function useRecurringSchedules() {
       while (currentDate <= actualEndDate) {
         const dayOfWeek = currentDate.getDay()
         if (schedule.days_of_week.includes(dayOfWeek)) {
-          matchingDates.push(currentDate.toISOString().split('T')[0])
+          matchingDates.push(formatLocalDate(currentDate))
         }
         currentDate.setDate(currentDate.getDate() + 1)
       }
@@ -264,7 +267,15 @@ export function useRecurringSchedules() {
             }
           }
 
-          // Create the log
+          // Create the log with client-side costs (DB trigger will also align via TOU calculator)
+          const wattage = (schedule as { device_wattage?: number }).device_wattage ?? 0
+          const costCalc = calculateUsageCost(
+            wattage,
+            schedule.start_time,
+            schedule.end_time,
+            date
+          )
+
           const { error: insertError } = await supabase
             .from('energy_logs')
             .insert({
@@ -273,6 +284,9 @@ export function useRecurringSchedules() {
               usage_date: date,
               start_time: schedule.start_time,
               end_time: schedule.end_time,
+              total_kwh: costCalc.totalKwh,
+              calculated_cost: costCalc.totalCost,
+              rate_breakdown: costCalc.breakdown,
               assigned_users: schedule.assigned_users,
               created_by: user.id,
               source_type: 'recurring',

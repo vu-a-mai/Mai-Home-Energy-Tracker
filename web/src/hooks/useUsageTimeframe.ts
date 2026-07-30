@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
+import {
+  endOfLocalMonth,
+  startOfLocalMonth,
+  startOfLocalYear,
+  todayLocal
+} from '../utils/dateUtils'
 
 export type UsageTimeframe = 'month' | 'lastMonth' | 'year' | 'all'
 
@@ -38,29 +44,27 @@ export function useUsageTimeframe(energyLogs: { usage_date: string }[]) {
     const next = new URLSearchParams(searchParams)
     next.set(PARAM, timeframe)
     setSearchParams(next, { replace: true })
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, timeframe)
-    }
-  }, [timeframe, searchParams, setSearchParams])
+    localStorage.setItem(STORAGE_KEY, timeframe)
+  }, [timeframe]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep unused param referenced for API compatibility
+  void energyLogs
 
   const setTimeframe = (next: UsageTimeframe) => setTimeframeState(next)
 
   const dateRange = useMemo(() => {
     const now = new Date()
-    const today = now.toISOString().split('T')[0]
+    const today = todayLocal()
     
     if (timeframe === 'month') {
-      const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
-      return { from: start, to: today }
+      return { from: startOfLocalMonth(now), to: today }
     }
     if (timeframe === 'lastMonth') {
-      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0]
-      const end = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0]
-      return { from: start, to: end }
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      return { from: startOfLocalMonth(lastMonth), to: endOfLocalMonth(lastMonth) }
     }
     if (timeframe === 'year') {
-      const start = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0]
-      return { from: start, to: today }
+      return { from: startOfLocalYear(now), to: today }
     }
     // 'all'
     return { from: '0000-01-01', to: today }
@@ -78,5 +82,3 @@ export function useUsageTimeframe(energyLogs: { usage_date: string }[]) {
 
   return { timeframe, setTimeframe, dateRange, label: getLabel(timeframe), getLabel }
 }
-
-

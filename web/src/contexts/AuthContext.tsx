@@ -9,6 +9,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<any>
   logout: () => Promise<any>
   loading: boolean
+  syncError: string | null
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -16,52 +17,43 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [syncError, setSyncError] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
-    
-    // Add timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      if (mounted) {
-        console.warn('Auth check timed out, proceeding without authentication')
-        setLoading(false)
+
+    const syncUser = async (currentUser: SupabaseUser) => {
+      try {
+        await syncUserWithDatabase(currentUser)
+        if (mounted) setSyncError(null)
+      } catch (syncErr) {
+        const message = syncErr instanceof Error ? syncErr.message : 'Failed to sync user profile'
+        console.error('User sync failed:', message)
+        if (mounted) setSyncError(message)
       }
-    }, 3000) // 3 second timeout (reduced from 10)
-    
-    // Check active session
+    }
+
     const checkSession = async () => {
       try {
         const { data, error } = await supabase.auth.getSession()
-        if (mounted) {
-          if (error) {
-            console.error('Session error:', error)
-          }
-          const currentUser = data.session?.user || null
-          setUser(currentUser)
-          
-          // Sync user with database if authenticated (with timeout)
-          if (currentUser) {
-            try {
-              const syncPromise = syncUserWithDatabase(currentUser)
-              const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Database sync timeout')), 5000)
-              )
-              await Promise.race([syncPromise, timeoutPromise])
-            } catch (syncError) {
-              // Silently continue - user is still authenticated
-              if (syncError instanceof Error && syncError.message !== 'Database sync timeout') {
-                console.warn('User sync delayed, will retry:', syncError.message)
-              }
-            }
-          }
-          
-          clearTimeout(timeoutId)
-          setLoading(false)
+        if (!mounted) return
+
+        if (error) {
+          console.error('Session error:', error)
+        }
+
+        const currentUser = data.session?.user || null
+        setUser(currentUser)
+
+        if (currentUser) {
+          await syncUser(currentUser)
+        } else {
+          setSyncError(null)
         }
       } catch (error) {
         console.error('Auth error:', error)
+      } finally {
         if (mounted) {
-          clearTimeout(timeoutId)
           setLoading(false)
         }
       }
@@ -69,37 +61,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     checkSession()
 
-    // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        if (mounted) {
-          const currentUser = session?.user || null
-          setUser(currentUser)
-          
-          // Sync user with database if authenticated (with timeout)
-          if (currentUser) {
-            try {
-              const syncPromise = syncUserWithDatabase(currentUser)
-              const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Database sync timeout')), 5000)
-              )
-              await Promise.race([syncPromise, timeoutPromise])
-            } catch (syncError) {
-              // Silently continue - user is still authenticated
-              if (syncError instanceof Error && syncError.message !== 'Database sync timeout') {
-                console.warn('User sync delayed, will retry:', syncError.message)
-              }
-            }
-          }
-          
-          setLoading(false)
+        if (!mounted) return
+
+        const currentUser = session?.user || null
+        setUser(currentUser)
+
+        if (currentUser) {
+          await syncUser(currentUser)
+        } else {
+          setSyncError(null)
         }
+
+        setLoading(false)
       }
     )
 
     return () => {
       mounted = false
-      clearTimeout(timeoutId)
       authListener.subscription.unsubscribe()
     }
   }, [])
@@ -107,12 +87,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       const result = await supabase.auth.signInWithPassword({ email, password })
-      
-      // Sync user with database after successful login
+
       if (result.data.user) {
         await syncUserWithDatabase(result.data.user)
+        setSyncError(null)
       }
-      
+
       return result
     } catch (error) {
       console.error('Login error:', error)
@@ -122,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
+      setSyncError(null)
       return await supabase.auth.signOut()
     } catch (error) {
       console.error('Logout error:', error)
@@ -133,7 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     login,
     logout,
-    loading
+    loading,
+    syncError
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -14,12 +14,12 @@ import NotFound from './pages/NotFound'
 import './App.css'
 
 function App() {
-  const { user, loading } = useAuth()
+  const { user, loading, syncError } = useAuth()
   const { isDemoMode } = useDemoMode()
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-background text-foreground">
+      <div className="flex justify-center items-center min-h-dvh bg-background text-foreground">
         <h2>Loading...</h2>
       </div>
     )
@@ -38,10 +38,17 @@ function App() {
 
   // Show Dashboard and protected routes for authenticated users OR demo mode
   return (
-    <div className="bg-background min-h-screen text-foreground">
-      <Toaster position="top-right" richColors closeButton />
+    <div className="bg-background min-h-dvh text-foreground">
+      <Toaster position="top-center" richColors closeButton className="md:!top-4 md:!right-4" />
       <NavBar />
-      <main className="p-2 sm:p-3 md:p-4 lg:p-5">
+      {syncError && (
+        <div className="mx-auto max-w-7xl px-3 pt-3">
+          <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            Account sync issue: {syncError}
+          </div>
+        </div>
+      )}
+      <main className="mx-auto max-w-7xl p-3 sm:p-4 md:p-5">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />

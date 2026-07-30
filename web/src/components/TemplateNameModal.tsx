@@ -25,7 +25,7 @@ export function TemplateNameModal({ isOpen, defaultName, onConfirm, onCancel }: 
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start sm:items-center justify-center z-[60] p-0 sm:p-4">
-      <div className="energy-card bg-gradient-to-br from-slate-900 to-slate-800 border-0 sm:border-2 border-blue-500/50 rounded-none sm:rounded-2xl shadow-2xl shadow-blue-500/20 max-w-md w-full min-h-screen sm:min-h-0 p-4 sm:p-6 animate-in fade-in zoom-in duration-200 flex flex-col">
+      <div className="energy-card bg-gradient-to-br from-slate-900 to-slate-800 border-0 sm:border-2 border-blue-500/50 rounded-none sm:rounded-2xl shadow-2xl shadow-blue-500/20 max-w-md w-full min-h-dvh sm:min-h-0 p-4 sm:p-6 animate-in fade-in zoom-in duration-200 flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between mb-3 sm:mb-4 flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">

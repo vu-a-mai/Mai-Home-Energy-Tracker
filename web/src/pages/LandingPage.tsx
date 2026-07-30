@@ -30,7 +30,7 @@ export default function LandingPage() {
   }
   
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
+    <div className="min-h-dvh bg-background text-foreground font-sans">
       {/* Navigation */}
       <nav className="flex justify-between items-center p-3 sm:p-4 md:p-6 energy-header-gradient rounded-b-2xl shadow-xl energy-glow mb-6 md:mb-8">
         <div className="text-lg sm:text-xl md:text-2xl font-bold text-white energy-pulse flex items-center gap-2">

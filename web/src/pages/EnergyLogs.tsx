@@ -45,6 +45,7 @@ import {
   DocumentDuplicateIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline'
+import { todayLocal } from '../utils/dateUtils'
 
 interface EnergyLogFormData {
   device_id: string
@@ -121,7 +122,7 @@ export default function EnergyLogs() {
   const [formData, setFormData] = useState<EnergyLogFormData>({
     device_id: '',
     device_ids: [],
-    usage_date: new Date().toISOString().split('T')[0],
+    usage_date: todayLocal(),
     start_time: '',
     end_time: '',
     assigned_users: []
@@ -270,7 +271,7 @@ export default function EnergyLogs() {
     setFormData({
       device_id: '',
       device_ids: [],
-      usage_date: new Date().toISOString().split('T')[0],
+      usage_date: todayLocal(),
       start_time: '',
       end_time: '',
       assigned_users: []
@@ -480,12 +481,7 @@ export default function EnergyLogs() {
           p_recovery_days: options.recoveryDays
         })
         if (error) throw error
-        toast.success(`Soft deleted ${logIds.length} log(s) (recoverable for ${options.recoveryDays} days)`, {
-          action: {
-            label: 'View Deleted',
-            onClick: () => window.location.href = '/logs/deleted'
-          }
-        })
+        toast.success(`Soft deleted ${logIds.length} log(s) (recoverable for ${options.recoveryDays} days)`)
       }
       
       setShowDeleteModal(false)
@@ -505,7 +501,7 @@ export default function EnergyLogs() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-3 md:p-5 min-h-screen bg-background text-foreground font-sans fade-in">
+    <div className="max-w-7xl mx-auto min-h-dvh bg-background text-foreground font-sans fade-in">
       {/* Header */}
       <header className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mb-6 md:mb-8 p-4 md:p-6 energy-header-gradient rounded-2xl text-white shadow-xl energy-glow">
         <div className="flex-1">
@@ -523,7 +519,7 @@ export default function EnergyLogs() {
             className="px-2.5 sm:px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap bg-purple-500 hover:bg-purple-600 text-white border-0 shadow-lg shadow-purple-500/30"
           >
             <BoltIcon className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1 md:mr-2" />
-            <span className="hidden xs:inline">Quick </span>kWh
+            <span className="hidden sm:inline">Quick </span>kWh
           </Button>
           <Button
             onClick={() => setShowTemplates(true)}
@@ -546,7 +542,7 @@ export default function EnergyLogs() {
             className="px-2.5 sm:px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg shadow-green-500/30"
           >
             <PlusIcon className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1" />
-            <span className="hidden xs:inline">Log </span>Usage
+            <span className="hidden sm:inline">Log </span>Usage
           </Button>
         </div>
       </header>
@@ -845,7 +841,7 @@ export default function EnergyLogs() {
       {/* Add Energy Log Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 overflow-y-auto p-0 sm:p-4">
-          <div className="w-full min-h-screen sm:min-h-0 sm:max-h-[90vh] flex items-start sm:items-center justify-center py-4 sm:py-0">
+          <div className="w-full min-h-dvh sm:min-h-0 sm:max-h-[min(90vh,100dvh)] flex items-start sm:items-center justify-center py-4 sm:py-0">
             <Card className="energy-card w-full max-w-4xl mx-2 sm:mx-0 my-auto">
               <div className="max-h-[calc(100vh-2rem)] sm:max-h-[85vh] overflow-y-auto">
                 <CardHeader className="p-3 sm:p-4 md:p-6 sticky top-0 bg-card z-10 border-b border-border">
@@ -1153,7 +1149,7 @@ export default function EnergyLogs() {
       {/* Device Filter Modal */}
       {showDeviceFilter && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) {
               setShowDeviceFilter(false)
@@ -1169,7 +1165,7 @@ export default function EnergyLogs() {
                 </h3>
                 <button
                   onClick={() => setShowDeviceFilter(false)}
-                  className="p-2 h-8 w-8 border border-border rounded hover:bg-muted"
+                  className="p-2 min-h-11 min-w-11 h-11 w-11 border border-border rounded hover:bg-muted"
                 >
                   <XMarkIcon className="w-4 h-4" />
                 </button>
@@ -1265,8 +1261,8 @@ export default function EnergyLogs() {
                         {log.source_type === 'template' && (
                           <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] sm:text-xs rounded-full flex items-center gap-0.5 sm:gap-1 shrink-0 border border-blue-500/30">
                             <DocumentDuplicateIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                            <span className="hidden xs:inline">Template</span>
-                            <span className="xs:hidden">T</span>
+                            <span className="hidden sm:inline">Template</span>
+                            <span className="sm:hidden">T</span>
                           </span>
                         )}
                       </div>
@@ -1356,7 +1352,7 @@ export default function EnergyLogs() {
                       onClick={() => handleSaveAsTemplate(log)}
                       variant="outline"
                       size="sm"
-                      className="p-2 h-8 w-8 border-purple-300 text-purple-500 hover:bg-purple-500/10"
+                      className="p-2 min-h-11 min-w-11 h-11 w-11 border-purple-300 text-purple-500 hover:bg-purple-500/10"
                       title="Save as template"
                     >
                       <DocumentDuplicateIcon className="w-4 h-4" />
@@ -1365,7 +1361,7 @@ export default function EnergyLogs() {
                       onClick={() => handleEdit(log)}
                       variant="outline"
                       size="sm"
-                      className="p-2 h-8 w-8 border-blue-300 text-blue-500 hover:bg-blue-500/10"
+                      className="p-2 min-h-11 min-w-11 h-11 w-11 border-blue-300 text-blue-500 hover:bg-blue-500/10"
                       title="Edit log"
                     >
                       <PencilIcon className="w-4 h-4" />
@@ -1374,7 +1370,7 @@ export default function EnergyLogs() {
                       onClick={() => deleteEnergyLog(log.id)}
                       variant="outline"
                       size="sm"
-                      className="p-2 h-8 w-8 border-red-300 text-red-500 hover:bg-red-500/10"
+                      className="p-2 min-h-11 min-w-11 h-11 w-11 border-red-300 text-red-500 hover:bg-red-500/10"
                       title="Delete log"
                     >
                       <TrashIcon className="w-4 h-4" />
@@ -1463,7 +1459,7 @@ export default function EnergyLogs() {
                         onClick={() => setExpandedLog(isExpanded ? null : log.id)}
                         variant="outline"
                         size="sm"
-                        className="p-2 h-8 w-8 text-xs"
+                        className="p-2 min-h-11 min-w-11 h-11 w-11 text-xs"
                         title={isExpanded ? "Hide details" : "View details"}
                       >
                         {isExpanded ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
@@ -1472,7 +1468,7 @@ export default function EnergyLogs() {
                         onClick={() => handleSaveAsTemplate(log)}
                         variant="outline"
                         size="sm"
-                        className="p-2 h-8 w-8 border-purple-300 text-purple-500 hover:bg-purple-500/10"
+                        className="p-2 min-h-11 min-w-11 h-11 w-11 border-purple-300 text-purple-500 hover:bg-purple-500/10"
                         title="Save as template"
                       >
                         <DocumentDuplicateIcon className="w-4 h-4" />
@@ -1481,7 +1477,7 @@ export default function EnergyLogs() {
                         onClick={() => handleEdit(log)}
                         variant="outline"
                         size="sm"
-                        className="p-2 h-8 w-8 border-blue-300 text-blue-500 hover:bg-blue-500/10"
+                        className="p-2 min-h-11 min-w-11 h-11 w-11 border-blue-300 text-blue-500 hover:bg-blue-500/10"
                         title="Edit log"
                       >
                         <PencilIcon className="w-4 h-4" />
@@ -1490,7 +1486,7 @@ export default function EnergyLogs() {
                         onClick={() => deleteEnergyLog(log.id)}
                         variant="outline"
                         size="sm"
-                        className="p-2 h-8 w-8 border-red-300 text-red-500 hover:bg-red-500/10"
+                        className="p-2 min-h-11 min-w-11 h-11 w-11 border-red-300 text-red-500 hover:bg-red-500/10"
                         title="Delete log"
                       >
                         <TrashIcon className="w-4 h-4" />
@@ -1708,7 +1704,7 @@ export default function EnergyLogs() {
       {/* User Filter Modal */}
       {showUserFilter && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) {
               setShowUserFilter(false)
@@ -1724,7 +1720,7 @@ export default function EnergyLogs() {
                 </h3>
                 <button
                   onClick={() => setShowUserFilter(false)}
-                  className="p-2 h-8 w-8 border border-border rounded hover:bg-muted"
+                  className="p-2 min-h-11 min-w-11 h-11 w-11 border border-border rounded hover:bg-muted"
                 >
                   <XMarkIcon className="w-4 h-4" />
                 </button>

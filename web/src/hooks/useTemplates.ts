@@ -3,15 +3,17 @@ import { supabase } from '../lib/supabase'
 import type { EnergyLogTemplate, TemplateFormData } from '../types'
 import { toast } from 'sonner'
 import { calculateUsageCost } from '../utils/rateCalculatorFixed'
+import { timesOverlap } from '../utils/timeOverlap'
+import { formatLocalDate, parseLocalDate } from '../utils/dateUtils'
 
-// Helper function to check for overlapping time periods
+// Helper function to check for overlapping time periods (including overnight)
 const checkForOverlap = async (
   deviceId: string,
   date: string,
   startTime: string,
   endTime: string,
   householdId: string
-): Promise<any[]> => {
+): Promise<{ id: string; start_time: string; end_time: string; device_id: string }[]> => {
   const { data: existingLogs } = await supabase
     .from('energy_logs')
     .select('id, start_time, end_time, device_id')
@@ -21,12 +23,9 @@ const checkForOverlap = async (
 
   if (!existingLogs || existingLogs.length === 0) return []
 
-  // Check for time overlap: (StartA < EndB) AND (EndA > StartB)
-  return existingLogs.filter(log => {
-    const existingStart = log.start_time
-    const existingEnd = log.end_time
-    return (startTime < existingEnd && endTime > existingStart)
-  })
+  return existingLogs.filter(log =>
+    timesOverlap(startTime, endTime, log.start_time, log.end_time)
+  )
 }
 
 // Helper to get device IDs from template (handles both old and new format)
@@ -335,10 +334,11 @@ export function useTemplates() {
       const deviceIds = getTemplateDeviceIds(template)
       if (deviceIds.length === 0) throw new Error('No devices in template')
 
-      // Calculate all matching dates
-      const start = new Date(startDate)
-      const end = new Date(endDate)
+      // Calculate all matching dates (local civil dates)
+      const start = parseLocalDate(startDate)
+      const end = parseLocalDate(endDate)
       const today = new Date()
+      today.setHours(0, 0, 0, 0)
       
       // Don't generate logs for future dates
       const actualEndDate = end > today ? today : end
@@ -349,7 +349,7 @@ export function useTemplates() {
       while (currentDate <= actualEndDate) {
         const dayOfWeek = currentDate.getDay()
         if (daysOfWeek.includes(dayOfWeek)) {
-          matchingDates.push(currentDate.toISOString().split('T')[0])
+          matchingDates.push(formatLocalDate(currentDate))
         }
         currentDate.setDate(currentDate.getDate() + 1)
       }

@@ -259,7 +259,7 @@ export default function Devices() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-3 md:p-5 min-h-screen bg-background text-foreground font-sans fade-in">
+    <div className="max-w-7xl mx-auto min-h-dvh bg-background text-foreground font-sans fade-in">
       {/* Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 md:mb-8 p-4 md:p-6 energy-header-gradient rounded-2xl text-white shadow-xl energy-glow">
         <div>
@@ -289,8 +289,8 @@ export default function Devices() {
 
       {/* Device Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="energy-card w-full max-w-lg max-h-[90vh] overflow-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <Card className="energy-card w-full max-w-lg max-h-[min(90vh,100dvh)] overflow-auto my-4 sm:my-0">
             <CardHeader>
               <CardTitle className="text-xl text-foreground flex items-center gap-2">
                 {editingDevice ? (
@@ -475,8 +475,8 @@ export default function Devices() {
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="energy-card w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
+          <Card className="energy-card w-full max-w-md my-4 sm:my-0">
             <CardHeader>
               <CardTitle className="text-xl text-red-600 flex items-center gap-2">
                 <TrashIcon className="w-5 h-5 inline-block mr-1" />
@@ -515,21 +515,21 @@ export default function Devices() {
               {/* Header with Icon and Actions */}
               <div className="mb-3">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
                     {getDeviceIcon(device.name, device.device_type)}
                     <h3 
-                      className="font-bold text-sm md:text-base text-foreground" 
+                      className="font-bold text-sm md:text-base text-foreground truncate min-w-0" 
                       title={device.name}
                     >
                       {device.name}
                     </h3>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 shrink-0">
                     <Button
                       onClick={() => handleEdit(device)}
                       variant="outline"
                       size="sm"
-                      className="p-2 h-8 w-8 border-blue-300 text-blue-500 hover:bg-blue-500/10"
+                      className="p-2 min-h-11 min-w-11 h-11 w-11 border-blue-300 text-blue-500 hover:bg-blue-500/10"
                       title="Edit device"
                     >
                       <PencilIcon className="w-4 h-4" />
@@ -538,7 +538,7 @@ export default function Devices() {
                       onClick={() => setDeleteConfirm(device.id)}
                       variant="outline"
                       size="sm"
-                      className="p-2 h-8 w-8 border-red-300 text-red-500 hover:bg-red-500/10"
+                      className="p-2 min-h-11 min-w-11 h-11 w-11 border-red-300 text-red-500 hover:bg-red-500/10"
                       title="Delete device"
                     >
                       <TrashIcon className="w-4 h-4" />

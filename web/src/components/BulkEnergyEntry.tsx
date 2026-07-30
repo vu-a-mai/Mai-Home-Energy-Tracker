@@ -14,6 +14,8 @@ import {
   CurrencyDollarIcon,
   InformationCircleIcon
 } from '@heroicons/react/24/outline'
+import { BULK_RATE_PRESETS } from '../utils/rateCalculatorFixed'
+import { todayLocal } from '../utils/dateUtils'
 
 interface BulkEnergyEntryProps {
   isOpen: boolean
@@ -21,12 +23,12 @@ interface BulkEnergyEntryProps {
   onSuccess?: () => void
 }
 
-const RATE_PERIODS = [
-  { value: 'super_off_peak', label: 'Super Off-Peak', rate: 0.10, hours: '12:00 AM - 6:00 AM' },
-  { value: 'off_peak', label: 'Off-Peak', rate: 0.25, hours: '6:00 AM - 2:00 PM & 9:00 PM - 12:00 AM' },
-  { value: 'mid_peak', label: 'Mid-Peak', rate: 0.35, hours: '2:00 PM - 4:00 PM' },
-  { value: 'on_peak', label: 'On-Peak', rate: 0.50, hours: '4:00 PM - 9:00 PM' }
-]
+const RATE_PERIODS = BULK_RATE_PRESETS.map(p => ({
+  value: p.value,
+  label: p.label,
+  rate: p.rate,
+  hours: p.hours
+}))
 
 export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryProps) {
   const { user } = useAuth()
@@ -39,8 +41,8 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
     total_kwh: '',
     rate_period: 'off_peak',
     custom_rate: '',
-    start_date: new Date().toISOString().split('T')[0],
-    end_date: new Date().toISOString().split('T')[0],
+    start_date: todayLocal(),
+    end_date: todayLocal(),
     assigned_users: [] as string[],
     notes: ''
   })
@@ -169,8 +171,8 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
-      <div className="w-full sm:max-w-2xl min-h-screen sm:min-h-0 sm:my-4">
-        <Card className="energy-card w-full bg-card border-0 sm:border border-border rounded-none sm:rounded-lg shadow-xl min-h-screen sm:min-h-0 sm:max-h-[90vh] flex flex-col">
+      <div className="w-full sm:max-w-2xl min-h-dvh sm:min-h-0 sm:my-4">
+        <Card className="energy-card w-full bg-card border-0 sm:border border-border rounded-none sm:rounded-lg shadow-xl min-h-dvh sm:min-h-0 sm:max-h-[min(90vh,100dvh)] flex flex-col">
           <CardHeader className="p-4 sm:p-5 md:p-6 border-b border-border flex-shrink-0 sticky top-0 bg-card z-10">
             <div className="flex items-center justify-between gap-3">
               <CardTitle className="text-lg sm:text-xl md:text-2xl text-foreground flex items-center gap-2 flex-1 min-w-0">

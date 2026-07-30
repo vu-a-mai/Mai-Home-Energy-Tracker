@@ -32,6 +32,7 @@ import {
   RocketLaunchIcon,
   PencilSquareIcon
 } from '@heroicons/react/24/outline'
+import { formatLocalDate } from '../utils/dateUtils'
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -170,19 +171,24 @@ export default function Dashboard() {
     // Process each energy log
     filteredLogs.forEach(log => {
       const device = devices.find(d => d.id === log.device_id)
-      if (!device) return
+      const wattage = device?.wattage ?? log.device_wattage ?? 0
 
       // Calculate usage using the rate calculator (same as Energy Logs page)
       const calculation = calculateUsageCost(
-        device.wattage,
+        wattage,
         log.start_time,
         log.end_time,
         log.usage_date
       )
 
-      // Use stored values if available (from bulk entry), otherwise use calculated values
+      // Prefer stored values (bulk / DB trigger); fall back to calculator
       const kwh = log.total_kwh ?? calculation.totalKwh
       const cost = log.calculated_cost ?? calculation.totalCost
+
+      // Skip only if we have nothing usable
+      if (!device && kwh === 0 && cost === 0 && !log.total_kwh && !log.calculated_cost) {
+        return
+      }
 
       // Add to household totals
       totalKwh += kwh
@@ -206,7 +212,7 @@ export default function Dashboard() {
       // Track device totals
       if (!deviceTotals[log.device_id]) {
         deviceTotals[log.device_id] = {
-            name: device.name,
+            name: device?.name || log.device_name || 'Unknown Device',
             kwh: 0,
           cost: 0
         }
@@ -358,17 +364,17 @@ export default function Dashboard() {
 
     // Calculate personal usage for current user
     const now = new Date()
-    const today = now.toISOString().split('T')[0]
+    const today = formatLocalDate(now)
     
     // Get first day of current month
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+    const firstDayOfMonth = formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1))
     
     // Get first day of current week (Sunday)
     const currentDay = now.getDay()
-    const firstDayOfWeek = new Date(now.getTime() - currentDay * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const firstDayOfWeek = formatLocalDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - currentDay))
     
     // Get first day of current year
-    const firstDayOfYear = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0]
+    const firstDayOfYear = formatLocalDate(new Date(now.getFullYear(), 0, 1))
 
     const calculatePersonalUsage = (startDate: string, endDate: string = today) => {
       let kwh = 0
@@ -405,12 +411,12 @@ export default function Dashboard() {
       return { kwh, cost }
     }
     
-    // Calculate comparison periods
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    const lastWeekStart = new Date(now.getTime() - (currentDay + 7) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    const lastWeekEnd = new Date(now.getTime() - (currentDay + 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0]
-    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0]
+    // Calculate comparison periods (local civil dates)
+    const yesterday = formatLocalDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1))
+    const lastWeekStart = formatLocalDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - (currentDay + 7)))
+    const lastWeekEnd = formatLocalDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - (currentDay + 1)))
+    const lastMonthStart = formatLocalDate(new Date(now.getFullYear(), now.getMonth() - 1, 1))
+    const lastMonthEnd = formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 0))
     
     const dailyCurrent = calculatePersonalUsage(today, today)
     const dailyPrevious = calculatePersonalUsage(yesterday, yesterday)
@@ -551,7 +557,7 @@ export default function Dashboard() {
     for (let i = 0; i < 7; i++) {
       const date = new Date(sevenDaysAgo.getTime() + i * 24 * 60 * 60 * 1000)
       const dayName = weekDays[date.getDay()]
-      const dateStr = date.toISOString().split('T')[0]
+      const dateStr = formatLocalDate(date)
       
       const dayLogs = energyLogs.filter(log => log.usage_date === dateStr)
       
@@ -660,7 +666,7 @@ export default function Dashboard() {
   // Show loading state
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-5 min-h-screen bg-background text-foreground font-sans fade-in flex items-center justify-center">
+      <div className="max-w-7xl mx-auto min-h-dvh bg-background text-foreground font-sans fade-in flex items-center justify-center">
         <div className="text-center">
           <BoltIcon className="w-16 h-16 md:w-24 md:h-24 mb-4 energy-pulse text-orange-400 mx-auto" />
           <h2 className="text-xl md:text-2xl font-bold mb-2">Loading Dashboard...</h2>
@@ -671,7 +677,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-5 min-h-screen bg-background text-foreground font-sans fade-in">
+    <div className="max-w-7xl mx-auto min-h-dvh bg-background text-foreground font-sans fade-in">
       {/* Demo Mode Banner */}
       {isDemoMode && (
         <div className="mb-4 p-3 md:p-4 bg-yellow-500/20 border-2 border-yellow-500 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center gap-3">
@@ -697,12 +703,12 @@ export default function Dashboard() {
 
       {/* Header */}
       <header className="mb-6 md:mb-8 p-4 md:p-8 energy-header-gradient rounded-2xl text-white shadow-xl energy-glow">
-        <div className="flex items-center justify-between mb-4 md:mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold energy-pulse flex items-center gap-2">
-            <BoltIcon className="w-7 h-7 md:w-8 md:h-8 text-orange-400" />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4 md:mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold energy-pulse flex items-center gap-2 min-w-0">
+            <BoltIcon className="w-7 h-7 md:w-8 md:h-8 text-orange-400 shrink-0" />
             Energy Dashboard
           </h1>
-          <Badge className="bg-white/20 text-white border-white/30 text-xs md:text-sm px-2 md:px-3 py-1">
+          <Badge className="bg-white/20 text-white border-white/30 text-xs md:text-sm px-2 md:px-3 py-1 w-fit shrink-0">
             {getSeason(currentTime) === 'summer' ? '☀️ Summer' : '☁️ Winter'} • {currentTime.getDay() === 0 || currentTime.getDay() === 6 ? 'Weekend' : 'Weekday'}
           </Badge>
         </div>
@@ -771,7 +777,7 @@ export default function Dashboard() {
                     key={idx}
                     className={`px-3 md:px-4 py-2.5 md:py-3 rounded-lg transition-all ${
                       isActive
-                        ? `bg-gradient-to-r ${colors.activeBg} text-white font-bold shadow-lg ring-2 ${colors.ring} scale-105 border-2 ${colors.border}` 
+                        ? `bg-gradient-to-r ${colors.activeBg} text-white font-bold shadow-lg ring-2 ${colors.ring} border-2 ${colors.border}` 
                         : `bg-gradient-to-r ${colors.bg} text-white/80 border ${colors.border}`
                     }`}
                   >
@@ -1029,8 +1035,8 @@ export default function Dashboard() {
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {segments.map((s, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-sm">
-                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
+                    <div key={idx} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm min-w-0">
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
                       <span className="text-muted-foreground">{s.name}:</span>
                       <span className="font-semibold">{s.kwh.toFixed(1)} kWh</span>
                       <span className="text-muted-foreground">(${s.cost.toFixed(2)})</span>
@@ -1052,8 +1058,8 @@ export default function Dashboard() {
             return highestName === 'On-Peak' ? (
               <div className="mt-4 bg-gradient-to-r from-red-500/20 via-orange-500/20 to-red-500/20 border-2 border-red-500/50 rounded-lg p-3 md:p-4 shadow-lg">
                 <div className="flex items-center justify-center gap-2 md:gap-3">
-                  <ExclamationTriangleIcon className="w-8 h-8 md:w-10 md:h-10 text-yellow-400 animate-pulse" />
-                  <div className="text-center">
+                  <ExclamationTriangleIcon className="hidden sm:block w-8 h-8 md:w-10 md:h-10 text-yellow-400 animate-pulse shrink-0" />
+                  <div className="text-center min-w-0">
                     <div className="text-red-400 font-bold text-base md:text-lg mb-1 flex items-center justify-center gap-2">
                       <BoltIcon className="w-4 h-4 md:w-5 md:h-5 text-orange-400" />
                       Avoid Peak Hours
@@ -1066,14 +1072,14 @@ export default function Dashboard() {
                       On-Peak Period - Highest Rates ($0.55/kWh)
                     </div>
                   </div>
-                  <ExclamationTriangleIcon className="w-8 h-8 md:w-10 md:h-10 text-yellow-400 animate-pulse" />
+                  <ExclamationTriangleIcon className="hidden sm:block w-8 h-8 md:w-10 md:h-10 text-yellow-400 animate-pulse shrink-0" />
                 </div>
               </div>
             ) : (
               <div className="mt-4 bg-gradient-to-r from-yellow-500/20 via-orange-500/20 to-yellow-500/20 border-2 border-yellow-500/50 rounded-lg p-3 md:p-4 shadow-lg">
                 <div className="flex items-center justify-center gap-2 md:gap-3">
-                  <ExclamationTriangleIcon className="w-8 h-8 md:w-10 md:h-10 text-yellow-400 animate-pulse" />
-                  <div className="text-center">
+                  <ExclamationTriangleIcon className="hidden sm:block w-8 h-8 md:w-10 md:h-10 text-yellow-400 animate-pulse shrink-0" />
+                  <div className="text-center min-w-0">
                     <div className="text-yellow-400 font-bold text-base md:text-lg mb-1 flex items-center justify-center gap-2">
                       <BoltIcon className="w-4 h-4 md:w-5 md:h-5 text-orange-400" />
                       Watch Peak Hours
@@ -1086,7 +1092,7 @@ export default function Dashboard() {
                       Mid-Peak Period - Higher Rates ($0.52/kWh)
                     </div>
                   </div>
-                  <ExclamationTriangleIcon className="w-8 h-8 md:w-10 md:h-10 text-yellow-400 animate-pulse" />
+                  <ExclamationTriangleIcon className="hidden sm:block w-8 h-8 md:w-10 md:h-10 text-yellow-400 animate-pulse shrink-0" />
                 </div>
               </div>
             )
@@ -1183,13 +1189,16 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               {weeklyUsageData.length > 0 && weeklyUsageData.some(day => Object.keys(day).length > 2) ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={weeklyUsageData}>
+              <div className="h-[220px] md:h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={weeklyUsageData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border))" />
-                  <XAxis dataKey="day" stroke="hsl(var(--color-muted-foreground))" />
+                  <XAxis dataKey="day" stroke="hsl(var(--color-muted-foreground))" tick={{ fontSize: 12 }} />
                   <YAxis 
-                    stroke="hsl(var(--color-muted-foreground))" 
-                    label={{ value: 'Usage (kWh)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: 'hsl(var(--color-muted-foreground))' } }}
+                    stroke="hsl(var(--color-muted-foreground))"
+                    tick={{ fontSize: 12 }}
+                    width={40}
+                    label={{ value: 'Usage (kWh)', angle: -90, position: 'insideLeft', className: 'hidden md:block', style: { textAnchor: 'middle', fill: 'hsl(var(--color-muted-foreground))' } }}
                   />
                   <Tooltip 
                     contentStyle={{ 
@@ -1211,8 +1220,9 @@ export default function Dashboard() {
                     ))}
                 </BarChart>
               </ResponsiveContainer>
+              </div>
               ) : (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                <div className="h-[220px] md:h-[300px] flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
                     <ChartBarIcon className="w-16 h-16 mx-auto mb-2 text-blue-400 opacity-50" />
                     <p className="text-sm">No energy logs in the past 7 days</p>
@@ -1234,20 +1244,22 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
             {monthlyTrendData.some(m => m.usage > 0) ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={monthlyTrendData}>
+              <div className="h-[220px] md:h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monthlyTrendData} margin={{ left: 0, right: 8, top: 8, bottom: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border))" />
                   <XAxis 
                     dataKey="month" 
                     stroke="hsl(var(--color-muted-foreground))" 
                     angle={-45}
                     textAnchor="end"
-                    height={80}
+                    height={60}
                     tick={{ fontSize: 11 }}
                   />
                   <YAxis 
-                    stroke="hsl(var(--color-muted-foreground))" 
-                    label={{ value: 'Total Usage (kWh)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: 'hsl(var(--color-muted-foreground))' } }}
+                    stroke="hsl(var(--color-muted-foreground))"
+                    tick={{ fontSize: 12 }}
+                    width={40}
                   />
                   <Tooltip 
                     contentStyle={{ 
@@ -1274,8 +1286,9 @@ export default function Dashboard() {
                   />
                 </LineChart>
               </ResponsiveContainer>
+              </div>
             ) : (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+              <div className="h-[220px] md:h-[300px] flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
                   <ArrowTrendingUpIcon className="w-16 h-16 mx-auto mb-3 text-primary opacity-50" />
                   <p className="text-sm">No monthly usage data available</p>

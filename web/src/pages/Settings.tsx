@@ -160,7 +160,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-3 sm:p-4 min-h-screen bg-background text-foreground font-sans fade-in">
+    <div className="max-w-7xl mx-auto min-h-dvh bg-background text-foreground font-sans fade-in">
       {/* Header */}
       <header className="mb-4 p-3 md:p-4 energy-header-gradient rounded-xl text-white shadow-xl">
         <h1 className="text-xl md:text-2xl font-bold energy-pulse flex items-center gap-3">

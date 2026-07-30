@@ -6,7 +6,6 @@ import { useAuth } from '../hooks/useAuth'
 import { useDemoMode } from './DemoContext'
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription'
 import { useCache } from '../hooks/useCache'
-import { MockDataService } from '../services/mockDataService'
 import { demoDevices } from '../demo/demoData'
 import { logger } from '../utils/logger'
 
@@ -119,23 +118,9 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
       cache.set(cacheKey, deviceData)
     } catch (err) {
       logger.error('Error fetching devices:', err)
-      logger.log('Falling back to mock data...')
-      
-      // Fallback to mock data
-      try {
-        const mockDevices = await MockDataService.getDevices()
-        const deviceData = mockDevices.map(device => ({
-          ...device,
-          kwh_per_hour: device.wattage / 1000,
-          household_id: 'mock-household',
-          created_by: user?.id || 'mock-user'
-        }))
-        setDevices(deviceData)
-        setError('Using demo data - Supabase connection unavailable')
-      } catch (mockErr) {
-        logger.error('Mock data error:', mockErr)
-        setError('Failed to load devices')
-      }
+      // Never inject mock device IDs for authenticated users — that creates orphan logs
+      setDevices([])
+      setError(err instanceof Error ? err.message : 'Failed to load devices. Please retry.')
     } finally {
       setLoading(false)
     }

@@ -1,4 +1,5 @@
 // Accurate rate calculator for Mai Home Energy Tracker
+// Keep in sync with web/src/lib/53-align-tou-cost-calculator.sql (database is authoritative)
 import type { RatePeriod } from '../types'
 
 // Determine if a date is in summer or winter
@@ -25,6 +26,14 @@ export const SUMMER_RATES: Record<string, RatePeriod[]> = {
     { name: 'Off-Peak', start: '21:01', end: '23:59', rate: 0.25, color: '🟢' }
   ]
 }
+
+/** Presets for Quick kWh / bulk entry — mirrors TOU-D-PRIME rates. */
+export const BULK_RATE_PRESETS = [
+  { value: 'super_off_peak', label: 'Super Off-Peak (Winter daytime)', rate: 0.24, hours: '8:00 AM - 4:00 PM (Winter)' },
+  { value: 'off_peak', label: 'Off-Peak', rate: 0.25, hours: 'Summer off-peak / Winter evenings & nights $0.24–$0.25' },
+  { value: 'mid_peak', label: 'Mid-Peak', rate: 0.52, hours: 'Winter 4:00 PM - 9:00 PM ($0.52) / Summer weekend ($0.37)' },
+  { value: 'on_peak', label: 'On-Peak', rate: 0.55, hours: 'Summer weekdays 4:01 PM - 9:00 PM' }
+] as const
 
 export interface UsageCalculation {
   totalKwh: number
@@ -54,7 +63,7 @@ const minutesToTime = (minutes: number): string => {
   return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`
 }
 
-// Get rate periods
+// Get rate periods for a calendar day
 const getRatePeriods = (date: Date): RatePeriod[] => {
   const season = getSeason(date)
   
@@ -94,10 +103,9 @@ export const calculateUsageCost = (
   endTime: string,
   usageDate: string
 ): UsageCalculation => {
-  // Parse date
+  // Parse date as local civil date
   const [year, month, day] = usageDate.split('-').map(Number)
-  const date = new Date(year, month - 1, day)
-  const ratePeriods = getRatePeriods(date)
+  const startDate = new Date(year, month - 1, day)
   
   // Convert times to minutes
   const startMinutes = timeToMinutes(startTime)
@@ -115,9 +123,12 @@ export const calculateUsageCost = (
   let totalCost = 0
   const breakdown: UsageCalculation['breakdown'] = []
   
-  // Process minute by minute to ensure accuracy
+  // Process minute by minute; advance calendar day after midnight for correct season/weekday rates
   for (let currentMinutes = startMinutes; currentMinutes < endMinutes; currentMinutes++) {
-    const timeOfDay = currentMinutes % (24 * 60)
+    const dayOffset = Math.floor(currentMinutes / (24 * 60))
+    const timeOfDay = ((currentMinutes % (24 * 60)) + 24 * 60) % (24 * 60)
+    const calendarDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + dayOffset)
+    const ratePeriods = getRatePeriods(calendarDate)
     const period = findRatePeriod(timeOfDay, ratePeriods)
     
     if (period) {

@@ -296,19 +296,34 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
         throw new Error('Energy log not found')
       }
 
-      // Delete the energy log (assigned_users are stored in the same table, no separate junction table)
-      const { error, count } = await supabase
-        .from('energy_logs')
-        .delete({ count: 'exact' })
-        .eq('id', id)
+      // Soft-delete so recovery remains available (matches bulk delete path)
+      const { data: softResult, error } = await supabase
+        .rpc('soft_delete_energy_logs', {
+          p_log_ids: [id],
+          p_recovery_days: 30
+        })
 
-      if (error) throw error
+      if (error) {
+        // Fall back to hard delete if soft-delete RPC is unavailable
+        const { error: hardError, count: hardCount } = await supabase
+          .from('energy_logs')
+          .delete({ count: 'exact' })
+          .eq('id', id)
 
-      // Check if deletion was actually successful (RLS might block it silently)
-      if (count === 0) {
-        logger.error('Delete was blocked by RLS policy. Log details:', existingLog)
-        logger.error('Current user:', user?.id)
-        throw new Error('You do not have permission to delete this energy log. It may have been created by another user. Please contact your administrator.')
+        if (hardError) throw hardError
+        if (hardCount === 0) {
+          logger.error('Delete was blocked by RLS policy. Log details:', existingLog)
+          logger.error('Current user:', user?.id)
+          throw new Error('You do not have permission to delete this energy log. It may have been created by another user. Please contact your administrator.')
+        }
+      } else {
+        const deletedCount = Array.isArray(softResult)
+          ? softResult[0]?.deleted_count ?? 0
+          : (softResult as { deleted_count?: number } | null)?.deleted_count ?? 0
+        if (deletedCount === 0) {
+          logger.error('Soft delete returned zero rows. Log details:', existingLog)
+          throw new Error('You do not have permission to delete this energy log.')
+        }
       }
 
       setEnergyLogs(prev => prev.filter(log => log.id !== id))

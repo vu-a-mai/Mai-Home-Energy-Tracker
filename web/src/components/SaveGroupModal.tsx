@@ -32,7 +32,7 @@ export function SaveGroupModal({ isOpen, onClose, onSave, deviceCount }: SaveGro
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-[60] p-0 sm:p-4">
-      <Card className="energy-card w-full sm:max-w-md border-0 sm:border rounded-none sm:rounded-lg min-h-screen sm:min-h-0">
+      <Card className="energy-card w-full sm:max-w-md border-0 sm:border rounded-none sm:rounded-lg min-h-dvh sm:min-h-0">
         <CardHeader className="p-4 sm:p-5 border-b border-border sticky top-0 bg-card z-10">
           <CardTitle className="text-base sm:text-lg text-foreground flex items-center justify-between gap-2">
             <span className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">

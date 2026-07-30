@@ -53,6 +53,8 @@ export interface EnergyLog {
   deleted_by?: string | null
   deletion_mode?: string
   permanent_delete_at?: string | null
+  device_name?: string
+  device_wattage?: number
 }
 
 export interface EnergyLogUser {

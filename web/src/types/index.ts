@@ -25,13 +25,17 @@ export interface EnergyLog {
   start_time: string
   end_time: string
   total_kwh: number
-  total_cost: number
+  total_cost?: number
+  calculated_cost?: number
   rate_breakdown: any
   household_id: string
   created_by: string
   created_at: string
+  assigned_users?: string[]
   source_type?: 'manual' | 'template' | 'recurring'
   source_id?: string
+  device_name?: string
+  device_wattage?: number
 }
 
 export interface EnergyLogUser {
