@@ -170,16 +170,21 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
-      <div className="w-full sm:max-w-2xl min-h-dvh sm:min-h-0 sm:my-4">
-        <Card className="energy-card w-full bg-card border-0 sm:border border-border rounded-none sm:rounded-lg shadow-xl min-h-dvh sm:min-h-0 sm:max-h-[min(90vh,100dvh)] flex flex-col">
-          <CardHeader className="p-4 sm:p-5 md:p-6 border-b border-border flex-shrink-0 sticky top-0 bg-card z-10">
+    <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/50 p-0 sm:p-4 overflow-y-auto overscroll-contain">
+      <div className="w-full sm:max-w-2xl sm:my-4 flex flex-col max-h-[100dvh] sm:max-h-[min(90vh,100dvh)]">
+        <Card className="energy-card flex flex-col w-full bg-card border-0 sm:border border-border rounded-none sm:rounded-lg shadow-xl min-h-0 max-h-[100dvh] sm:max-h-[min(90vh,100dvh)]">
+          <CardHeader className="p-4 sm:p-5 md:p-6 border-b border-border flex-shrink-0 bg-card z-10">
             <div className="flex items-center justify-between gap-3">
               <CardTitle className="text-lg sm:text-xl md:text-2xl text-foreground flex items-center gap-2 flex-1 min-w-0">
                 <BoltIcon className="w-5 h-5 sm:w-6 sm:h-6 text-orange-400 flex-shrink-0" />
                 <span className="truncate">Quick Energy Entry</span>
               </CardTitle>
-              <button onClick={onClose} className="p-2 h-9 w-9 sm:h-10 sm:w-10 border border-border rounded hover:bg-muted flex-shrink-0">
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close quick entry"
+                className="p-2 h-11 w-11 sm:h-10 sm:w-10 border border-border rounded hover:bg-muted flex-shrink-0 inline-flex items-center justify-center"
+              >
                 <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
@@ -188,7 +193,7 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
             </p>
           </CardHeader>
 
-          <CardContent className="p-4 sm:p-5 md:p-6 overflow-y-auto flex-1 min-h-0">
+          <CardContent className="p-4 sm:p-5 md:p-6 overflow-y-auto overscroll-contain flex-1 min-h-0">
           {/* Mode Toggle */}
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4 sm:mb-6">
             <button
