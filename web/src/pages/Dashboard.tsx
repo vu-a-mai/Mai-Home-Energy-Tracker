@@ -642,7 +642,7 @@ export default function Dashboard() {
             <button
               type="button"
               onClick={() => setShowRateSchedule((v) => !v)}
-              className="text-xs px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/20 border border-white/20"
+              className="text-xs px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-white/20"
             >
               {showRateSchedule ? 'Hide rates' : 'TOU rates'}
             </button>

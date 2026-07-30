@@ -370,7 +370,7 @@ export function DeleteConfirmationModal({
         </div>
 
         {/* Actions - Sticky Footer */}
-        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 p-4 sm:p-6 border-t border-slate-700 flex-shrink-0 bg-slate-900/50 sticky bottom-0 z-10">
+        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 p-4 sm:p-6 border-t border-slate-700 flex-shrink-0 bg-slate-900 sticky bottom-0 z-10">
           <Button
             onClick={onCancel}
             variant="outline"

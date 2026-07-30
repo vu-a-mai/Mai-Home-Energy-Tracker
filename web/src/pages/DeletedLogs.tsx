@@ -148,7 +148,7 @@ export default function DeletedLogs() {
           </div>
           <Link
             to="/logs"
-            className="inline-flex items-center gap-1.5 text-sm bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg"
+            className="inline-flex items-center gap-1.5 text-sm bg-slate-800 hover:bg-slate-700 border border-white/30 px-3 py-2 rounded-lg"
           >
             <ArrowLeftIcon className="w-4 h-4" />
             Back to Logs

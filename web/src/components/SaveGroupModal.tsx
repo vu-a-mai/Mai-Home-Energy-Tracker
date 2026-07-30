@@ -33,7 +33,7 @@ export function SaveGroupModal({ isOpen, onClose, onSave, deviceCount }: SaveGro
   return (
     <div className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center bg-black/50 p-0 sm:p-4 overflow-y-auto overscroll-contain">
       <Card className="energy-card w-full sm:max-w-md border-0 sm:border rounded-none sm:rounded-lg min-h-0 max-h-[100dvh] sm:max-h-[min(90vh,100dvh)] flex flex-col overflow-hidden">
-        <CardHeader className="p-4 sm:p-5 border-b border-border flex-shrink-0 bg-card z-10">
+        <CardHeader className="p-4 sm:p-5 border-b border-border flex-shrink-0 bg-slate-900 z-10">
           <CardTitle className="text-base sm:text-lg text-foreground flex items-center justify-between gap-2">
             <span className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
               <FolderPlusIcon className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400 flex-shrink-0" />

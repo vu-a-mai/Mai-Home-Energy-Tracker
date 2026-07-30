@@ -776,7 +776,7 @@ ${householdUsers.map(user =>
               </div>
 
               {/* Usage Summary */}
-              <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 p-4 rounded-lg border border-slate-600/50 mb-6">
+              <div className="bg-gradient-to-r from-slate-800 to-slate-700 p-4 rounded-lg border border-slate-600 mb-6">
                 <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
                   <ChartBarIcon className="w-5 h-5 text-blue-400" />
                   Usage Summary
@@ -1066,7 +1066,7 @@ ${householdUsers.map(user =>
                         </div>
                         
                         {/* Total Bill - Prominent */}
-                        <div className="bg-black/30 backdrop-blur-sm rounded-lg p-2 md:p-2.5 border border-emerald-500/30">
+                        <div className="bg-slate-950 rounded-lg p-2 md:p-2.5 border border-emerald-500/30">
                           <div className="flex items-baseline justify-between">
                             <span className="text-[9px] md:text-[10px] text-emerald-300 font-semibold uppercase tracking-wide">Total</span>
                             <div className="text-lg md:text-xl font-bold text-emerald-400">
@@ -1085,7 +1085,7 @@ ${householdUsers.map(user =>
                               return (
                                 <div 
                                   key={user.id} 
-                                className="bg-slate-800/50 backdrop-blur-sm rounded px-1.5 md:px-2 py-1 md:py-1.5 border border-slate-700/50"
+                                className="bg-slate-800 rounded px-1.5 md:px-2 py-1 md:py-1.5 border border-slate-700"
                               >
                                 <div className="text-[9px] md:text-[10px] text-slate-400 truncate">{getUserIcon(user.name)} {user.name}</div>
                                 <div className="text-[10px] md:text-xs font-bold text-green-400">
@@ -1236,7 +1236,7 @@ ${householdUsers.map(user =>
                     const untrackedCost = viewingBillSplit.total_bill_amount - totalTrackedCost
                     
                     return (
-                      <div className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 p-4 rounded-lg border border-slate-600/50">
+                      <div className="bg-gradient-to-r from-slate-800 to-slate-700 p-4 rounded-lg border border-slate-600">
                         <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
                           <ChartBarIcon className="w-5 h-5 text-blue-400" />
                           Usage Summary
@@ -1273,7 +1273,7 @@ ${householdUsers.map(user =>
                       const percentage = (userAllocation.totalOwed / viewingBillSplit.total_bill_amount) * 100
                       
                       return (
-                        <Card key={user.id} className="energy-card bg-gradient-to-br from-slate-800/80 to-slate-900/60 border-slate-600">
+                        <Card key={user.id} className="energy-card bg-gradient-to-br from-slate-800 to-slate-900 border-slate-600">
                           <CardContent className="p-4">
                             {/* User Header */}
                             <div className="flex items-center gap-2 mb-3">
