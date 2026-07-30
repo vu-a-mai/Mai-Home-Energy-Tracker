@@ -12,6 +12,7 @@ This folder contains SQL scripts for Mai Home Energy Tracker database setup and 
 |------|---------|-------------|
 | `1-fresh-database-schema.sql` | Complete database schema (tables, triggers, RLS policies, indexes) | **Always run first** on new/empty database |
 | `14-fix-security-warnings.sql` | Security fixes for functions (search_path) | Run on existing database to fix security warnings |
+| `53-align-tou-cost-calculator.sql` | Align `calculate_energy_cost` with app TOU-D-PRIME rates; overnight/day boundaries | **Run on existing projects** after the July 2026 cost-hardening release |
 
 ### Archived Scripts
 
@@ -29,10 +30,21 @@ The `migrations-archive/` folder contains historical debugging and migration fil
    - Sets up RLS policies
    - Configures time-of-use rate calculation
 
-2. Optional: Run 14-fix-security-warnings.sql
+2. Run: 53-align-tou-cost-calculator.sql
+   - Ensures DB cost calculator matches the app (overnight + season boundaries)
+
+3. Optional: Run 14-fix-security-warnings.sql
    - Fixes Supabase security warnings
    - Adds search_path to functions
 ```
+
+### For Existing Database (cost hardening):
+
+```bash
+Run: 53-align-tou-cost-calculator.sql
+```
+
+In Supabase Dashboard → **SQL Editor** → New query → paste the file → **Run**.
 
 ### For Existing Database with Security Warnings:
 
@@ -79,6 +91,33 @@ Run: 14-fix-security-warnings.sql
 - After seeing security warnings in Supabase Dashboard
 - Safe to run multiple times (uses `CREATE OR REPLACE`)
 - Does not affect existing data
+
+---
+
+### 5️⃣3️⃣ `53-align-tou-cost-calculator.sql`
+
+**Updates:**
+- Replaces `calculate_energy_cost()` with minute-level TOU-D-PRIME math matching `rateCalculatorFixed.ts`
+- Handles overnight sessions and day/season boundaries
+- Keeps manual bulk entries (`source_type = 'manual'` with pre-set kWh/cost)
+- Recalculates timed / template / recurring inserts via the trigger
+
+**When to Run:**
+- On every existing Supabase project after deploying the cost-hardening app changes
+- Safe to re-run (`CREATE OR REPLACE` + trigger recreate)
+- Does **not** rewrite historical rows automatically; new inserts/updates use the aligned rates
+
+**Verify after running:**
+
+```sql
+SELECT * FROM calculate_energy_cost(
+  1000,           -- 1 kW device
+  '17:00'::time,  -- summer weekday on-peak
+  '18:00'::time,
+  '2026-07-15'::date
+);
+-- Expect total_cost ≈ 0.55, total_kwh ≈ 1.00
+```
 
 ---
 
