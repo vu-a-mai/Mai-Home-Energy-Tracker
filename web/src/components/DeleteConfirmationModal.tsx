@@ -362,8 +362,8 @@ export function DeleteConfirmationModal({
         <div className="mb-4 sm:mb-6 bg-red-500/10 border border-red-500/30 p-3 sm:p-4 rounded-lg">
           <div className="text-xs sm:text-sm text-red-300 font-semibold">
             {deletionMode === 'permanent' || skipRecovery
-              ? '⚠️ THIS ACTION CANNOT BE UNDONE'
-              : `ℹ️ Logs can be restored from "Deleted Logs" page within ${recoveryDays} days`
+              ? 'THIS ACTION CANNOT BE UNDONE'
+              : `Logs can be restored from Deleted Logs (/logs/deleted) within ${recoveryDays} days`
             }
           </div>
         </div>

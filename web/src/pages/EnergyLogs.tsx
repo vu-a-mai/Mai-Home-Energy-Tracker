@@ -1,4 +1,5 @@
-import { useState, useMemo, type ReactElement } from 'react'
+import { useState, useMemo, useEffect, useRef, type ReactElement } from 'react'
+import { Link } from 'react-router'
 import { useEnergyLogs } from '../hooks/useEnergyLogs'
 import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
@@ -48,6 +49,7 @@ import {
   ArrowPathIcon
 } from '@heroicons/react/24/outline'
 import { todayLocal } from '../utils/dateUtils'
+import { getUserIcon as getSharedUserIcon } from '../utils/userAppearance'
 
 interface EnergyLogFormData {
   device_id: string
@@ -94,17 +96,8 @@ const getDeviceIcon = (deviceName: string): ReactElement => {
   return <BoltIcon className={`${iconClass} text-orange-400`} /> // Default icon
 }
 
-// Helper function to get user icon
-const getUserIcon = (userName: string): ReactElement => {
-  const name = userName.toLowerCase()
-  const iconClass = "w-4 h-4 inline-block"
-  
-  if (name.includes('vu')) return <UserIcon className={`${iconClass} text-green-400`} />
-  if (name.includes('thuy')) return <UserIcon className={`${iconClass} text-purple-400`} />
-  if (name.includes('vy')) return <UserIcon className={`${iconClass} text-pink-400`} />
-  if (name.includes('han')) return <UserIcon className={`${iconClass} text-blue-400`} />
-  return <UserIcon className={`${iconClass} text-slate-400`} />
-}
+// Helper function to get user icon (stable color from name — not family-keyed)
+const getUserIcon = (userName: string): ReactElement => getSharedUserIcon(userName)
 
 export default function EnergyLogs() {
   const { energyLogs, loading, addEnergyLog, updateEnergyLog, deleteEnergyLog, getTotalUsage, refreshEnergyLogs } = useEnergyLogs()
@@ -146,10 +139,23 @@ export default function EnergyLogs() {
   const [showRateBreakdown, setShowRateBreakdown] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
   const [showSchedules, setShowSchedules] = useState(false)
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
+  const moreMenuRef = useRef<HTMLDivElement>(null)
   const [showBulkEntry, setShowBulkEntry] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showTemplateNameModal, setShowTemplateNameModal] = useState(false)
   const [templateLogData, setTemplateLogData] = useState<typeof energyLogs[0] | null>(null)
+
+  useEffect(() => {
+    if (!showMoreMenu) return
+    const onPointerDown = (event: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        setShowMoreMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    return () => document.removeEventListener('mousedown', onPointerDown)
+  }, [showMoreMenu])
 
   const validateForm = (): boolean => {
     const errors: Partial<EnergyLogFormData> = {}
@@ -527,37 +533,80 @@ export default function EnergyLogs() {
             Track and analyze device usage sessions
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={() => setShowBulkEntry(true)}
-            className="px-2.5 sm:px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap bg-purple-500 hover:bg-purple-600 text-white border-0 shadow-lg shadow-purple-500/30"
-          >
-            <BoltIcon className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1 md:mr-2" />
-            <span className="hidden sm:inline">Quick </span>kWh
-          </Button>
-          <Button
-            onClick={() => setShowTemplates(true)}
-            className="px-2.5 sm:px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-lg shadow-blue-500/30"
-          >
-            <DocumentDuplicateIcon className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1 md:mr-2" />
-            <span className="hidden sm:inline">Templates</span>
-            <span className="sm:hidden">Temp</span>
-          </Button>
-          <Button
-            onClick={() => setShowSchedules(true)}
-            className="px-2.5 sm:px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap bg-cyan-500 hover:bg-cyan-600 text-white border-0 shadow-lg shadow-cyan-500/30"
-          >
-            <ArrowPathIcon className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1 md:mr-2" />
-            <span className="hidden sm:inline">Schedules</span>
-            <span className="sm:hidden">Sched</span>
-          </Button>
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             onClick={() => setShowForm(true)}
-            className="px-2.5 sm:px-3 md:px-4 py-2 text-xs sm:text-sm md:text-base font-semibold whitespace-nowrap bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg shadow-green-500/30"
+            className="px-3 md:px-4 py-2 text-sm md:text-base font-semibold whitespace-nowrap bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg shadow-green-500/30"
           >
             <PlusIcon className="w-4 h-4 md:w-5 md:h-5 inline-block mr-1" />
-            <span className="hidden sm:inline">Log </span>Usage
+            Add log
           </Button>
+          <div className="relative" ref={moreMenuRef}>
+            <Button
+              type="button"
+              onClick={() => setShowMoreMenu((v) => !v)}
+              aria-expanded={showMoreMenu}
+              aria-haspopup="menu"
+              className="px-3 md:px-4 py-2 text-sm md:text-base font-semibold whitespace-nowrap bg-slate-700/80 hover:bg-slate-600 text-white border border-white/20"
+            >
+              More
+              <ChevronDownIcon className="w-4 h-4 inline-block ml-1" />
+            </Button>
+            {showMoreMenu && (
+              <div
+                role="menu"
+                className="absolute right-0 mt-2 w-56 rounded-lg border border-border bg-card shadow-xl z-30 overflow-hidden"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted flex items-center gap-2 text-foreground"
+                  onClick={() => {
+                    setShowMoreMenu(false)
+                    setShowBulkEntry(true)
+                  }}
+                >
+                  <BoltIcon className="w-4 h-4 text-purple-400" />
+                  Quick kWh
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted flex items-center gap-2 text-foreground"
+                  onClick={() => {
+                    setShowMoreMenu(false)
+                    setShowTemplates(true)
+                  }}
+                >
+                  <DocumentDuplicateIcon className="w-4 h-4 text-blue-400" />
+                  Templates (one-shot)
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted flex items-center gap-2 text-foreground"
+                  onClick={() => {
+                    setShowMoreMenu(false)
+                    setShowSchedules(true)
+                  }}
+                >
+                  <ArrowPathIcon className="w-4 h-4 text-cyan-400" />
+                  Schedules (auto)
+                </button>
+                {!isDemoMode && (
+                  <Link
+                    to="/logs/deleted"
+                    role="menuitem"
+                    className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted flex items-center gap-2 text-foreground border-t border-border"
+                    onClick={() => setShowMoreMenu(false)}
+                  >
+                    <TrashIcon className="w-4 h-4 text-orange-400" />
+                    Deleted Logs
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

@@ -1,14 +1,12 @@
 import { useAuth } from '../hooks/useAuth'
-import { useDemoMode } from '../contexts/DemoContext'
 import { useEnergyLogs } from '../hooks/useEnergyLogs'
 import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router'
-import { Button } from '../components/ui/Button'
+import { Link } from 'react-router'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Badge } from '../components/ui/badge'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
 import { calculateUsageCost, getSeason, WINTER_RATES, SUMMER_RATES } from '../utils/rateCalculatorFixed'
 import { useUsageTimeframe } from '../hooks/useUsageTimeframe'
 import {
@@ -16,7 +14,6 @@ import {
   HomeIcon,
   CpuChipIcon,
   ChartBarIcon,
-  ChartPieIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
   CalendarDaysIcon,
@@ -24,23 +21,18 @@ import {
   SunIcon,
   MoonIcon,
   UserGroupIcon,
-  EyeIcon,
   CurrencyDollarIcon,
   ExclamationTriangleIcon,
   UserIcon,
-  ClipboardDocumentListIcon,
-  RocketLaunchIcon,
-  PencilSquareIcon
 } from '@heroicons/react/24/outline'
 import { formatLocalDate } from '../utils/dateUtils'
+import { getUserColorClass } from '../utils/userAppearance'
 
 export default function Dashboard() {
   const { user } = useAuth()
-  const { isDemoMode, disableDemoMode } = useDemoMode()
-  const navigate = useNavigate()
   const [currentTime, setCurrentTime] = useState(new Date())
-  const [projectionView, setProjectionView] = useState<'personal' | 'household'>('personal')
   const [ratePeriodView, setRatePeriodView] = useState<'personal' | 'household'>('personal')
+  const [showRateSchedule, setShowRateSchedule] = useState(false)
   
   // Use the same hooks as other pages for consistency
   const { energyLogs, loading: logsLoading } = useEnergyLogs()
@@ -461,47 +453,9 @@ export default function Dashboard() {
       ratePeriods: {
         personal: personalRatePeriods,
         household: ratePeriods
-      },
-      // Add projection data (personal and household)
-      monthProjection: {
-        personal: {
-          currentCost: monthlyCurrent.cost,
-          daysElapsed: now.getDate(),
-          daysInMonth: new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(),
-          projectedCost: monthlyCurrent.cost > 0 
-            ? (monthlyCurrent.cost / now.getDate()) * new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
-            : 0
-        },
-        household: {
-          // Calculate household total for CURRENT MONTH only
-          currentCost: (() => {
-            let householdMonthCost = 0
-            energyLogs
-              .filter(log => log.usage_date >= firstDayOfMonth && log.usage_date <= today)
-              .forEach(log => {
-                const device = devices.find(d => d.id === log.device_id)
-                if (!device) return
-                const calculation = calculateUsageCost(
-                  device.wattage,
-                  log.start_time,
-                  log.end_time,
-                  log.usage_date
-                )
-                householdMonthCost += log.calculated_cost ?? calculation.totalCost
-              })
-            return householdMonthCost
-          })(),
-          daysElapsed: now.getDate(),
-          daysInMonth: new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(),
-          get projectedCost() {
-            return this.currentCost > 0 
-              ? (this.currentCost / this.daysElapsed) * this.daysInMonth
-              : 0
-          }
-        }
       }
     }
-  }, [filteredLogs, devices, householdMembers, user])
+  }, [filteredLogs, devices, householdMembers, user, energyLogs])
 
   const dashboardData = calculateDashboardData
 
@@ -654,15 +608,6 @@ export default function Dashboard() {
   }, [energyLogs, devices])
 
 
-  // Device usage data for pie chart
-  const deviceUsageData = dashboardData.topDevices.map(device => ({
-    name: device.name,
-    value: device.kwh,
-      cost: device.cost
-  }))
-
-  const COLORS = ['#22c55e', '#eab308', '#ef4444', '#3b82f6', '#8b5cf6']
-
   // Show loading state
   if (loading) {
     return (
@@ -678,143 +623,77 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-7xl mx-auto min-h-dvh bg-background text-foreground font-sans fade-in">
-      {/* Demo Mode Banner */}
-      {isDemoMode && (
-        <div className="mb-4 p-3 md:p-4 bg-yellow-500/20 border-2 border-yellow-500 rounded-lg flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-          <div className="flex items-center gap-2 md:gap-3">
-            <EyeIcon className="w-8 h-8 md:w-10 md:h-10 text-yellow-500" />
-            <div>
-              <h3 className="font-bold text-yellow-500 text-sm md:text-base">Demo Mode Active</h3>
-              <p className="text-xs md:text-sm text-yellow-200">Demo sandbox — changes stay on this device only</p>
-            </div>
+      {/* Compact header — spend answers come first below */}
+      <header className="mb-4 p-4 md:p-5 energy-header-gradient rounded-2xl text-white shadow-xl">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2 min-w-0">
+              <BoltIcon className="w-7 h-7 md:w-8 md:h-8 text-orange-400 shrink-0" />
+              Energy Dashboard
+            </h1>
+            <p className="text-xs md:text-sm opacity-90 mt-1">
+              {currentRangeLabel} · {getSeason(currentTime) === 'summer' ? 'Summer' : 'Winter'} rates
+            </p>
           </div>
-          <Button 
-            onClick={() => {
-              disableDemoMode()
-              navigate('/login')
-            }}
-            variant="outline"
-            className="border-yellow-500 text-yellow-500 hover:bg-yellow-500/20 text-sm w-full sm:w-auto"
-          >
-            Exit Demo
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge className="bg-white/20 text-white border-white/30 text-xs md:text-sm px-2 md:px-3 py-1 w-fit">
+              Now: {currentRate.name} ${currentRate.rate.toFixed(2)}/kWh
+            </Badge>
+            <button
+              type="button"
+              onClick={() => setShowRateSchedule((v) => !v)}
+              className="text-xs px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/20 border border-white/20"
+            >
+              {showRateSchedule ? 'Hide rates' : 'TOU rates'}
+            </button>
+          </div>
         </div>
-      )}
-
-      {/* Header */}
-      <header className="mb-6 md:mb-8 p-4 md:p-8 energy-header-gradient rounded-2xl text-white shadow-xl energy-glow">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4 md:mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold energy-pulse flex items-center gap-2 min-w-0">
-            <BoltIcon className="w-7 h-7 md:w-8 md:h-8 text-orange-400 shrink-0" />
-            Energy Dashboard
-          </h1>
-          <Badge className="bg-white/20 text-white border-white/30 text-xs md:text-sm px-2 md:px-3 py-1 w-fit shrink-0">
-            {getSeason(currentTime) === 'summer' ? '☀️ Summer' : '☁️ Winter'} • {currentTime.getDay() === 0 || currentTime.getDay() === 6 ? 'Weekend' : 'Weekday'}
-          </Badge>
-        </div>
-        
-        {/* Combined Current Rate & Schedule */}
-        <div>
-          <div className="text-sm md:text-base font-semibold opacity-90 mb-2">Current Rate:</div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
+        {showRateSchedule && (
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
             {(() => {
               const season = getSeason(currentTime)
               const isWeekend = currentTime.getDay() === 0 || currentTime.getDay() === 6
-              const rates = season === 'summer' 
+              const rates = season === 'summer'
                 ? (isWeekend ? SUMMER_RATES.weekend : SUMMER_RATES.weekday)
                 : WINTER_RATES
-              
+              const formatTime = (time: string) => {
+                const [h, m] = time.split(':').map(Number)
+                if (h === 0) return '12:00 AM'
+                if (h < 12) return `${h}:${m.toString().padStart(2, '0')} AM`
+                if (h === 12) return '12:00 PM'
+                return `${h - 12}:${m.toString().padStart(2, '0')} PM`
+              }
               return rates.map((period, idx) => {
                 const isActive = currentRate.name === period.name
-                
-                // Format time to 12-hour format
-                const formatTime = (time: string) => {
-                  const [h, m] = time.split(':').map(Number)
-                  if (h === 0) return '12:00 AM'
-                  if (h < 12) return `${h}:${m.toString().padStart(2, '0')} AM`
-                  if (h === 12) return '12:00 PM'
-                  return `${h - 12}:${m.toString().padStart(2, '0')} PM`
-                }
-                
-                // Get color scheme based on rate period
-                const getColorScheme = (name: string) => {
-                  if (name === 'Off-Peak') return {
-                    bg: 'from-green-500/20 to-emerald-500/20',
-                    border: 'border-green-500/40',
-                    ring: 'ring-green-500/50',
-                    activeBg: 'from-green-500/30 to-emerald-500/30'
-                  }
-                  if (name === 'Super Off-Peak') return {
-                    bg: 'from-blue-500/20 to-cyan-500/20',
-                    border: 'border-blue-500/40',
-                    ring: 'ring-blue-500/50',
-                    activeBg: 'from-blue-500/30 to-cyan-500/30'
-                  }
-                  if (name === 'Mid-Peak') return {
-                    bg: 'from-yellow-500/20 to-orange-500/20',
-                    border: 'border-yellow-500/40',
-                    ring: 'ring-yellow-500/50',
-                    activeBg: 'from-yellow-500/30 to-orange-500/30'
-                  }
-                  if (name === 'On-Peak') return {
-                    bg: 'from-red-500/20 to-pink-500/20',
-                    border: 'border-red-500/40',
-                    ring: 'ring-red-500/50',
-                    activeBg: 'from-red-500/30 to-pink-500/30'
-                  }
-                  return {
-                    bg: 'from-white/10 to-white/5',
-                    border: 'border-white/20',
-                    ring: 'ring-white/50',
-                    activeBg: 'from-white/20 to-white/10'
-                  }
-                }
-                
-                const colors = getColorScheme(period.name)
-                
                 return (
                   <div
                     key={idx}
-                    className={`px-3 md:px-4 py-2.5 md:py-3 rounded-lg transition-all ${
-                      isActive
-                        ? `bg-gradient-to-r ${colors.activeBg} text-white font-bold shadow-lg ring-2 ${colors.ring} border-2 ${colors.border}` 
-                        : `bg-gradient-to-r ${colors.bg} text-white/80 border ${colors.border}`
+                    className={`px-3 py-2.5 rounded-lg border ${
+                      isActive ? 'bg-white/20 border-orange-400 ring-1 ring-orange-400' : 'bg-white/5 border-white/20'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{period.color}</span>
-                        <span className="text-sm md:text-base font-semibold">{period.name}</span>
-                      </div>
-                      {isActive && (
-                        <Badge className="bg-orange-500 text-white text-xs px-2 py-0.5 border-0">
-                          NOW
-                        </Badge>
-                      )}
+                      <span className="text-sm font-semibold">{period.name}</span>
+                      {isActive && <Badge className="bg-orange-500 text-white text-xs border-0">NOW</Badge>}
                     </div>
-                    <div className="text-xs md:text-sm opacity-90 mb-1">
+                    <div className="text-xs opacity-90 mb-1">
                       {formatTime(period.start)} - {formatTime(period.end)}
                     </div>
-                    <div className="text-sm md:text-base font-bold">
-                      ${period.rate.toFixed(2)}/kWh
-                    </div>
+                    <div className="text-sm font-bold">${period.rate.toFixed(2)}/kWh</div>
                   </div>
                 )
               })
             })()}
           </div>
-        </div>
+        )}
       </header>
 
-      {/* ========================================= */}
-      {/* HOUSEHOLD OVERVIEW WITH YOUR SHARE      */}
-      {/* ========================================= */}
-
+      {/* Household spend first */}
       <section className="mb-6 slide-up">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3 md:mb-4">
           <h2 className="text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
             <HomeIcon className="w-6 h-6 text-cyan-400" />
-            🏠 Household Overview
+            Household Overview
           </h2>
           <div 
             className="flex flex-wrap gap-1.5 bg-slate-800/50 rounded-lg p-1 border border-slate-700/50"
@@ -876,43 +755,62 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Your Quick Summary */}
+        {/* Your share for selected timeframe + today/week context */}
         <Card className="energy-card bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30 mb-4">
           <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <UserIcon className="w-5 h-5 text-purple-400" />
-                <span className="font-semibold text-foreground">Your Quick Summary</span>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <UserIcon className="w-5 h-5 text-purple-400" />
+                  <span className="font-semibold text-foreground">Your share ({currentRangeLabel})</span>
+                </div>
+                <div className="text-sm">
+                  <strong className="text-purple-300 text-lg">
+                    {dashboardData.personalInFilter.kwh.toFixed(1)} kWh
+                  </strong>
+                  <span className="text-muted-foreground">
+                    {' '}(${dashboardData.personalInFilter.cost.toFixed(2)})
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-4 text-sm">
+              <div className="flex flex-wrap gap-4 text-xs sm:text-sm text-muted-foreground border-t border-border/50 pt-2">
                 <div>
-                  <span className="text-muted-foreground">Today: </span>
-                  <strong className="text-green-400">{dashboardData.personalUsage.daily.kwh.toFixed(1)} kWh</strong>
-                  <span className="text-muted-foreground"> (${dashboardData.personalUsage.daily.cost.toFixed(2)})</span>
+                  Today:{' '}
+                  <strong className="text-foreground">
+                    {dashboardData.personalUsage.daily.kwh.toFixed(1)} kWh
+                  </strong>
                 </div>
-                <div className="hidden sm:block text-muted-foreground">•</div>
                 <div>
-                  <span className="text-muted-foreground">This Week: </span>
-                  <strong className="text-blue-400">{dashboardData.personalUsage.weekly.kwh.toFixed(1)} kWh</strong>
-                  <span className="text-muted-foreground"> (${dashboardData.personalUsage.weekly.cost.toFixed(2)})</span>
-                </div>
-                <div className="hidden sm:block text-muted-foreground">•</div>
-                <div>
-                  <span className="text-muted-foreground">This Month: </span>
-                  <strong className="text-red-400">{dashboardData.personalUsage.monthly.kwh.toFixed(1)} kWh</strong>
-                  <span className="text-muted-foreground"> (${dashboardData.personalUsage.monthly.cost.toFixed(2)})</span>
+                  This week:{' '}
+                  <strong className="text-foreground">
+                    {dashboardData.personalUsage.weekly.kwh.toFixed(1)} kWh
+                  </strong>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
+        {filteredLogs.length === 0 && (
+          <Card className="energy-card mb-4 border-dashed border-border">
+            <CardContent className="p-6 text-center text-sm text-muted-foreground">
+              <p className="mb-3">No usage in this timeframe.</p>
+              <Link
+                to="/logs"
+                className="inline-flex items-center justify-center rounded-md bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm font-semibold"
+              >
+                Add your first log
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Total Household with Your Share Highlighted */}
         <Card className="energy-card bg-gradient-to-br from-primary/15 via-emerald-500/10 to-cyan-500/15 border-primary/40 hover:border-primary/60 transition-all shadow-lg hover:shadow-primary/20 mb-4">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg text-foreground flex items-center gap-2">
               <HomeIcon className="w-5 h-5 text-cyan-400" />
-              Total Household Usage
+              Total Household Usage · {currentRangeLabel}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -927,27 +825,16 @@ export default function Dashboard() {
 
             {/* Everyone's Share */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
-              {dashboardData.householdUsage.members.map((member, index) => {
-                const normalizedName = member.name.toLowerCase()
-                const colorClass = normalizedName.includes('vu')
-                  ? 'purple'
-                  : normalizedName.includes('vy')
-                  ? 'red'
-                  : normalizedName.includes('thuy')
-                  ? 'yellow'
-                  : normalizedName.includes('han')
-                  ? 'blue'
-                  : ['green','yellow','red','blue','purple'][index % 5]
-                const isCurrentUser = householdMembers.find(m => m.id === (user?.id || ''))?.name === member.name
+              {dashboardData.householdUsage.members.map((member) => {
+                const memberId =
+                  householdMembers.find((m) => m.name === member.name)?.id || member.name
+                const text = getUserColorClass(memberId)
+                const isCurrentUser = memberId === user?.id
                 const pct = dashboardData.householdUsage.total.kwh > 0
                   ? ((member.kwh / dashboardData.householdUsage.total.kwh) * 100).toFixed(1)
                   : '0'
-                const border = `border-${colorClass}-500/40`
-                const text = `text-${colorClass}-400`
-                const bgFrom = colorClass === 'purple' ? 'from-purple-500/20' : colorClass === 'red' ? 'from-red-500/20' : colorClass === 'yellow' ? 'from-yellow-500/20' : colorClass === 'blue' ? 'from-blue-500/20' : 'from-green-500/20'
-                const bgTo = colorClass === 'purple' ? 'to-pink-500/20' : colorClass === 'red' ? 'to-pink-500/20' : colorClass === 'yellow' ? 'to-orange-500/20' : colorClass === 'blue' ? 'to-cyan-500/20' : 'to-emerald-500/20'
                 return (
-                  <Card key={member.name} className={`bg-gradient-to-br ${bgFrom} ${bgTo} border ${border} ${isCurrentUser ? 'ring-2 ring-current/30' : ''}`}>
+                  <Card key={member.name} className={`bg-muted/20 border border-border ${isCurrentUser ? 'ring-2 ring-primary/40' : ''}`}>
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -1174,7 +1061,7 @@ export default function Dashboard() {
       {/* Data Visualization Charts */}
       <section className="mb-8 slide-up">
         <h2 className="mb-3 md:mb-5 text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
-          <ChartPieIcon className="w-6 h-6 text-blue-400" />
+          <ChartBarIcon className="w-6 h-6 text-blue-400" />
           Usage Trends & Analysis
         </h2>
         
@@ -1184,7 +1071,7 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle className="text-lg text-foreground flex items-center gap-2">
                 <ChartBarIcon className="w-5 h-5 text-blue-400" />
-                Weekly Usage by Person
+                Last 7 days by person
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1215,9 +1102,16 @@ export default function Dashboard() {
                         return `${label}${dayData?.date ? ` (${dayData.date})` : ''}`
                       }}
                     />
-                    {householdMembers.map((member, index) => (
-                      <Bar key={member.id} dataKey={member.name} fill={COLORS[index % COLORS.length]} />
-                    ))}
+                    {householdMembers.map((member, index) => {
+                      const chartColors = ['#22c55e', '#eab308', '#ef4444', '#3b82f6', '#8b5cf6', '#06b6d4', '#a855f7']
+                      return (
+                        <Bar
+                          key={member.id}
+                          dataKey={member.name}
+                          fill={chartColors[index % chartColors.length]}
+                        />
+                      )
+                    })}
                 </BarChart>
               </ResponsiveContainer>
               </div>

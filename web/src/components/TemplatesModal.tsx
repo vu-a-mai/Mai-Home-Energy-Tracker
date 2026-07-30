@@ -504,10 +504,10 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
           <div className="flex-1 min-w-0">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
               <DocumentDuplicateIcon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-blue-400 flex-shrink-0" />
-              <span className="truncate">Energy Log Templates</span>
+              <span className="truncate">Templates (one-shot)</span>
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 hidden sm:block">
-              Save and reuse common usage patterns
+              Reusable recipes for logging now or over a date range. Not ongoing automation — use Schedules for that.
             </p>
           </div>
           <button

@@ -38,6 +38,7 @@ import {
   DocumentTextIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline'
+import { getUserIcon as getSharedUserIcon } from '../utils/userAppearance'
 
 interface BillSplitData {
   billingPeriod: string
@@ -63,17 +64,8 @@ interface GlobalDiscount {
   customPercentage: number
 }
 
-// Helper function to get user icon
-const getUserIcon = (userName: string): ReactElement => {
-  const name = userName.toLowerCase()
-  const iconClass = "w-4 h-4 inline-block"
-  
-  if (name.includes('vu')) return <UserIcon className={`${iconClass} text-green-400`} />
-  if (name.includes('thuy')) return <UserIcon className={`${iconClass} text-purple-400`} />
-  if (name.includes('vy')) return <UserIcon className={`${iconClass} text-pink-400`} />
-  if (name.includes('han')) return <UserIcon className={`${iconClass} text-blue-400`} />
-  return <UserIcon className={`${iconClass} text-slate-400`} /> // Default icon
-}
+// Helper function to get user icon (stable color from name — not family-keyed)
+const getUserIcon = (userName: string): ReactElement => getSharedUserIcon(userName)
 
 export default function BillSplit() {
   const { getLogsByDateRange } = useEnergyLogs()

@@ -440,10 +440,10 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
           <div className="flex-1 min-w-0">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
               <ArrowPathIcon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-green-400 flex-shrink-0" />
-              <span className="truncate">Recurring Schedules</span>
+              <span className="truncate">Schedules (auto)</span>
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 hidden sm:block">
-              Automatically generate logs for regular usage patterns
+              Ongoing automation — generate today&apos;s logs at midnight or when someone opens the app. Use Templates for one-shot recipes.
             </p>
           </div>
           <button
