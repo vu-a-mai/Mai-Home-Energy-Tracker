@@ -36,8 +36,8 @@ export default function Login() {
   }
 
 
-  const handleViewDemo = () => {
-    enableDemoMode()
+  const handleViewDemo = async () => {
+    await enableDemoMode()
     navigate('/dashboard')
   }
 

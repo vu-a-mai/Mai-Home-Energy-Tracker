@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
+import { useDemoMode } from '../contexts/DemoContext'
 import { supabase } from '../lib/supabase'
+import { demoAddEnergyLog } from '../demo/demoStore'
 import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
 import { Button } from './ui/Button'
@@ -32,6 +34,7 @@ const RATE_PERIODS = BULK_RATE_PRESETS.map(p => ({
 
 export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryProps) {
   const { user } = useAuth()
+  const { isDemoMode } = useDemoMode()
   const { devices } = useDevices()
   const { users: householdUsers } = useHouseholdUsers()
   
@@ -59,6 +62,46 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
     setSubmitting(true)
 
     try {
+      const kwh = parseFloat(formData.total_kwh)
+      const rateBreakdown = {
+        type: mode === 'bulk' ? 'bulk_entry' : 'quick_kwh_entry',
+        rate_period: formData.rate_period,
+        rate: rateToUse,
+        total_kwh: kwh,
+        notes: formData.notes,
+        ...(mode === 'bulk'
+          ? { date_range: { start: formData.start_date, end: formData.end_date } }
+          : { estimated_times: true })
+      }
+
+      if (isDemoMode) {
+        const defaultTimes = {
+          super_off_peak: { start: '00:00:00', end: '06:00:00' },
+          off_peak: { start: '21:00:00', end: '23:59:59' },
+          mid_peak: { start: '14:00:00', end: '16:00:00' },
+          on_peak: { start: '16:00:00', end: '21:00:00' }
+        }
+        const times = mode === 'bulk'
+          ? { start: '00:00:00', end: '00:00:01' }
+          : (defaultTimes[formData.rate_period as keyof typeof defaultTimes] || { start: '00:00:00', end: '23:59:59' })
+
+        demoAddEnergyLog({
+          device_id: formData.device_id,
+          usage_date: formData.start_date,
+          start_time: times.start,
+          end_time: times.end,
+          assigned_users: formData.assigned_users,
+          source_type: 'manual',
+          total_kwh: kwh,
+          calculated_cost: totalCost,
+          rate_breakdown: rateBreakdown,
+        })
+        toast.success(mode === 'bulk' ? 'Bulk entry created successfully!' : 'Quick entry created successfully!')
+        if (onSuccess) onSuccess()
+        onClose()
+        return
+      }
+
       const { data: userData } = await supabase
         .from('users')
         .select('household_id')
@@ -71,48 +114,21 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
       // This prevents timeout issues with the trigger trying to calculate complex time ranges
       
       if (mode === 'bulk') {
-        // Create a single bulk entry with manual cost calculation
-        console.log('🔍 Bulk Entry - Inserting data:', {
-          household_id: userData.household_id,
-          device_id: formData.device_id,
-          usage_date: formData.start_date,
-          total_kwh: parseFloat(formData.total_kwh),
-          calculated_cost: totalCost,
-          source_type: 'manual'
-        })
-
-        const { data, error } = await supabase.from('energy_logs').insert({
+        const { error } = await supabase.from('energy_logs').insert({
           household_id: userData.household_id,
           device_id: formData.device_id,
           usage_date: formData.start_date,
           start_time: '00:00:00',
           end_time: '00:00:01', // Use minimal time range to avoid trigger timeout
-          total_kwh: parseFloat(formData.total_kwh),
+          total_kwh: kwh,
           calculated_cost: totalCost,
-          rate_breakdown: JSON.stringify({
-            type: 'bulk_entry',
-            rate_period: formData.rate_period,
-            rate: rateToUse,
-            total_kwh: parseFloat(formData.total_kwh),
-            date_range: {
-              start: formData.start_date,
-              end: formData.end_date
-            },
-            notes: formData.notes
-          }),
+          rate_breakdown: JSON.stringify(rateBreakdown),
           assigned_users: formData.assigned_users,
           created_by: user?.id,
           source_type: 'manual'
         }).select()
 
-        console.log('🔍 Bulk Entry - Response:', { data, error })
-
-        if (error) {
-          console.error('❌ Bulk Entry - Error:', error)
-          throw error
-        }
-        
-        console.log('✅ Bulk Entry - Success! Data returned:', data)
+        if (error) throw error
         toast.success('Bulk entry created successfully!')
       } else {
         // Daily mode - create entry for single day with estimated times
@@ -131,16 +147,9 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
           usage_date: formData.start_date,
           start_time: times.start,
           end_time: times.end,
-          total_kwh: parseFloat(formData.total_kwh),
+          total_kwh: kwh,
           calculated_cost: totalCost,
-          rate_breakdown: JSON.stringify({
-            type: 'quick_kwh_entry',
-            rate_period: formData.rate_period,
-            rate: rateToUse,
-            total_kwh: parseFloat(formData.total_kwh),
-            estimated_times: true,
-            notes: formData.notes
-          }),
+          rate_breakdown: JSON.stringify(rateBreakdown),
           assigned_users: formData.assigned_users,
           created_by: user?.id,
           source_type: 'manual'

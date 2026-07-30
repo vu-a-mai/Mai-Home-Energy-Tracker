@@ -13,6 +13,7 @@ This folder contains SQL scripts for Mai Home Energy Tracker database setup and 
 | `1-fresh-database-schema.sql` | Complete database schema (tables, triggers, RLS policies, indexes) | **Always run first** on new/empty database |
 | `14-fix-security-warnings.sql` | Security fixes for functions (search_path) | Run on existing database to fix security warnings |
 | `53-align-tou-cost-calculator.sql` | Align `calculate_energy_cost` with app TOU-D-PRIME rates; overnight/day boundaries | **Run on existing projects** after the July 2026 cost-hardening release |
+| `54-secure-recurring-and-cleanup-rpcs.sql` | Household-scope recurring RPCs; revoke client cleanup | **Run on existing projects** to close cross-tenant RPC gaps |
 
 ### Archived Scripts
 
@@ -45,6 +46,14 @@ Run: 53-align-tou-cost-calculator.sql
 ```
 
 In Supabase Dashboard → **SQL Editor** → New query → paste the file → **Run**.
+
+### For Existing Database (RPC security hardening):
+
+```bash
+Run: 54-secure-recurring-and-cleanup-rpcs.sql
+```
+
+Scopes recurring log generation to the caller's household and removes client execute rights on global cleanup.
 
 ### For Existing Database with Security Warnings:
 

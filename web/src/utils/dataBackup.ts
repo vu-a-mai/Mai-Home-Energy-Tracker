@@ -255,36 +255,33 @@ export async function parseBackupFile(file: File): Promise<BackupData> {
 }
 
 /**
- * Create automatic backup before dangerous operations
+ * Create automatic backup checkpoint before dangerous operations.
+ * Stores metadata only in localStorage — use exportDataToJSON for a full backup.
  */
 export function createAutoBackup(
   devices: Device[],
   energyLogs: EnergyLogWithDevice[],
   householdId: string
 ): string {
-  const backupData: BackupData = {
+  const dates = energyLogs.map(log => log.usage_date).sort()
+  const checkpoint = {
     version: '1.0',
     timestamp: new Date().toISOString(),
     household_id: householdId,
-    devices,
-    energyLogs,
     metadata: {
       deviceCount: devices.length,
       energyLogCount: energyLogs.length,
       dateRange: {
-        earliest: null,
-        latest: null
+        earliest: dates.length > 0 ? dates[0] : null,
+        latest: dates.length > 0 ? dates[dates.length - 1] : null
       }
     }
   }
 
-  const jsonString = JSON.stringify(backupData)
-  
-  // Store in localStorage as emergency backup
   try {
-    localStorage.setItem('mai-energy-auto-backup', jsonString)
+    localStorage.setItem('mai-energy-auto-backup', JSON.stringify(checkpoint))
     localStorage.setItem('mai-energy-auto-backup-timestamp', new Date().toISOString())
-    return 'Auto-backup created successfully'
+    return 'Auto-backup checkpoint created (metadata only)'
   } catch (error) {
     console.error('Failed to create auto-backup:', error)
     return 'Failed to create auto-backup'
@@ -292,14 +289,33 @@ export function createAutoBackup(
 }
 
 /**
- * Restore from auto-backup
+ * Restore from auto-backup.
+ * Full restore requires a downloaded JSON export; localStorage holds metadata only.
  */
 export function getAutoBackup(): BackupData | null {
   try {
     const backup = localStorage.getItem('mai-energy-auto-backup')
     if (!backup) return null
-    
-    return JSON.parse(backup) as BackupData
+
+    const parsed = JSON.parse(backup)
+    // Legacy full backups are cleared — do not rehydrate sensitive payloads from storage
+    if (Array.isArray(parsed.devices) || Array.isArray(parsed.energyLogs)) {
+      clearAutoBackup()
+      return null
+    }
+
+    return {
+      version: parsed.version || '1.0',
+      timestamp: parsed.timestamp || new Date().toISOString(),
+      household_id: parsed.household_id || '',
+      devices: [],
+      energyLogs: [],
+      metadata: parsed.metadata || {
+        deviceCount: 0,
+        energyLogCount: 0,
+        dateRange: { earliest: null, latest: null }
+      }
+    }
   } catch (error) {
     console.error('Failed to retrieve auto-backup:', error)
     return null
