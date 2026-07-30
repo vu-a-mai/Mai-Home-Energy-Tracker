@@ -198,7 +198,8 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
               </button>
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-              For when you know kWh but not exact times (e.g., Tesla charging data)
+              Enter known kWh or bill chunks when you do not have exact start/end times.
+              For accurate TOU pricing, use timed Add log instead.
             </p>
           </CardHeader>
 
@@ -243,13 +244,13 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
                 <div className="text-xs sm:text-sm text-blue-300">
                   {mode === 'bulk' ? (
                     <>
-                      <strong>Bulk Entry:</strong> Enter total kWh for a period (e.g., 435 kWh for last 31 days).
-                      Perfect for Tesla app monthly totals.
+                      <strong>Bulk Entry:</strong> Enter total kWh for a period (e.g., 435 kWh from an EV app).
+                      Uses a typical rate-period window — not as accurate as timed Log Usage.
                     </>
                   ) : (
                     <>
-                      <strong>Daily Entry:</strong> Enter kWh for a single day. System uses typical times for the
-                      selected rate period.
+                      <strong>Daily Entry:</strong> Enter kWh for a single day with a typical rate-period window.
+                      Prefer timed Add log when you know exact hours.
                     </>
                   )}
                 </div>

@@ -19,6 +19,7 @@ import {
 import { formatLocalDate, todayLocal } from '../utils/dateUtils'
 import { validateAmount, validateDateRange } from '../utils/validation'
 import { calculateUsageCost } from '../utils/rateCalculatorFixed'
+import { resolveLogCostAttribution } from '../utils/billSplitAllocation'
 import { logger } from '../utils/logger'
 import {
   CurrencyDollarIcon,
@@ -99,6 +100,7 @@ export default function BillSplit() {
   })
   const [formErrors, setFormErrors] = useState<Partial<BillFormData>>({})
   const [showResults, setShowResults] = useState(false)
+  const [showDiscounts, setShowDiscounts] = useState(false)
   const [saving, setSaving] = useState(false)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [viewingBillSplit, setViewingBillSplit] = useState<typeof savedBillSplits[0] | null>(null)
@@ -172,7 +174,6 @@ export default function BillSplit() {
     const personalCosts: { [userId: string]: number } = {}
     const personalKwh: { [userId: string]: number } = {}
     let totalTrackedCosts = 0
-    let totalSharedDeviceCosts = 0
 
     // Initialize personal costs and kWh
     householdUsers.forEach(user => {
@@ -220,7 +221,7 @@ export default function BillSplit() {
     }
 
     // Usage-based split: Calculate costs from energy logs using live rate calculator
-    periodLogs.forEach(log => {
+    for (const log of periodLogs) {
       const device = devices.find(d => d.id === log.device_id)
       const wattage = device?.wattage ?? log.device_wattage ?? 0
       
@@ -235,40 +236,34 @@ export default function BillSplit() {
       // Use stored values if available (from bulk entry), otherwise use calculated values
       const totalCost = log.calculated_cost ?? calc.totalCost
       const totalKwh = log.total_kwh ?? calc.totalKwh
-      
-      // If log has assigned users, charge them (regardless of device shared status)
-      if (log.assigned_users && log.assigned_users.length > 0) {
-        // Has assigned users (personal device) - credit to assigned user(s)
-        const costPerUser = totalCost / log.assigned_users.length
-        const kwhPerUser = totalKwh / log.assigned_users.length
-        
-        const discountPercent = getDiscountPercentage()
-        const discountedCostPerUser = costPerUser * (1 - discountPercent / 100)
-        
-        log.assigned_users.forEach((userId: string) => {
-          // Store original cost before discount
-          personalCostsBeforeDiscount[userId] = (personalCostsBeforeDiscount[userId] || 0) + costPerUser
-          // Store discounted cost
-          personalCosts[userId] = (personalCosts[userId] || 0) + discountedCostPerUser
-          personalKwh[userId] = (personalKwh[userId] || 0) + kwhPerUser
-        })
-        
-        totalTrackedCosts += discountedCostPerUser * log.assigned_users.length
-      } else {
-        // Fallback: no assigned users - credit to creator
-        const userId = log.created_by || householdUsers[0]?.id || 'unknown'
-        // Apply CARE/FERA discount to personal device usage
-        const discountPercent = getDiscountPercentage()
-        const discountedCost = totalCost * (1 - discountPercent / 100)
-        
-        // Store original cost before discount
-        personalCostsBeforeDiscount[userId] = (personalCostsBeforeDiscount[userId] || 0) + totalCost
-        // Store discounted cost
-        personalCosts[userId] = (personalCosts[userId] || 0) + discountedCost
-        personalKwh[userId] = (personalKwh[userId] || 0) + totalKwh
-        totalTrackedCosts += discountedCost
+
+      const attribution = resolveLogCostAttribution({
+        assigned_users: log.assigned_users,
+        created_by: log.created_by,
+        deviceIsShared: device?.is_shared,
+        fallbackUserId: householdUsers[0]?.id,
+      })
+
+      if (attribution.kind === 'shared') {
+        // Shared-device usage with no assignees joins the household remainder pool
+        // (fees + unlogged usage). Do not apply CARE/FERA here.
+        continue
       }
-    })
+
+      const userIds = attribution.userIds
+      const costPerUser = totalCost / userIds.length
+      const kwhPerUser = totalKwh / userIds.length
+      const discountPercent = getDiscountPercentage()
+      const discountedCostPerUser = costPerUser * (1 - discountPercent / 100)
+
+      userIds.forEach((userId: string) => {
+        personalCostsBeforeDiscount[userId] = (personalCostsBeforeDiscount[userId] || 0) + costPerUser
+        personalCosts[userId] = (personalCosts[userId] || 0) + discountedCostPerUser
+        personalKwh[userId] = (personalKwh[userId] || 0) + kwhPerUser
+      })
+
+      totalTrackedCosts += discountedCostPerUser * userIds.length
+    }
 
     // Remaining amount after all logged usage is split evenly (base charges, taxes, etc.)
     const remainingAmount = Math.max(0, formData.totalAmount - totalTrackedCosts)
@@ -446,9 +441,14 @@ export default function BillSplit() {
       const device = devices.find(d => d.id === log.device_id)
       const wattage = device?.wattage ?? log.device_wattage ?? 0
 
-      const assignedUsers = log.assigned_users && log.assigned_users.length > 0 
-        ? log.assigned_users 
-        : [log.created_by]
+      const attribution = resolveLogCostAttribution({
+        assigned_users: log.assigned_users,
+        created_by: log.created_by,
+        deviceIsShared: device?.is_shared,
+        fallbackUserId: householdUsers[0]?.id,
+      })
+      if (attribution.kind === 'shared') return
+      const assignedUsers = attribution.userIds
 
       const calculation = calculateUsageCost(
         wattage,
@@ -649,11 +649,12 @@ ${householdUsers.map(user =>
         </Card>
       </section>
 
-      {/* Bill Split Results Modal */}
-      <Dialog open={showResults && !!calculateBillSplit} onOpenChange={(open) => !open && setShowResults(false)}>
-        <DialogContent className="max-w-6xl max-h-[min(90vh,100dvh)] overflow-y-auto bg-slate-900 border-2 border-green-600">
-          <DialogHeader>
-            <DialogTitle className="text-xl md:text-2xl font-bold text-white flex flex-wrap items-center gap-2 pr-2">
+      {/* Bill Split Results — inline */}
+      {showResults && calculateBillSplit && (
+        <section className="mb-6 slide-up">
+          <Card className="energy-card border-2 border-green-600/60">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-xl md:text-2xl font-bold text-foreground flex flex-wrap items-center gap-2">
                   <ArrowTrendingUpIcon className="w-6 h-6 md:w-7 md:h-7 text-green-400 shrink-0" />
                   Bill Split Results
                   <Badge 
@@ -664,27 +665,45 @@ ${householdUsers.map(user =>
                         : 'bg-blue-500/20 text-blue-300 border-blue-500/50'
                     }`}
                   >
-                    {formData.splitMethod === 'even' ? '⚖️ Even Split' : '⚡ Usage-Based'}
+                    {formData.splitMethod === 'even' ? 'Even Split' : 'Usage-Based'}
                   </Badge>
-            </DialogTitle>
-            <DialogDescription className="text-slate-300">
+              </CardTitle>
+              <CardDescription>
               Detailed breakdown of energy costs for the billing period
-            </DialogDescription>
-          </DialogHeader>
-          
-          {calculateBillSplit && (
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
             <div className="space-y-4">
 
-              {/* CARE/FERA Discount Selector */}
-              <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+              {/* CARE/FERA behind Discounts disclosure */}
+              <div className="border border-slate-600 rounded-lg overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowDiscounts((v) => !v)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left bg-slate-800 hover:bg-slate-750 text-sm font-semibold text-blue-300"
+                  aria-expanded={showDiscounts}
+                >
+                  <span>Discounts (CARE / FERA)</span>
+                  <span className="text-xs text-slate-400 font-normal">
+                    {globalDiscount.discountType === 'none'
+                      ? 'None applied'
+                      : globalDiscount.discountType === 'care'
+                        ? 'CARE 32.5%'
+                        : globalDiscount.discountType === 'fera'
+                          ? 'FERA 18%'
+                          : `Custom ${globalDiscount.customPercentage}%`}
+                    {' · '}{showDiscounts ? 'Hide' : 'Show'}
+                  </span>
+                </button>
+                {showDiscounts && (
+              <div className="bg-blue-900/20 border-t border-blue-500/30 p-4">
                 <div className="flex flex-col md:flex-row md:items-center gap-3">
                   <div className="flex-1">
-                    <h4 className="text-sm font-semibold text-blue-300 mb-1 flex items-center gap-2">
-                      <span>💰</span>
-                      CARE/FERA Discount (Applies to All Personal Usage)
+                    <h4 className="text-sm font-semibold text-blue-300 mb-1">
+                      Applies to personal (assigned) usage only
                     </h4>
                     <p className="text-xs text-slate-400">
-                      SCE TOU-D-PRIME: CARE (32.5%) • FERA (18%) • Discounts apply only to personal devices
+                      SCE TOU-D-PRIME: CARE (32.5%) • FERA (18%). Shared-pool costs are not discounted.
                     </p>
                   </div>
                   <div className="flex gap-2 items-center">
@@ -718,6 +737,8 @@ ${householdUsers.map(user =>
                     )}
                   </div>
                 </div>
+              </div>
+                )}
               </div>
 
               {/* Summary - Color Coded */}
@@ -798,7 +819,9 @@ ${householdUsers.map(user =>
                     <div className="text-green-400 font-bold text-xl">
                       ${calculateBillSplit.sharedCost.toFixed(2)}
                     </div>
-                    <div className="text-muted-foreground">Untracked (Base Charges)</div>
+                    <div className="text-muted-foreground">
+                      Remainder (fees + shared/unlogged)
+                    </div>
                   </div>
                   <div className="text-center">
                     <div className="text-red-400 font-bold text-xl">
@@ -929,7 +952,7 @@ ${householdUsers.map(user =>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex justify-end items-center gap-3 pt-4 border-t border-slate-700">
+              <div className="flex flex-wrap justify-end items-center gap-3 pt-4 border-t border-slate-700">
                 <Button
                   onClick={exportBillSplit}
                   variant="outline"
@@ -960,13 +983,14 @@ ${householdUsers.map(user =>
                   variant="outline"
                   className="bg-slate-700 hover:bg-slate-600 text-white border-slate-600"
                 >
-                  Close
+                  Clear results
                 </Button>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            </CardContent>
+          </Card>
+        </section>
+      )}
 
       {/* Bill Split History - Yearly Calendar View */}
         <section className="mb-6 slide-up">
@@ -1252,7 +1276,9 @@ ${householdUsers.map(user =>
                           </div>
                           <div className="text-center">
                             <div className="text-green-400 font-bold text-2xl mb-1">${untrackedCost.toFixed(2)}</div>
-                            <div className="text-muted-foreground">Untracked (Base Charges)</div>
+                            <div className="text-muted-foreground">
+                      Remainder (fees + shared/unlogged)
+                    </div>
                           </div>
                           <div className="text-center">
                             <div className="text-red-400 font-bold text-2xl mb-1">${viewingBillSplit.total_bill_amount.toFixed(2)}</div>
