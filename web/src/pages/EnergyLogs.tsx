@@ -567,7 +567,7 @@ export default function EnergyLogs() {
                   }}
                 >
                   <BoltIcon className="w-4 h-4 text-purple-400" />
-                  Quick kWh
+                  Quick kWh (no exact times)
                 </button>
                 <button
                   type="button"

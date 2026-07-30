@@ -13,9 +13,15 @@ export interface BackupData {
   household_id: string
   devices: Device[]
   energyLogs: EnergyLogWithDevice[]
+  templates?: unknown[]
+  schedules?: unknown[]
+  billSplits?: unknown[]
   metadata: {
     deviceCount: number
     energyLogCount: number
+    templateCount?: number
+    scheduleCount?: number
+    billSplitCount?: number
     dateRange: {
       earliest: string | null
       latest: string | null
@@ -23,31 +29,32 @@ export interface BackupData {
   }
 }
 
-export interface ImportResult {
-  success: boolean
-  message: string
-  stats?: {
-    devicesImported: number
-    energyLogsImported: number
-    devicesSkipped: number
-    energyLogsSkipped: number
-  }
-  errors?: string[]
+export interface HouseholdExportExtras {
+  templates?: unknown[]
+  schedules?: unknown[]
+  billSplits?: unknown[]
 }
 
 /**
- * Export all data to JSON file
+ * Export household data to JSON file (devices, logs, and optional extras).
  */
 export function exportDataToJSON(
   devices: Device[],
   energyLogs: EnergyLogWithDevice[],
-  householdId: string
+  householdId: string,
+  extras: HouseholdExportExtras = {}
 ): void {
   // Calculate metadata
   const dates = energyLogs.map(log => log.usage_date).sort()
+  const templates = extras.templates ?? []
+  const schedules = extras.schedules ?? []
+  const billSplits = extras.billSplits ?? []
   const metadata = {
     deviceCount: devices.length,
     energyLogCount: energyLogs.length,
+    templateCount: templates.length,
+    scheduleCount: schedules.length,
+    billSplitCount: billSplits.length,
     dateRange: {
       earliest: dates.length > 0 ? dates[0] : null,
       latest: dates.length > 0 ? dates[dates.length - 1] : null
@@ -55,11 +62,14 @@ export function exportDataToJSON(
   }
 
   const backupData: BackupData = {
-    version: '1.0',
+    version: '1.1',
     timestamp: new Date().toISOString(),
     household_id: householdId,
     devices,
     energyLogs,
+    templates,
+    schedules,
+    billSplits,
     metadata
   }
 
@@ -69,7 +79,7 @@ export function exportDataToJSON(
   
   const a = document.createElement('a')
   a.href = url
-  a.download = `mai-energy-backup-${new Date().toISOString().split('T')[0]}.json`
+  a.download = `mai-household-export-${new Date().toISOString().split('T')[0]}.json`
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)

@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useDemoMode } from '../contexts/DemoContext'
 import { Button } from './ui/Button'
@@ -20,13 +20,7 @@ export default function NavBar() {
   const { user, logout } = useAuth()
   const { isDemoMode, disableDemoMode } = useDemoMode()
   const navigate = useNavigate()
-  const [currentTime, setCurrentTime] = useState(new Date())
   const [showMobileMenu, setShowMobileMenu] = useState(false)
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
 
   const handleLogout = async () => {
     try {
@@ -101,18 +95,8 @@ export default function NavBar() {
           </NavLink>
         </div>
 
-        {/* Right: User Info, Time, and Logout */}
+        {/* Right: User Info and Logout */}
         <div className="flex items-center gap-2 md:gap-3">
-          {/* Date and Time - Desktop Only */}
-          <div className="hidden xl:flex flex-col items-end text-xs">
-            <div className="text-muted-foreground text-[10px]">
-              {currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-            </div>
-            <div className="text-sm font-bold font-mono text-primary">
-              {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-            </div>
-          </div>
-
           {/* User Display */}
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-primary/20 to-emerald-500/20 border border-primary/30">
             <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-emerald-500 flex items-center justify-center text-sm font-bold text-white shadow-lg">

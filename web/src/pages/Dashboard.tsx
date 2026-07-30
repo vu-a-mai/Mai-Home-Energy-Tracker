@@ -791,7 +791,58 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {filteredLogs.length === 0 && (
+        {(devices.length === 0 || energyLogs.length === 0) && (
+          <Card className="energy-card mb-4 border-primary/40 bg-primary/5">
+            <CardContent className="p-5 md:p-6">
+              <h2 className="text-base md:text-lg font-semibold text-foreground mb-1">Get started</h2>
+              <p className="text-xs md:text-sm text-muted-foreground mb-4">
+                A short path to your first cost insight.
+              </p>
+              <ol className="space-y-3 text-sm">
+                <li className="flex items-start gap-3">
+                  <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${devices.length > 0 ? 'bg-green-600 text-white' : 'bg-slate-700 text-slate-200'}`}>1</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-foreground">Add a device</div>
+                    <p className="text-xs text-muted-foreground mb-1">Name, wattage, and location.</p>
+                    {devices.length === 0 && (
+                      <Link to="/devices" className="text-xs font-semibold text-primary hover:underline">
+                        Go to Devices →
+                      </Link>
+                    )}
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${energyLogs.length > 0 ? 'bg-green-600 text-white' : 'bg-slate-700 text-slate-200'}`}>2</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-foreground">Add your first log</div>
+                    <p className="text-xs text-muted-foreground mb-1">Timed Log Usage for accurate TOU costs.</p>
+                    {devices.length > 0 && energyLogs.length === 0 && (
+                      <Link to="/logs" className="text-xs font-semibold text-primary hover:underline">
+                        Go to Energy Logs →
+                      </Link>
+                    )}
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold bg-slate-700 text-slate-200">3</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-foreground">See cost &amp; bill split</div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Review spend here, then allocate the utility bill.
+                    </p>
+                    {energyLogs.length > 0 && (
+                      <Link to="/bill-split" className="text-xs font-semibold text-primary hover:underline">
+                        Open Bill Split →
+                      </Link>
+                    )}
+                  </div>
+                </li>
+              </ol>
+            </CardContent>
+          </Card>
+        )}
+
+        {filteredLogs.length === 0 && energyLogs.length > 0 && (
           <Card className="energy-card mb-4 border-dashed border-border">
             <CardContent className="p-6 text-center text-sm text-muted-foreground">
               <p className="mb-3">No usage in this timeframe.</p>
@@ -799,7 +850,7 @@ export default function Dashboard() {
                 to="/logs"
                 className="inline-flex items-center justify-center rounded-md bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm font-semibold"
               >
-                Add your first log
+                Add a log
               </Link>
             </CardContent>
           </Card>

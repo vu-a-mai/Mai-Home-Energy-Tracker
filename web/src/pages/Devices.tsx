@@ -1,5 +1,6 @@
 import { useState, type ReactElement } from 'react'
 import { useDevices } from '../hooks/useDevices'
+import { useDeviceGroups } from '../hooks/useDeviceGroups'
 import { toast } from 'sonner'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -9,6 +10,7 @@ import { validateDeviceName, validateWattage } from '../utils/validation'
 import {
   CpuChipIcon,
   PlusIcon,
+  MagnifyingGlassIcon,
   PencilIcon,
   TrashIcon,
   BoltIcon,
@@ -25,6 +27,7 @@ import {
   HomeIcon,
   UserIcon,
   TagIcon,
+  Squares2X2Icon,
   MapPinIcon
 } from '@heroicons/react/24/outline'
 
@@ -149,6 +152,7 @@ const LOCATIONS = [
 
 export default function Devices() {
   const { devices, loading, error, addDevice, updateDevice, deleteDevice } = useDevices()
+  const { deviceGroups, deleteDeviceGroup } = useDeviceGroups()
   const [showForm, setShowForm] = useState(false)
   const [editingDevice, setEditingDevice] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
@@ -162,6 +166,17 @@ export default function Devices() {
     is_shared: true
   })
   const [formErrors, setFormErrors] = useState<Partial<DeviceFormData>>({})
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const filteredDevices = devices.filter((device) => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return true
+    return (
+      device.name.toLowerCase().includes(q) ||
+      device.device_type.toLowerCase().includes(q) ||
+      (device.location || '').toLowerCase().includes(q)
+    )
+  })
 
   const validateForm = (): boolean => {
     const errors: Partial<DeviceFormData> = {}
@@ -277,6 +292,59 @@ export default function Devices() {
         <div className="bg-red-500/10 border border-red-500 text-red-600 p-4 rounded-lg mb-6 slide-up">
           {error}
         </div>
+      )}
+
+      {/* Saved device groups */}
+      {deviceGroups.length > 0 && (
+        <Card className="energy-card mb-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base md:text-lg flex items-center gap-2">
+              <Squares2X2Icon className="w-5 h-5 text-purple-400" />
+              Device Groups
+            </CardTitle>
+            <CardDescription className="text-xs md:text-sm">
+              Saved multi-device sets used when logging, creating templates, or schedules. Create new groups from a multi-device picker.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {deviceGroups.map((group) => {
+              const names = group.device_ids
+                .map((id) => devices.find((d) => d.id === id)?.name)
+                .filter(Boolean)
+              return (
+                <div
+                  key={group.id}
+                  className="flex items-start justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm text-foreground">{group.group_name}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {group.device_ids.length} device{group.device_ids.length === 1 ? '' : 's'}
+                      {names.length > 0 ? ` · ${names.join(', ')}` : ''}
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 border-red-300 text-red-500 hover:bg-red-500/10"
+                    title="Delete group"
+                    onClick={async () => {
+                      if (!confirm(`Delete group “${group.group_name}”? Devices are kept.`)) return
+                      try {
+                        await deleteDeviceGroup(group.id)
+                      } catch {
+                        /* toast in hook */
+                      }
+                    }}
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </Button>
+                </div>
+              )
+            })}
+          </CardContent>
+        </Card>
       )}
 
       {/* Device Form Modal */}
@@ -424,11 +492,13 @@ export default function Devices() {
                       className="mr-3 w-4 h-4"
                     />
                     <span className="font-semibold text-foreground">
-                      Shared Device (can be used by multiple family members)
+                      Shared Device (usage without assignees is split evenly on bills)
                     </span>
                   </label>
                   <div className="text-sm text-muted-foreground mt-2 ml-7">
-                    {formData.is_shared ? 'Shared device (organizational label only — bill split still uses who you assign on each log)' : 'Personal device (organizational label only — assign users on each log for cost share)'}
+                    {formData.is_shared
+                      ? 'Shared: unassigned logs join the household shared pool on Bill Split. Assign users on a log to charge them personally.'
+                      : 'Personal: unassigned logs are charged to the log creator. Assign users on a log to split that session.'}
                   </div>
                 </div>
 
@@ -500,8 +570,29 @@ export default function Devices() {
       )}
 
       {/* Device List - Compact Design */}
+      {devices.length > 0 && (
+        <div className="mb-4">
+          <div className="relative max-w-md">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <Input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by name, type, or location…"
+              className="pl-9"
+              aria-label="Search devices"
+            />
+          </div>
+          {searchQuery.trim() && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Showing {filteredDevices.length} of {devices.length} devices
+            </p>
+          )}
+        </div>
+      )}
+
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 slide-up">
-        {devices.map(device => (
+        {filteredDevices.map(device => (
           <Card key={device.id} className="energy-card hover:border-primary/50 transition-all">
             <CardContent className="p-4">
               {/* Header with Icon and Actions */}
@@ -600,6 +691,12 @@ export default function Devices() {
           </Card>
         ))}
       </section>
+
+      {devices.length > 0 && filteredDevices.length === 0 && (
+        <section className="text-center py-12 text-sm text-muted-foreground">
+          No devices match “{searchQuery.trim()}”.
+        </section>
+      )}
 
       {/* Empty State */}
       {devices.length === 0 && !loading && (

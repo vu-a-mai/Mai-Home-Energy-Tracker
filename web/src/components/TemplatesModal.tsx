@@ -31,6 +31,7 @@ import {
   ListBulletIcon
 } from '@heroicons/react/24/outline'
 import { formatLocalDate, todayLocal } from '../utils/dateUtils'
+import { countMatchingScheduleDays, getMatchingScheduleDates } from '../utils/scheduleDates'
 
 interface TemplatesModalProps {
   isOpen: boolean
@@ -368,24 +369,15 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
 
   const calculateMatchingDays = () => {
     if (!useDateRange || !selectedTemplateId) return 0
-    
-    const startDate = new Date(useTemplateData.startDate)
-    const endDate = new Date(useTemplateData.endDate)
-    const today = new Date()
-    const actualEndDate = endDate > today ? today : endDate
-    
-    let count = 0
-    const currentDate = new Date(startDate)
-    
-    while (currentDate <= actualEndDate) {
-      const dayOfWeek = currentDate.getDay()
-      if (useTemplateData.daysOfWeek.includes(dayOfWeek)) {
-        count++
-      }
-      currentDate.setDate(currentDate.getDate() + 1)
-    }
-    
-    return count
+
+    return countMatchingScheduleDays(
+      {
+        schedule_start_date: useTemplateData.startDate,
+        schedule_end_date: useTemplateData.endDate,
+        days_of_week: useTemplateData.daysOfWeek,
+      },
+      todayLocal()
+    )
   }
 
   const fetchExistingLogsPreview = async () => {
@@ -399,22 +391,14 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
     
     setLoadingPreview(true)
     try {
-      // Calculate matching dates
-      const startDate = new Date(useTemplateData.startDate)
-      const endDate = new Date(useTemplateData.endDate)
-      const today = new Date()
-      const actualEndDate = endDate > today ? today : endDate
-      
-      const matchingDates: string[] = []
-      const currentDate = new Date(startDate)
-      
-      while (currentDate <= actualEndDate) {
-        const dayOfWeek = currentDate.getDay()
-        if (useTemplateData.daysOfWeek.includes(dayOfWeek)) {
-          matchingDates.push(formatLocalDate(currentDate))
-        }
-        currentDate.setDate(currentDate.getDate() + 1)
-      }
+      const matchingDates = getMatchingScheduleDates(
+        {
+          schedule_start_date: useTemplateData.startDate,
+          schedule_end_date: useTemplateData.endDate,
+          days_of_week: useTemplateData.daysOfWeek,
+        },
+        todayLocal()
+      )
       
       if (matchingDates.length === 0) {
         setExistingLogsPreview([])
