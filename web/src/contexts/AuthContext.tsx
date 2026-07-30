@@ -7,6 +7,7 @@ import { syncUserWithDatabase } from '../services/userService'
 interface AuthContextType {
   user: SupabaseUser | null
   login: (email: string, password: string) => Promise<any>
+  signup: (email: string, password: string, name?: string) => Promise<any>
   logout: () => Promise<any>
   loading: boolean
   syncError: string | null
@@ -100,6 +101,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const signup = async (email: string, password: string, name?: string) => {
+    try {
+      const result = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name?.trim() || undefined,
+          },
+        },
+      })
+
+      if (result.error) return result
+
+      if (result.data.user) {
+        await syncUserWithDatabase(result.data.user, {
+          name: name?.trim() || undefined,
+          asOwner: true,
+        })
+        setSyncError(null)
+      }
+
+      return result
+    } catch (error) {
+      console.error('Signup error:', error)
+      throw error
+    }
+  }
+
   const logout = async () => {
     try {
       setSyncError(null)
@@ -113,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = {
     user,
     login,
+    signup,
     logout,
     loading,
     syncError

@@ -16,6 +16,7 @@ This folder contains SQL scripts for Mai Home Energy Tracker database setup and 
 | `54-secure-recurring-and-cleanup-rpcs.sql` | Household-scope recurring RPCs; revoke client cleanup | **Run on existing projects** to close cross-tenant RPC gaps |
 | `55-complete-auto-scheduling.sql` | Unified recurring generation, bulk RPC, household timezone, service due-runner | **Run on existing projects** to enable auto-create |
 | `56-schedule-auto-scheduling-cron.sql` | Hourly pg_cron job calling `run_due_recurring_schedules` | **Optional** after 55; requires pg_cron |
+| `57-household-invites-and-roles.sql` | `household_role`, invite codes, signup INSERT policy, viewer write guard | **Run on existing projects** for signup/join + roles |
 
 ### Archived Scripts
 
@@ -66,11 +67,31 @@ Scopes recurring log generation to the caller's household and removes client exe
 
 What this enables:
 
-- **Today-only auto-create** for schedules with `auto_create = true`
+- **Today + 7-day backfill auto-create** for schedules with `auto_create = true` (app-open runner)
 - **Per-household timezone** (`household_settings`, default `America/Los_Angeles`) editable in Settings
 - **Server midnight runner** via `run_due_recurring_schedules()` (service_role / cron)
-- **App-open fallback** once per local day per household
+- **App-open fallback** once per local day per household (includes missed-day catch-up)
 - Soft-deleted logs no longer block regeneration; bulk generation uses the same RPC core
+
+### For Existing Database (invites + roles):
+
+```bash
+Run: 57-household-invites-and-roles.sql
+```
+
+What this enables:
+
+- **Signup** can insert into `public.users` (owner of a new household)
+- **Invite codes** (`create_household_invite` / `accept_household_invite` / `revoke_household_invite`)
+- **Roles**: `owner` | `editor` | `viewer` (viewers blocked from mutating household data)
+- Earliest existing member per household is backfilled as `owner`
+
+Verify after 57:
+
+```sql
+SELECT household_role, count(*) FROM users GROUP BY 1;
+SELECT code, role, use_count, max_uses, expires_at FROM household_invites LIMIT 5;
+```
 
 Verify after 55:
 

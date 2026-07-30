@@ -5,9 +5,12 @@ import { useDemoMode } from '../contexts/DemoContext'
 import { useRecurringSchedules } from '../hooks/useRecurringSchedules'
 import { useEnergyLogs } from '../hooks/useEnergyLogs'
 import { supabase } from '../lib/supabase'
-import { todayLocal } from '../utils/dateUtils'
+import { addLocalDays, todayLocal } from '../utils/dateUtils'
+import { getBackfillDates, summarizeBackfill } from '../utils/householdAccess'
 
 const STORAGE_PREFIX = 'mai-auto-schedules-last-run'
+/** Catch up missed auto_create days when the app opens (today inclusive). */
+const BACKFILL_LOOKBACK_DAYS = 7
 
 function storageKey(householdId: string) {
   return `${STORAGE_PREFIX}:${householdId}`
@@ -15,7 +18,8 @@ function storageKey(householdId: string) {
 
 /**
  * Once per local civil day per household, generate auto_create schedules
- * for today. Complements the midnight server cron as an app-open fallback.
+ * for today plus a short missed-day backfill window.
+ * Complements the midnight server cron as an app-open fallback.
  */
 export function AutoScheduleRunner() {
   const { user } = useAuth()
@@ -48,20 +52,30 @@ export function AutoScheduleRunner() {
         const key = storageKey(householdId)
         if (localStorage.getItem(key) === today) return
 
-        const summary = await autoGenerateLogsForDate(today, { silent: true })
+        const dates = getBackfillDates(today, BACKFILL_LOOKBACK_DAYS, addLocalDays)
+        const daily = []
+        for (const date of dates) {
+          if (cancelled) return
+          const summary = await autoGenerateLogsForDate(date, { silent: true })
+          daily.push(summary || { created: 0, replaced: 0, failed: 0 })
+        }
+
         if (cancelled) return
 
-        // Mark complete only after a successful RPC (including zero due schedules)
+        // Mark complete only after a successful RPC pass (including zero due schedules)
         localStorage.setItem(key, today)
 
-        const createdOrReplaced = (summary?.created ?? 0) + (summary?.replaced ?? 0)
+        const totals = summarizeBackfill(daily)
+        const createdOrReplaced = totals.created + totals.replaced
         if (createdOrReplaced > 0) {
-          toast.success(`Auto-created ${createdOrReplaced} schedule log(s) for today`)
+          toast.success(
+            `Auto-created ${createdOrReplaced} schedule log(s) (including up to ${BACKFILL_LOOKBACK_DAYS} missed days)`
+          )
           await refreshEnergyLogs()
         }
 
-        if ((summary?.failed ?? 0) > 0) {
-          toast.warning(`${summary.failed} auto-schedule(s) failed to generate`)
+        if (totals.failed > 0) {
+          toast.warning(`${totals.failed} auto-schedule(s) failed to generate`)
         }
       } catch (err) {
         // Leave storage unset so the next visit retries

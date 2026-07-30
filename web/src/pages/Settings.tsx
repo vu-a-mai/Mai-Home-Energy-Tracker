@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { useAuth } from '../hooks/useAuth'
 import { useDevices } from '../hooks/useDevices'
 import { useEnergyLogs } from '../hooks/useEnergyLogs'
@@ -7,8 +8,11 @@ import { useTemplates } from '../hooks/useTemplates'
 import { useRecurringSchedules } from '../hooks/useRecurringSchedules'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
 import { useHouseholdTimezone } from '../hooks/useHouseholdTimezone'
+import { useHouseholdRole } from '../hooks/useHouseholdRole'
+import { useDemoMode } from '../contexts/DemoContext'
 import { toast } from 'sonner'
 import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card'
 import {
   exportDataToJSON,
@@ -17,6 +21,18 @@ import {
   parseBackupFile,
   importHouseholdBackup,
 } from '../utils/dataBackup'
+import {
+  acceptHouseholdInvite,
+  createHouseholdInvite,
+  listHouseholdInvites,
+  revokeHouseholdInvite,
+  type HouseholdInvite,
+} from '../services/inviteService'
+import {
+  invitePath,
+  isValidInviteCodeFormat,
+  normalizeInviteCode,
+} from '../utils/householdAccess'
 import {
   Cog6ToothIcon,
   ArrowDownTrayIcon,
@@ -31,6 +47,8 @@ import {
   CurrencyDollarIcon,
   LightBulbIcon,
   GlobeAmericasIcon,
+  UserGroupIcon,
+  LinkIcon,
 } from '@heroicons/react/24/outline'
 
 const COMMON_TIMEZONES = [
@@ -46,12 +64,19 @@ const COMMON_TIMEZONES = [
 
 export default function Settings() {
   const { user } = useAuth()
+  const { isDemoMode } = useDemoMode()
   const { devices, addDevice, refreshDevices } = useDevices()
   const { energyLogs, addEnergyLog, refreshEnergyLogs } = useEnergyLogs()
   const { billSplits } = useBillSplits()
   const { templates, addTemplate, refreshTemplates } = useTemplates()
   const { schedules, addSchedule, refreshSchedules } = useRecurringSchedules()
   const { users: householdUsers } = useHouseholdUsers()
+  const {
+    role,
+    canEdit,
+    isOwner,
+    refresh: refreshRole,
+  } = useHouseholdRole()
   const {
     timezone,
     browserTimezone,
@@ -63,12 +88,119 @@ export default function Settings() {
   const [showAbout, setShowAbout] = useState(false)
   const [importing, setImporting] = useState(false)
   const importInputRef = useRef<HTMLInputElement>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [joinCode, setJoinCode] = useState('')
+  const [joining, setJoining] = useState(false)
+  const [invites, setInvites] = useState<HouseholdInvite[]>([])
+  const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor')
+  const [creatingInvite, setCreatingInvite] = useState(false)
+  const [loadingInvites, setLoadingInvites] = useState(false)
 
   const timezoneOptions = Array.from(
     new Set([browserTimezone, timezone, ...COMMON_TIMEZONES].filter(Boolean))
   )
   const draftTimezone = selectedTimezone ?? timezone
   const exportHouseholdId = devices[0]?.household_id || user?.id || 'unknown'
+
+  const refreshInvites = useCallback(async () => {
+    if (isDemoMode || !isOwner) {
+      setInvites([])
+      return
+    }
+    setLoadingInvites(true)
+    try {
+      const rows = await listHouseholdInvites()
+      setInvites(rows.filter((row) => !row.revoked_at && new Date(row.expires_at) > new Date()))
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoadingInvites(false)
+    }
+  }, [isDemoMode, isOwner])
+
+  useEffect(() => {
+    void refreshInvites()
+  }, [refreshInvites])
+
+  useEffect(() => {
+    const code = searchParams.get('code')
+    if (code) {
+      setJoinCode(normalizeInviteCode(code))
+    }
+  }, [searchParams])
+
+  const handleJoinHousehold = async () => {
+    const code = normalizeInviteCode(joinCode)
+    if (!isValidInviteCodeFormat(code)) {
+      toast.error('Enter a valid invite code')
+      return
+    }
+    if (isDemoMode) {
+      toast.error('Switch out of demo mode to join a live household')
+      return
+    }
+    setJoining(true)
+    try {
+      const result = await acceptHouseholdInvite(code)
+      if (result.joined) {
+        toast.success(`Joined household as ${result.role}`)
+      } else {
+        toast.info('You are already in that household')
+      }
+      setJoinCode('')
+      setSearchParams({})
+      await refreshRole()
+      window.location.reload()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to join household')
+    } finally {
+      setJoining(false)
+    }
+  }
+
+  const handleCreateInvite = async () => {
+    if (isDemoMode) {
+      toast.error('Invites are unavailable in demo mode')
+      return
+    }
+    setCreatingInvite(true)
+    try {
+      const invite = await createHouseholdInvite({ role: inviteRole })
+      const path = invitePath(invite.code)
+      const shareUrl = `${window.location.origin}${path}`
+      try {
+        await navigator.clipboard.writeText(shareUrl)
+        toast.success(`Invite ${invite.code} created and link copied`)
+      } catch {
+        toast.success(`Invite created: ${invite.code}`)
+      }
+      await refreshInvites()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create invite')
+    } finally {
+      setCreatingInvite(false)
+    }
+  }
+
+  const handleRevokeInvite = async (inviteId: string) => {
+    try {
+      await revokeHouseholdInvite(inviteId)
+      toast.success('Invite revoked')
+      await refreshInvites()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to revoke invite')
+    }
+  }
+
+  const handleCopyInvite = async (code: string) => {
+    const shareUrl = `${window.location.origin}${invitePath(code)}`
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      toast.success('Invite link copied')
+    } catch {
+      toast.info(shareUrl)
+    }
+  }
 
   const handleExportAll = () => {
     try {
@@ -214,9 +346,15 @@ export default function Settings() {
           Settings
         </h1>
         <p className="opacity-90 text-xs md:text-sm">
-          Household timezone and data export
+          Household members, invites, timezone, and data export
         </p>
       </header>
+
+      {!canEdit && !isDemoMode && (
+        <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          You have <span className="font-semibold">viewer</span> access — you can browse data but not change devices, logs, or settings.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 slide-up">
         <Card className="energy-card">
@@ -230,6 +368,10 @@ export default function Settings() {
             <div className="flex justify-between items-center p-2 bg-muted/30 rounded text-xs md:text-sm">
               <span className="text-muted-foreground">Email</span>
               <span className="font-semibold text-foreground truncate ml-2">{user?.email || 'Not logged in'}</span>
+            </div>
+            <div className="flex justify-between items-center p-2 bg-muted/30 rounded text-xs md:text-sm">
+              <span className="text-muted-foreground">Role</span>
+              <span className="font-semibold text-foreground capitalize">{role || (isDemoMode ? 'owner' : '—')}</span>
             </div>
           </CardContent>
         </Card>
@@ -264,6 +406,135 @@ export default function Settings() {
         <Card className="energy-card">
           <CardHeader className="pb-3">
             <CardTitle className="text-base md:text-lg text-foreground flex items-center gap-2">
+              <UserGroupIcon className="w-5 h-5 text-violet-400" />
+              Household
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Members, invite links, and joining another household.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Members</div>
+              {householdUsers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No members loaded.</p>
+              ) : (
+                householdUsers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-semibold text-sm text-foreground truncate">{member.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">{member.email}</div>
+                    </div>
+                    <span className="shrink-0 text-xs font-medium capitalize rounded-full border border-border px-2 py-0.5">
+                      {member.household_role || 'editor'}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {isOwner && !isDemoMode && (
+              <div className="space-y-3 border-t border-border pt-4">
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                  <LinkIcon className="w-3.5 h-3.5" />
+                  Invite links
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+                  <label className="flex-1 text-xs sm:text-sm">
+                    <span className="text-muted-foreground mb-1 block">Role for invitees</span>
+                    <select
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+                      value={inviteRole}
+                      onChange={(e) => setInviteRole(e.target.value as 'editor' | 'viewer')}
+                    >
+                      <option value="editor">Editor (can add logs &amp; devices)</option>
+                      <option value="viewer">Viewer (read-only)</option>
+                    </select>
+                  </label>
+                  <Button
+                    type="button"
+                    onClick={handleCreateInvite}
+                    disabled={creatingInvite}
+                    className="energy-action-btn"
+                  >
+                    {creatingInvite ? 'Creating…' : 'Create invite link'}
+                  </Button>
+                </div>
+                {loadingInvites ? (
+                  <p className="text-xs text-muted-foreground">Loading invites…</p>
+                ) : invites.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No active invites.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {invites.map((invite) => (
+                      <div
+                        key={invite.id}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border border-border px-3 py-2"
+                      >
+                        <div className="min-w-0 text-sm">
+                          <div className="font-mono font-semibold tracking-wider">{invite.code}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {invite.role} · {invite.use_count}/{invite.max_uses} uses · expires{' '}
+                            {new Date(invite.expires_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <Button type="button" variant="outline" size="sm" onClick={() => handleCopyInvite(invite.code)}>
+                            Copy link
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="border-red-300 text-red-500 hover:bg-red-500/10"
+                            onClick={() => handleRevokeInvite(invite.id)}
+                          >
+                            Revoke
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-2 border-t border-border pt-4">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Join another household
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Input
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(normalizeInviteCode(e.target.value))}
+                  placeholder="Invite code"
+                  className="uppercase tracking-wider"
+                  disabled={joining || isDemoMode}
+                />
+                <Button
+                  type="button"
+                  onClick={handleJoinHousehold}
+                  disabled={joining || isDemoMode || !joinCode}
+                  className="energy-action-btn shrink-0"
+                >
+                  {joining ? 'Joining…' : 'Join'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Solo owners can move freely. Owners of multi-member households must stay until ownership is sorted out.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="mb-4 slide-up">
+        <Card className="energy-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base md:text-lg text-foreground flex items-center gap-2">
               <GlobeAmericasIcon className="w-5 h-5 text-emerald-400" />
               Household Timezone
             </CardTitle>
@@ -278,7 +549,7 @@ export default function Settings() {
                 <select
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
                   value={draftTimezone}
-                  disabled={timezoneLoading || timezoneSaving}
+                  disabled={timezoneLoading || timezoneSaving || !canEdit}
                   onChange={(e) => setSelectedTimezone(e.target.value)}
                 >
                   {timezoneOptions.map((tz) => (
@@ -293,7 +564,7 @@ export default function Settings() {
               <Button
                 type="button"
                 onClick={handleSaveTimezone}
-                disabled={timezoneLoading || timezoneSaving || draftTimezone === timezone}
+                disabled={timezoneLoading || timezoneSaving || draftTimezone === timezone || !canEdit}
                 className="energy-action-btn"
               >
                 {timezoneSaving ? 'Saving…' : 'Save timezone'}
@@ -350,7 +621,7 @@ export default function Settings() {
               <button
                 type="button"
                 onClick={handleImportClick}
-                disabled={importing}
+                disabled={importing || !canEdit}
                 className="w-full group relative overflow-hidden bg-gradient-to-br from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 border border-blue-500/40 hover:border-blue-500/60 rounded-lg p-4 transition-all duration-300 text-left disabled:opacity-60"
               >
                 <div className="flex items-center gap-3">

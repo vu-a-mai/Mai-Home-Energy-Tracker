@@ -1,6 +1,7 @@
 import { useState, type ReactElement } from 'react'
 import { useDevices } from '../hooks/useDevices'
 import { useDeviceGroups } from '../hooks/useDeviceGroups'
+import { useHouseholdRole } from '../hooks/useHouseholdRole'
 import { toast } from 'sonner'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -153,6 +154,7 @@ const LOCATIONS = [
 export default function Devices() {
   const { devices, loading, error, addDevice, updateDevice, deleteDevice } = useDevices()
   const { deviceGroups, deleteDeviceGroup } = useDeviceGroups()
+  const { canEdit } = useHouseholdRole()
   const [showForm, setShowForm] = useState(false)
   const [editingDevice, setEditingDevice] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
@@ -167,16 +169,26 @@ export default function Devices() {
   })
   const [formErrors, setFormErrors] = useState<Partial<DeviceFormData>>({})
   const [searchQuery, setSearchQuery] = useState('')
+  const [typeFilter, setTypeFilter] = useState<string>('all')
+  const [locationFilter, setLocationFilter] = useState<string>('all')
+
+  const availableTypes = Array.from(new Set(devices.map((d) => d.device_type).filter(Boolean))).sort()
+  const availableLocations = Array.from(new Set(devices.map((d) => d.location).filter(Boolean))).sort()
 
   const filteredDevices = devices.filter((device) => {
     const q = searchQuery.trim().toLowerCase()
-    if (!q) return true
-    return (
+    const matchesSearch =
+      !q ||
       device.name.toLowerCase().includes(q) ||
       device.device_type.toLowerCase().includes(q) ||
       (device.location || '').toLowerCase().includes(q)
-    )
+    const matchesType = typeFilter === 'all' || device.device_type === typeFilter
+    const matchesLocation = locationFilter === 'all' || device.location === locationFilter
+    return matchesSearch && matchesType && matchesLocation
   })
+
+  const hasActiveFilters =
+    searchQuery.trim().length > 0 || typeFilter !== 'all' || locationFilter !== 'all'
 
   const validateForm = (): boolean => {
     const errors: Partial<DeviceFormData> = {}
@@ -281,6 +293,8 @@ export default function Devices() {
         <Button
           onClick={() => setShowForm(true)}
           className="energy-action-btn px-4 md:px-6 py-2 md:py-3 text-base md:text-lg font-semibold w-full sm:w-auto"
+          disabled={!canEdit}
+          title={canEdit ? undefined : 'Viewers cannot add devices'}
         >
           <PlusIcon className="w-5 h-5" />
           Add Device
@@ -329,7 +343,9 @@ export default function Devices() {
                     size="sm"
                     className="shrink-0 border-red-300 text-red-500 hover:bg-red-500/10"
                     title="Delete group"
+                    disabled={!canEdit}
                     onClick={async () => {
+                      if (!canEdit) return
                       if (!confirm(`Delete group “${group.group_name}”? Devices are kept.`)) return
                       try {
                         await deleteDeviceGroup(group.id)
@@ -569,9 +585,9 @@ export default function Devices() {
         </div>
       )}
 
-      {/* Device List - Compact Design */}
+      {/* Device List filters */}
       {devices.length > 0 && (
-        <div className="mb-4">
+        <div className="mb-4 space-y-3">
           <div className="relative max-w-md">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <Input
@@ -583,8 +599,58 @@ export default function Devices() {
               aria-label="Search devices"
             />
           </div>
-          {searchQuery.trim() && (
-            <p className="text-xs text-muted-foreground mt-2">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:items-center">
+            <label className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
+              <TagIcon className="w-4 h-4" />
+              <span className="sr-only sm:not-sr-only">Type</span>
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                aria-label="Filter by device type"
+              >
+                <option value="all">All types</option>
+                {availableTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
+              <MapPinIcon className="w-4 h-4" />
+              <span className="sr-only sm:not-sr-only">Location</span>
+              <select
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+                className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                aria-label="Filter by location"
+              >
+                <option value="all">All locations</option>
+                {availableLocations.map((location) => (
+                  <option key={location} value={location}>
+                    {location}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {hasActiveFilters && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery('')
+                  setTypeFilter('all')
+                  setLocationFilter('all')
+                }}
+              >
+                Clear filters
+              </Button>
+            )}
+          </div>
+          {hasActiveFilters && (
+            <p className="text-xs text-muted-foreground">
               Showing {filteredDevices.length} of {devices.length} devices
             </p>
           )}
@@ -608,24 +674,28 @@ export default function Devices() {
                     </h3>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button
-                      onClick={() => handleEdit(device)}
-                      variant="outline"
-                      size="sm"
-                      className="p-2 min-h-11 min-w-11 h-11 w-11 border-blue-300 text-blue-500 hover:bg-blue-500/10"
-                      title="Edit device"
-                    >
-                      <PencilIcon className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      onClick={() => setDeleteConfirm(device.id)}
-                      variant="outline"
-                      size="sm"
-                      className="p-2 min-h-11 min-w-11 h-11 w-11 border-red-300 text-red-500 hover:bg-red-500/10"
-                      title="Delete device"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </Button>
+                    {canEdit && (
+                      <>
+                        <Button
+                          onClick={() => handleEdit(device)}
+                          variant="outline"
+                          size="sm"
+                          className="p-2 min-h-11 min-w-11 h-11 w-11 border-blue-300 text-blue-500 hover:bg-blue-500/10"
+                          title="Edit device"
+                        >
+                          <PencilIcon className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          onClick={() => setDeleteConfirm(device.id)}
+                          variant="outline"
+                          size="sm"
+                          className="p-2 min-h-11 min-w-11 h-11 w-11 border-red-300 text-red-500 hover:bg-red-500/10"
+                          title="Delete device"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
                 <Badge 
