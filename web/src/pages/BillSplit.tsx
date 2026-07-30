@@ -102,7 +102,7 @@ export default function BillSplit() {
   const [formData, setFormData] = useState<BillFormData>({
     startDate: currentMonth.start,
     endDate: currentMonth.end,
-    totalAmount: isDemoMode ? 555 : 0, // Demo mode shows 555, live mode starts at 0
+    totalAmount: isDemoMode ? 185 : 0, // Demo July bill (tracked usage + fees)
     splitMethod: 'usage_based' // Default to usage-based split
   })
   const [formErrors, setFormErrors] = useState<Partial<BillFormData>>({})

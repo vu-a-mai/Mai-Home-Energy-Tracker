@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from './useAuth'
 import { useDemoMode } from '../contexts/DemoContext'
 import { userService } from '../services/database'
-import { demoUserService } from '../demo/demoService'
+import { DEMO_HOUSEHOLD_ID, getDemoState } from '../demo/demoStore'
 
 export interface HouseholdUser {
   id: string
@@ -24,11 +24,11 @@ export function useHouseholdUsers() {
         setError(null)
 
         if (isDemoMode) {
-          // Use demo users
-          const demoUsers = await demoUserService.getHouseholdMembers('demo-household-12345678-1234-5678-9012-123456789012')
+          const demoUsers = getDemoState().users.filter(
+            (u) => u.household_id === DEMO_HOUSEHOLD_ID
+          )
           setUsers(demoUsers)
         } else if (user) {
-          // Fetch real users from Supabase
           const currentUser = await userService.getCurrentUser()
           if (currentUser?.household_id) {
             const householdMembers = await userService.getHouseholdMembers(currentUser.household_id)

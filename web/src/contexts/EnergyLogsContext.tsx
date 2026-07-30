@@ -7,7 +7,14 @@ import { useDemoMode } from './DemoContext'
 import type { EnergyLog } from '../lib/supabase'
 import { calculateUsageCost } from '../utils/rateCalculatorFixed'
 import { logger } from '../utils/logger'
-import { demoEnergyLogs, demoDevices } from '../demo/demoData'
+import {
+  demoGetEnergyLogs,
+  demoAddEnergyLog,
+  demoUpdateEnergyLog,
+  demoDeleteEnergyLog,
+  demoGetDevices,
+  subscribeDemoStore,
+} from '../demo/demoStore'
 
 // Re-export EnergyLog for convenience
 export type { EnergyLog }
@@ -45,21 +52,23 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
       setLoading(true)
       setError(null)
 
-      // Use demo data if in demo mode
+      // Use demo sandbox if in demo mode
       if (isDemoMode) {
-        const transformedLogs = demoEnergyLogs.map(log => {
-          const device = demoDevices.find(d => d.id === log.device_id)
+        const transformedLogs = demoGetEnergyLogs().map((log) => {
+          const device = demoGetDevices().find((d) => d.id === log.device_id)
           return {
             ...log,
-            device_name: device?.name,
-            device_wattage: device?.wattage,
-            // Use actual calculated_kwh from demo data, or calculate it if missing
-            total_kwh: log.total_kwh || ((device?.wattage || 0) / 1000) * 
-              ((new Date(`2000-01-01T${log.end_time}`).getTime() - new Date(`2000-01-01T${log.start_time}`).getTime()) / (1000 * 60 * 60))
+            device_name: log.device_name || device?.name,
+            device_wattage: log.device_wattage || device?.wattage,
+            total_kwh:
+              log.total_kwh ||
+              ((device?.wattage || 0) / 1000) *
+                ((new Date(`2000-01-01T${log.end_time}`).getTime() -
+                  new Date(`2000-01-01T${log.start_time}`).getTime()) /
+                  (1000 * 60 * 60)),
           }
         })
         setEnergyLogs(transformedLogs)
-        setError('Using demo data - Supabase connection unavailable')
         setLoading(false)
         return
       }
@@ -127,6 +136,16 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
     usageDate: string
   ): Promise<{ cost: number; kwh: number }> => {
     try {
+      if (isDemoMode) {
+        const device = demoGetDevices().find((d) => d.id === deviceId)
+        if (!device) throw new Error('Device not found')
+        const calculation = calculateUsageCost(device.wattage, startTime, endTime, usageDate)
+        return {
+          cost: Math.round(calculation.totalCost * 100) / 100,
+          kwh: Math.round(calculation.totalKwh * 1000) / 1000,
+        }
+      }
+
       // Get device wattage
       const { data: device, error: deviceError } = await supabase
         .from('devices')
@@ -156,6 +175,13 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
   }
 
   const addEnergyLog = async (logData: Omit<EnergyLog, 'id' | 'calculated_cost' | 'total_kwh' | 'household_id' | 'created_by' | 'created_at' | 'updated_at'>) => {
+    if (isDemoMode) {
+      setError(null)
+      const created = demoAddEnergyLog(logData)
+      setEnergyLogs((prev) => [created, ...prev])
+      return
+    }
+
     if (!user) throw new Error('User not authenticated')
 
     try {
@@ -229,6 +255,14 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
   }
 
   const updateEnergyLog = async (id: string, updates: Partial<EnergyLog>) => {
+    if (isDemoMode) {
+      setError(null)
+      const updated = demoUpdateEnergyLog(id, updates)
+      if (!updated) throw new Error('Energy log not found')
+      setEnergyLogs((prev) => prev.map((log) => (log.id === id ? { ...log, ...updated } : log)))
+      return
+    }
+
     try {
       setError(null)
 
@@ -281,6 +315,13 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
   }
 
   const deleteEnergyLog = async (id: string) => {
+    if (isDemoMode) {
+      setError(null)
+      demoDeleteEnergyLog(id)
+      setEnergyLogs((prev) => prev.filter((log) => log.id !== id))
+      return
+    }
+
     try {
       setError(null)
 
@@ -360,6 +401,14 @@ export function EnergyLogsProvider({ children }: { children: ReactNode }) {
       refreshEnergyLogs()
     }
   }, [user, isDemoMode])
+
+  // Keep React state aligned when templates/schedules mutate the demo store
+  useEffect(() => {
+    if (!isDemoMode) return
+    return subscribeDemoStore(() => {
+      void refreshEnergyLogs()
+    })
+  }, [isDemoMode])
 
   // Set up realtime subscription for energy logs
   useEffect(() => {

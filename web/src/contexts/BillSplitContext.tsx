@@ -3,6 +3,14 @@ import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { useDemoMode } from './DemoContext'
+import {
+  demoGetBillSplits,
+  demoSaveBillSplit,
+  demoDeleteBillSplit,
+  type DemoBillSplit,
+  subscribeDemoStore,
+} from '../demo/demoStore'
 
 export interface BillSplit {
   id: string
@@ -36,13 +44,29 @@ interface BillSplitContextType {
 
 const BillSplitContext = createContext<BillSplitContextType | undefined>(undefined)
 
+function mapDemoBillSplits(): BillSplit[] {
+  return demoGetBillSplits().map((split: DemoBillSplit) => ({
+    ...split,
+    split_method: split.split_method || 'usage_based',
+    updated_at: split.updated_at || split.created_at,
+  })) as BillSplit[]
+}
+
 export function BillSplitProvider({ children }: { children: ReactNode }) {
   const [billSplits, setBillSplits] = useState<BillSplit[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
+  const { isDemoMode } = useDemoMode()
 
   const refreshBillSplits = async () => {
+    if (isDemoMode) {
+      setBillSplits(mapDemoBillSplits())
+      setLoading(false)
+      setError(null)
+      return
+    }
+
     if (!user) {
       setLoading(false)
       return
@@ -70,15 +94,30 @@ export function BillSplitProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     refreshBillSplits()
-  }, [user])
+  }, [user, isDemoMode])
 
-  const saveBillSplit = async (billSplit: Omit<BillSplit, 'id' | 'household_id' | 'created_by' | 'created_at' | 'updated_at'>) => {
+  useEffect(() => {
+    if (!isDemoMode) return
+    return subscribeDemoStore(() => {
+      void refreshBillSplits()
+    })
+  }, [isDemoMode])
+
+  const saveBillSplit = async (
+    billSplit: Omit<BillSplit, 'id' | 'household_id' | 'created_by' | 'created_at' | 'updated_at'>
+  ) => {
+    if (isDemoMode) {
+      setError(null)
+      demoSaveBillSplit(billSplit)
+      setBillSplits(mapDemoBillSplits())
+      return
+    }
+
     if (!user) throw new Error('User not authenticated')
 
     try {
       setError(null)
 
-      // Get user's household_id
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('household_id')
@@ -89,17 +128,19 @@ export function BillSplitProvider({ children }: { children: ReactNode }) {
 
       const { data, error } = await supabase
         .from('bill_splits')
-        .insert([{
-          ...billSplit,
-          household_id: userData.household_id,
-          created_by: user.id
-        }])
+        .insert([
+          {
+            ...billSplit,
+            household_id: userData.household_id,
+            created_by: user.id,
+          },
+        ])
         .select()
         .single()
 
       if (error) throw error
 
-      setBillSplits(prev => [data, ...prev])
+      setBillSplits((prev) => [data, ...prev])
     } catch (err) {
       console.error('Error saving bill split:', err)
       setError('Failed to save bill split')
@@ -108,17 +149,21 @@ export function BillSplitProvider({ children }: { children: ReactNode }) {
   }
 
   const deleteBillSplit = async (id: string) => {
+    if (isDemoMode) {
+      setError(null)
+      demoDeleteBillSplit(id)
+      setBillSplits(mapDemoBillSplits())
+      return
+    }
+
     try {
       setError(null)
 
-      const { error } = await supabase
-        .from('bill_splits')
-        .delete()
-        .eq('id', id)
+      const { error } = await supabase.from('bill_splits').delete().eq('id', id)
 
       if (error) throw error
 
-      setBillSplits(prev => prev.filter(split => split.id !== id))
+      setBillSplits((prev) => prev.filter((split) => split.id !== id))
     } catch (err) {
       console.error('Error deleting bill split:', err)
       setError('Failed to delete bill split')
@@ -134,7 +179,7 @@ export function BillSplitProvider({ children }: { children: ReactNode }) {
         error,
         saveBillSplit,
         deleteBillSplit,
-        refreshBillSplits
+        refreshBillSplits,
       }}
     >
       {children}

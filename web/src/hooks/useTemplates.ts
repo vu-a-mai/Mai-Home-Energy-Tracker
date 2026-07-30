@@ -5,6 +5,17 @@ import { toast } from 'sonner'
 import { calculateUsageCost } from '../utils/rateCalculatorFixed'
 import { timesOverlap } from '../utils/timeOverlap'
 import { formatLocalDate, parseLocalDate } from '../utils/dateUtils'
+import { useDemoMode } from '../contexts/DemoContext'
+import {
+  demoGetTemplates,
+  demoAddTemplate,
+  demoUpdateTemplate,
+  demoDeleteTemplate,
+  demoGetEnergyLogs,
+  demoAddEnergyLog,
+  demoDeleteEnergyLog,
+  demoFindOverlappingLogs,
+} from '../demo/demoStore'
 
 // Helper function to check for overlapping time periods (including overnight)
 const checkForOverlap = async (
@@ -12,8 +23,18 @@ const checkForOverlap = async (
   date: string,
   startTime: string,
   endTime: string,
-  householdId: string
+  householdId: string,
+  isDemoMode = false
 ): Promise<{ id: string; start_time: string; end_time: string; device_id: string }[]> => {
+  if (isDemoMode) {
+    return demoFindOverlappingLogs(deviceId, date, startTime, endTime).map(log => ({
+      id: log.id,
+      start_time: log.start_time,
+      end_time: log.end_time,
+      device_id: log.device_id,
+    }))
+  }
+
   const { data: existingLogs } = await supabase
     .from('energy_logs')
     .select('id, start_time, end_time, device_id')
@@ -45,11 +66,17 @@ export function useTemplates() {
   const [templates, setTemplates] = useState<EnergyLogTemplate[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { isDemoMode } = useDemoMode()
 
   const fetchTemplates = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
+
+      if (isDemoMode) {
+        setTemplates(demoGetTemplates())
+        return
+      }
 
       const { data: templatesData, error: templatesError } = await supabase
         .from('energy_log_templates')
@@ -94,17 +121,25 @@ export function useTemplates() {
       console.error('Error fetching templates:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch templates'
       setError(errorMessage)
-      toast.error(errorMessage)
+      if (!isDemoMode) toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [isDemoMode])
 
   useEffect(() => {
     fetchTemplates()
   }, [fetchTemplates])
 
   const addTemplate = async (templateData: TemplateFormData) => {
+    if (isDemoMode) {
+      demoAddTemplate(templateData)
+      setTemplates(demoGetTemplates())
+      const deviceCount = templateData.device_ids?.length || 1
+      toast.success(`Template created with ${deviceCount} device(s)!`)
+      return
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
@@ -155,6 +190,13 @@ export function useTemplates() {
   }
 
   const updateTemplate = async (id: string, templateData: Partial<TemplateFormData>) => {
+    if (isDemoMode) {
+      demoUpdateTemplate(id, templateData)
+      setTemplates(demoGetTemplates())
+      toast.success('Template updated successfully!')
+      return
+    }
+
     try {
       const { error: updateError } = await supabase
         .from('energy_log_templates')
@@ -174,6 +216,13 @@ export function useTemplates() {
   }
 
   const deleteTemplate = async (id: string) => {
+    if (isDemoMode) {
+      demoDeleteTemplate(id)
+      setTemplates(demoGetTemplates())
+      toast.success('Template deleted successfully!')
+      return
+    }
+
     try {
       const { error: deleteError } = await supabase
         .from('energy_log_templates')
@@ -196,6 +245,48 @@ export function useTemplates() {
     try {
       const template = templates.find(t => t.id === templateId)
       if (!template) throw new Error('Template not found')
+
+      if (isDemoMode) {
+        const deviceIds = getTemplateDeviceIds(template)
+        if (deviceIds.length === 0) throw new Error('No devices in template')
+        let createdCount = 0
+        let skippedCount = 0
+        let overlapCount = 0
+        for (const deviceId of deviceIds) {
+          const exact = demoGetEnergyLogs().find(
+            (l) =>
+              l.device_id === deviceId &&
+              l.usage_date === usageDate &&
+              l.start_time === template.default_start_time &&
+              l.end_time === template.default_end_time
+          )
+          if (exact) {
+            skippedCount++
+            continue
+          }
+          const overlaps = demoFindOverlappingLogs(
+            deviceId,
+            usageDate,
+            template.default_start_time,
+            template.default_end_time
+          )
+          if (overlaps.length > 0) overlapCount++
+          demoAddEnergyLog({
+            device_id: deviceId,
+            usage_date: usageDate,
+            start_time: template.default_start_time,
+            end_time: template.default_end_time,
+            assigned_users: template.assigned_users,
+            source_type: 'template',
+            source_id: templateId,
+          })
+          createdCount++
+        }
+        if (createdCount > 0) toast.success(`✅ Created ${createdCount} log(s) from template!`)
+        if (skippedCount > 0) toast.info(`⏭️ Skipped ${skippedCount} duplicate(s)`)
+        if (overlapCount > 0) toast.warning(`⚠️ ${overlapCount} log(s) may overlap with existing entries`)
+        return createdCount > 0
+      }
 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
@@ -318,6 +409,72 @@ export function useTemplates() {
     try {
       const template = templates.find(t => t.id === templateId)
       if (!template) throw new Error('Template not found')
+
+      if (isDemoMode) {
+        const deviceIds = getTemplateDeviceIds(template)
+        if (deviceIds.length === 0) throw new Error('No devices in template')
+        const start = parseLocalDate(startDate)
+        const end = parseLocalDate(endDate)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const actualEndDate = end > today ? today : end
+        const matchingDates: string[] = []
+        const currentDate = new Date(start)
+        while (currentDate <= actualEndDate) {
+          if (daysOfWeek.includes(currentDate.getDay())) {
+            matchingDates.push(formatLocalDate(currentDate))
+          }
+          currentDate.setDate(currentDate.getDate() + 1)
+        }
+        if (matchingDates.length === 0) {
+          toast.info('No matching dates found for the selected days')
+          return { success: 0, failed: 0, skipped: 0, overlaps: 0 }
+        }
+        let successCount = 0
+        let skippedCount = 0
+        let overlapCount = 0
+        toast.info(`Generating ${matchingDates.length * deviceIds.length} log(s) from template...`)
+        for (const date of matchingDates) {
+          for (const deviceId of deviceIds) {
+            const exact = demoGetEnergyLogs().find(
+              (l) =>
+                l.device_id === deviceId &&
+                l.usage_date === date &&
+                l.start_time === template.default_start_time &&
+                l.end_time === template.default_end_time
+            )
+            if (exact) {
+              if (replaceExisting) {
+                demoDeleteEnergyLog(exact.id)
+              } else {
+                skippedCount++
+                continue
+              }
+            }
+            const overlaps = demoFindOverlappingLogs(
+              deviceId,
+              date,
+              template.default_start_time,
+              template.default_end_time
+            )
+            if (overlaps.length > 0) overlapCount++
+            demoAddEnergyLog({
+              device_id: deviceId,
+              usage_date: date,
+              start_time: template.default_start_time,
+              end_time: template.default_end_time,
+              assigned_users: template.assigned_users,
+              source_type: 'template',
+              source_id: templateId,
+            })
+            successCount++
+          }
+        }
+        if (successCount > 0) toast.success(`✅ Generated ${successCount} log(s) from template!`)
+        if (skippedCount > 0) toast.info(`⏭️ Skipped ${skippedCount} existing log(s)`)
+        if (overlapCount > 0) toast.warning(`⚠️ ${overlapCount} log(s) may overlap with existing entries`)
+        return { success: successCount, failed: 0, skipped: skippedCount, overlaps: overlapCount }
+      }
 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')

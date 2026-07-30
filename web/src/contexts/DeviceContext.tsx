@@ -6,7 +6,14 @@ import { useAuth } from '../hooks/useAuth'
 import { useDemoMode } from './DemoContext'
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription'
 import { useCache } from '../hooks/useCache'
-import { demoDevices } from '../demo/demoData'
+import {
+  demoGetDevices,
+  demoAddDevice,
+  demoUpdateDevice,
+  demoDeleteDevice,
+  subscribeDemoStore,
+  DEMO_CURRENT_USER_ID,
+} from '../demo/demoStore'
 import { logger } from '../utils/logger'
 
 export interface Device {
@@ -34,37 +41,29 @@ interface DeviceContextType {
 
 const DeviceContext = createContext<DeviceContextType | undefined>(undefined)
 
+function mapDemoDevices(): Device[] {
+  return demoGetDevices().map((device) => ({
+    ...device,
+    kwh_per_hour: device.wattage / 1000,
+    created_by: device.created_by || DEMO_CURRENT_USER_ID,
+  }))
+}
+
 export function DeviceProvider({ children }: { children: ReactNode }) {
   const [devices, setDevices] = useState<Device[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
   const { isDemoMode } = useDemoMode()
-  const cache = useCache<Device[]>('devices', { ttl: 2 * 60 * 1000 }) // 2 minutes cache
+  const cache = useCache<Device[]>('devices', { ttl: 2 * 60 * 1000 })
 
   const refreshDevices = async (useCache = true) => {
     try {
       setLoading(true)
       setError(null)
 
-      // Use demo data if in demo mode
       if (isDemoMode) {
-        const deviceData = demoDevices.map(device => {
-          // Determine owner based on device name
-          let owner = 'demo-user-vu'
-          if (device.name.includes("Thuy's")) owner = 'demo-user-thuy'
-          else if (device.name.includes("Vy's")) owner = 'demo-user-vy'
-          else if (device.name.includes("Han's")) owner = 'demo-user-han'
-          
-          return {
-            ...device,
-            kwh_per_hour: device.wattage / 1000,
-            // Use is_shared from demo data (already correctly set)
-            created_by: owner
-          }
-        })
-        setDevices(deviceData)
-        setError('Using demo data - Supabase connection unavailable')
+        setDevices(mapDemoDevices())
         setLoading(false)
         return
       }
@@ -74,7 +73,6 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      // Get user's household_id to filter devices
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('household_id')
@@ -93,7 +91,6 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      // Check cache first
       const cacheKey = `devices-${user.id}`
       if (useCache && cache.has(cacheKey)) {
         const cachedDevices = cache.get(cacheKey)
@@ -104,7 +101,6 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // Fetch devices - FILTERED BY HOUSEHOLD
       const { data, error } = await supabase
         .from('devices')
         .select('*')
@@ -118,7 +114,6 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
       cache.set(cacheKey, deviceData)
     } catch (err) {
       logger.error('Error fetching devices:', err)
-      // Never inject mock device IDs for authenticated users — that creates orphan logs
       setDevices([])
       setError(err instanceof Error ? err.message : 'Failed to load devices. Please retry.')
     } finally {
@@ -127,16 +122,27 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
   }
 
   const addDevice = async (deviceData: Omit<Device, 'id' | 'kwh_per_hour' | 'household_id' | 'created_by' | 'created_at'>) => {
+    if (isDemoMode) {
+      setError(null)
+      demoAddDevice({
+        name: deviceData.name,
+        device_type: deviceData.device_type,
+        location: deviceData.location,
+        wattage: deviceData.wattage,
+        is_shared: deviceData.is_shared,
+      })
+      setDevices(mapDemoDevices())
+      return
+    }
+
     if (!user) throw new Error('User not authenticated')
 
     try {
       setError(null)
-      
-      // Get or create user's household_id
+
       let userData = null
-      
-      // First try to get existing user
-      const { data: existingUser, error: userError } = await supabase
+
+      const { data: existingUser } = await supabase
         .from('users')
         .select('household_id')
         .eq('id', user.id)
@@ -145,15 +151,14 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
       if (existingUser) {
         userData = existingUser
       } else {
-        // User doesn't exist in database, create them
         logger.log('User not found in database, creating user record...')
         const householdId = crypto.randomUUID()
-        
+
         const newUser = {
           id: user.id,
           email: user.email || '',
           name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-          household_id: householdId
+          household_id: householdId,
         }
 
         const { data: createdUser, error: createError } = await supabase
@@ -166,7 +171,7 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
           logger.error('Error creating user:', createError)
           throw new Error('Failed to create user profile. Please try again.')
         }
-        
+
         userData = createdUser
       }
 
@@ -177,7 +182,7 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
       const newDevice = {
         ...deviceData,
         household_id: userData.household_id,
-        created_by: user.id
+        created_by: user.id,
       }
 
       const { data, error } = await supabase
@@ -188,10 +193,7 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error
 
-      // Update local state (real-time will also update)
-      setDevices(prev => [data, ...prev])
-      
-      // Invalidate cache
+      setDevices((prev) => [data, ...prev])
       cache.remove(`devices-${user.id}`)
     } catch (err) {
       logger.error('Error adding device:', err)
@@ -202,10 +204,17 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
   }
 
   const updateDevice = async (id: string, updates: Partial<Device>) => {
+    if (isDemoMode) {
+      setError(null)
+      const updated = demoUpdateDevice(id, updates)
+      if (!updated) throw new Error('Device not found')
+      setDevices(mapDemoDevices())
+      return
+    }
+
     try {
       setError(null)
 
-      // Remove kwh_per_hour from updates since it's auto-calculated
       const updateData = { ...updates }
       delete updateData.kwh_per_hour
 
@@ -219,12 +228,10 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
       if (error) throw error
       if (!data) throw new Error('Device not found')
 
-      // Update local state (real-time will also update)
-      setDevices(prev => prev.map(device => 
-        device.id === id ? { ...device, ...data } : device
-      ))
-      
-      // Invalidate cache
+      setDevices((prev) =>
+        prev.map((device) => (device.id === id ? { ...device, ...data } : device))
+      )
+
       if (user) cache.remove(`devices-${user.id}`)
     } catch (err) {
       logger.error('Error updating device:', err)
@@ -234,20 +241,22 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
   }
 
   const deleteDevice = async (id: string) => {
+    if (isDemoMode) {
+      setError(null)
+      demoDeleteDevice(id)
+      setDevices(mapDemoDevices())
+      return
+    }
+
     try {
       setError(null)
 
-      const { error } = await supabase
-        .from('devices')
-        .delete()
-        .eq('id', id)
+      const { error } = await supabase.from('devices').delete().eq('id', id)
 
       if (error) throw error
 
-      // Update local state (real-time will also update)
-      setDevices(prev => prev.filter(device => device.id !== id))
-      
-      // Invalidate cache
+      setDevices((prev) => prev.filter((device) => device.id !== id))
+
       if (user) cache.remove(`devices-${user.id}`)
     } catch (err) {
       logger.error('Error deleting device:', err)
@@ -256,23 +265,23 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Real-time subscription for devices
   useRealtimeSubscription({
     table: 'devices',
+    enabled: !isDemoMode && !!user,
     onInsert: (payload) => {
-      setDevices(prev => [payload.new, ...prev])
+      setDevices((prev) => [payload.new, ...prev])
       if (user) cache.remove(`devices-${user.id}`)
     },
     onUpdate: (payload) => {
-      setDevices(prev => prev.map(device => 
-        device.id === payload.new.id ? payload.new : device
-      ))
+      setDevices((prev) =>
+        prev.map((device) => (device.id === payload.new.id ? payload.new : device))
+      )
       if (user) cache.remove(`devices-${user.id}`)
     },
     onDelete: (payload) => {
-      setDevices(prev => prev.filter(device => device.id !== payload.old.id))
+      setDevices((prev) => prev.filter((device) => device.id !== payload.old.id))
       if (user) cache.remove(`devices-${user.id}`)
-    }
+    },
   })
 
   useEffect(() => {
@@ -281,6 +290,13 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
     }
   }, [user, isDemoMode])
 
+  useEffect(() => {
+    if (!isDemoMode) return
+    return subscribeDemoStore(() => {
+      void refreshDevices()
+    })
+  }, [isDemoMode])
+
   const value = {
     devices,
     loading,
@@ -288,14 +304,10 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
     addDevice,
     updateDevice,
     deleteDevice,
-    refreshDevices
+    refreshDevices,
   }
 
-  return (
-    <DeviceContext.Provider value={value}>
-      {children}
-    </DeviceContext.Provider>
-  )
+  return <DeviceContext.Provider value={value}>{children}</DeviceContext.Provider>
 }
 
 export function useDevices() {

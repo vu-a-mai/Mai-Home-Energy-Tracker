@@ -1,1215 +1,4203 @@
-// Demo data for Mai Home Energy Tracker
-// This data is used when users click "View Demo" on the login page
-
+/**
+ * Isolated fictional demo household: the Park family.
+ * Distinct from any real Supabase household data.
+ * Dated for June–July 2026 so Dashboard "This Month" / Bill Split current period are populated.
+ */
 import type { User, Device, EnergyLog, BillSplit } from '../lib/supabase'
+import type { EnergyLogTemplate, RecurringSchedule, DeviceGroup } from '../types'
 
-// Note: EnergyLog uses total_kwh (not calculated_kwh) to match database schema
+export const DEMO_HOUSEHOLD_ID = "demo-hh-park-family-0001"
+export const DEMO_CURRENT_USER_ID = "demo-user-alex"
 
-// Demo household ID
-export const DEMO_HOUSEHOLD_ID = 'demo-household-12345678-1234-5678-9012-123456789012'
-
-// Demo Users
 export const demoUsers: User[] = [
   {
-    id: 'demo-user-vu',
-    email: 'vu@demo.com',
-    name: 'Vu',
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_at: '2023-12-31T00:00:00Z',
-    updated_at: '2023-12-31T00:00:00Z'
+    "id": "demo-user-alex",
+    "email": "alex@park-demo.example",
+    "name": "Alex",
+    "household_id": "demo-hh-park-family-0001",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   },
   {
-    id: 'demo-user-thuy',
-    email: 'thuy@demo.com',
-    name: 'Thuy',
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_at: '2023-12-31T00:00:00Z',
-    updated_at: '2023-12-31T00:00:00Z'
+    "id": "demo-user-mia",
+    "email": "mia@park-demo.example",
+    "name": "Mia",
+    "household_id": "demo-hh-park-family-0001",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   },
   {
-    id: 'demo-user-vy',
-    email: 'vy@demo.com',
-    name: 'Vy',
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_at: '2023-12-31T00:00:00Z',
-    updated_at: '2023-12-31T00:00:00Z'
+    "id": "demo-user-noah",
+    "email": "noah@park-demo.example",
+    "name": "Noah",
+    "household_id": "demo-hh-park-family-0001",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   },
   {
-    id: 'demo-user-han',
-    email: 'han@demo.com',
-    name: 'Han',
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_at: '2023-12-31T00:00:00Z',
-    updated_at: '2023-12-31T00:00:00Z'
+    "id": "demo-user-sofia",
+    "email": "sofia@park-demo.example",
+    "name": "Sofia",
+    "household_id": "demo-hh-park-family-0001",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   }
 ]
 
-// Demo Devices - Updated with is_shared, device_type, and location fields
 export const demoDevices: Device[] = [
   {
-    id: 'demo-device-1',
-    name: 'Living Room TV',
-    wattage: 150,
-    device_type: 'TV',
-    location: 'Living Room',
-    is_shared: true,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_at: '2023-12-31T00:00:00Z',
-    updated_at: '2023-12-31T00:00:00Z'
+    "id": "demo-dev-living-tv",
+    "name": "Living Room TV",
+    "wattage": 120,
+    "device_type": "TV",
+    "location": "Living Room",
+    "is_shared": true,
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   },
   {
-    id: 'demo-device-2',
-    name: 'Kitchen Refrigerator',
-    wattage: 200,
-    device_type: 'Refrigerator',
-    location: 'Kitchen',
-    is_shared: true,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_at: '2023-12-31T00:00:00Z',
-    updated_at: '2023-12-31T00:00:00Z'
+    "id": "demo-dev-fridge",
+    "name": "Kitchen Fridge",
+    "wattage": 180,
+    "device_type": "Refrigerator",
+    "location": "Kitchen",
+    "is_shared": true,
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   },
   {
-    id: 'demo-device-3',
-    name: "Vu's Gaming PC",
-    wattage: 500,
-    device_type: 'Computer',
-    location: 'Bedroom 2',
-    is_shared: false,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_at: '2023-12-31T00:00:00Z',
-    updated_at: '2023-12-31T00:00:00Z'
+    "id": "demo-dev-washer",
+    "name": "Washer",
+    "wattage": 500,
+    "device_type": "Washing Machine",
+    "location": "Laundry Room",
+    "is_shared": true,
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   },
   {
-    id: 'demo-device-4',
-    name: 'Master Bedroom TV',
-    wattage: 120,
-    device_type: 'TV',
-    location: 'Master Bedroom',
-    is_shared: true,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_at: '2023-12-31T00:00:00Z',
-    updated_at: '2023-12-31T00:00:00Z'
+    "id": "demo-dev-dryer",
+    "name": "Dryer",
+    "wattage": 3000,
+    "device_type": "Dryer",
+    "location": "Laundry Room",
+    "is_shared": true,
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   },
   {
-    id: 'demo-device-5',
-    name: 'Room AC',
-    wattage: 1200,
-    device_type: 'Air Conditioner',
-    location: 'Living Room',
-    is_shared: true,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_at: '2023-12-31T00:00:00Z',
-    updated_at: '2023-12-31T00:00:00Z'
+    "id": "demo-dev-dishwasher",
+    "name": "Dishwasher",
+    "wattage": 1800,
+    "device_type": "Dishwasher",
+    "location": "Kitchen",
+    "is_shared": true,
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   },
   {
-    id: 'demo-device-6',
-    name: "Thuy's Laptop",
-    wattage: 65,
-    device_type: 'Computer',
-    location: 'Master Bedroom',
-    is_shared: false,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_at: '2023-12-31T00:00:00Z',
-    updated_at: '2023-12-31T00:00:00Z'
+    "id": "demo-dev-heatpump",
+    "name": "Whole-Home Heat Pump",
+    "wattage": 2500,
+    "device_type": "Air Conditioner",
+    "location": "Utility Room",
+    "is_shared": true,
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   },
   {
-    id: 'demo-device-7',
-    name: "Vy's Hair Dryer",
-    wattage: 1500,
-    device_type: 'Other',
-    location: 'Bathroom',
-    is_shared: false,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_at: '2023-12-31T00:00:00Z',
-    updated_at: '2023-12-31T00:00:00Z'
+    "id": "demo-dev-alex-pc",
+    "name": "Alex's Desktop PC",
+    "wattage": 450,
+    "device_type": "Computer",
+    "location": "Office",
+    "is_shared": false,
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   },
   {
-    id: 'demo-device-8',
-    name: "Han's Tablet",
-    wattage: 15,
-    device_type: 'Other',
-    location: 'Bedroom 3',
-    is_shared: false,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_at: '2023-12-31T00:00:00Z',
-    updated_at: '2023-12-31T00:00:00Z'
+    "id": "demo-dev-mia-laptop",
+    "name": "Mia's Laptop",
+    "wattage": 65,
+    "device_type": "Laptop",
+    "location": "Office",
+    "is_shared": false,
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   },
   {
-    id: 'demo-device-9',
-    name: "Vu's Tesla Model Y Charger",
-    wattage: 9600, // Level 2 charger - 50A breaker, 40A continuous @ 240V = 9.6 kW
-    device_type: 'Other',
-    location: 'Garage',
-    is_shared: false,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_at: '2023-12-31T00:00:00Z',
-    updated_at: '2023-12-31T00:00:00Z'
+    "id": "demo-dev-noah-console",
+    "name": "Noah's Game Console",
+    "wattage": 200,
+    "device_type": "Gaming Console",
+    "location": "Bedroom 2",
+    "is_shared": false,
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-noah",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   },
   {
-    id: 'demo-device-10',
-    name: "Vy's Tesla Model 3 Charger",
-    wattage: 9600, // Level 2 charger - 50A breaker, 40A continuous @ 240V = 9.6 kW
-    device_type: 'Other',
-    location: 'Garage',
-    is_shared: false,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_at: '2023-12-31T00:00:00Z',
-    updated_at: '2023-12-31T00:00:00Z'
+    "id": "demo-dev-sofia-lamp",
+    "name": "Sofia's Desk Lamp",
+    "wattage": 40,
+    "device_type": "Light",
+    "location": "Bedroom 3",
+    "is_shared": false,
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-sofia",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   },
   {
-    id: 'demo-device-11',
-    name: "Thuy's Work Computer",
-    wattage: 150, // Desktop computer
-    device_type: 'Computer',
-    location: 'Office',
-    is_shared: false,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_at: '2023-12-31T00:00:00Z',
-    updated_at: '2023-12-31T00:00:00Z'
+    "id": "demo-dev-alex-ev",
+    "name": "Alex's EV Charger",
+    "wattage": 7200,
+    "device_type": "EV Charger",
+    "location": "Garage",
+    "is_shared": false,
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   },
   {
-    id: 'demo-device-12',
-    name: "Han's Work Computer",
-    wattage: 150, // Desktop computer
-    device_type: 'Computer',
-    location: 'Office',
-    is_shared: false,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_at: '2023-12-31T00:00:00Z',
-    updated_at: '2023-12-31T00:00:00Z'
+    "id": "demo-dev-coffee",
+    "name": "Espresso Machine",
+    "wattage": 1000,
+    "device_type": "Coffee Maker",
+    "location": "Kitchen",
+    "is_shared": true,
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-01-01T00:00:00Z",
+    "updated_at": "2026-01-01T00:00:00Z"
   }
 ]
 
-// Demo Energy Logs - Realistic September 2025 usage based on REAL data
-// Target: ~$450 total bill
-// EV Charging: Vu's Model Y (658.8 kWh, $164.70) + Vy's Model 3 (622.08 kWh, $155.52) = $320.22
-// Other devices: ~$77.25
-// Total from logs: ~$397.47
-// September = Summer rates (Off-Peak: $0.25, On-Peak: $0.55 weekdays, Mid-Peak: $0.37 weekends)
-// EV Charger: 50A breaker, 40A continuous @ 240V = 9.6 kW (9,600W)
+/** 101 usage logs across June–July 2026 (summer TOU). Totals ~328.5 kWh / $140.89 tracked. */
 export const demoEnergyLogs: EnergyLog[] = [
-  // === EV CHARGING LOGS (18 total) - $290.40 ===
-  // Vu's Tesla Model Y - 538.8 kWh total, $134.70 (10 sessions, all after 9pm off-peak @ $0.25/kWh)
-  {
-    id: 'ev-vu-1',
-    device_id: 'demo-device-9',
-    start_time: '21:00:00',
-    end_time: '05:00:00',
-    usage_date: '2025-09-02',
-    calculated_cost: 19.20,
-    total_kwh: 76.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-02T05:00:00Z',
-    updated_at: '2025-09-02T05:00:00Z'
-  },
-  {
-    id: 'ev-vu-2',
-    device_id: 'demo-device-9',
-    start_time: '21:30:00',
-    end_time: '05:30:00',
-    usage_date: '2025-09-05',
-    calculated_cost: 19.20,
-    total_kwh: 76.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-05T05:30:00Z',
-    updated_at: '2025-09-05T05:30:00Z'
-  },
-  {
-    id: 'ev-vu-3',
-    device_id: 'demo-device-9',
-    start_time: '22:00:00',
-    end_time: '06:00:00',
-    usage_date: '2025-09-08',
-    calculated_cost: 19.20,
-    total_kwh: 76.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-08T06:00:00Z',
-    updated_at: '2025-09-08T06:00:00Z'
-  },
-  {
-    id: 'ev-vu-4',
-    device_id: 'demo-device-9',
-    start_time: '21:00:00',
-    end_time: '04:00:00',
-    usage_date: '2025-09-11',
-    calculated_cost: 16.80,
-    total_kwh: 67.2,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-11T04:00:00Z',
-    updated_at: '2025-09-11T04:00:00Z'
-  },
-  {
-    id: 'ev-vu-5',
-    device_id: 'demo-device-9',
-    start_time: '21:30:00',
-    end_time: '05:00:00',
-    usage_date: '2025-09-14',
-    calculated_cost: 18.00,
-    total_kwh: 72.0,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-14T05:00:00Z',
-    updated_at: '2025-09-14T05:00:00Z'
-  },
-  {
-    id: 'ev-vu-6',
-    device_id: 'demo-device-9',
-    start_time: '22:00:00',
-    end_time: '05:00:00',
-    usage_date: '2025-09-17',
-    calculated_cost: 16.80,
-    total_kwh: 67.2,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-17T05:00:00Z',
-    updated_at: '2025-09-17T05:00:00Z'
-  },
-  {
-    id: 'ev-vu-7',
-    device_id: 'demo-device-9',
-    start_time: '21:00:00',
-    end_time: '04:30:00',
-    usage_date: '2025-09-20',
-    calculated_cost: 18.00,
-    total_kwh: 72.0,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-20T04:30:00Z',
-    updated_at: '2025-09-20T04:30:00Z'
-  },
-  {
-    id: 'ev-vu-8',
-    device_id: 'demo-device-9',
-    start_time: '21:30:00',
-    end_time: '03:00:00',
-    usage_date: '2025-09-23',
-    calculated_cost: 13.20,
-    total_kwh: 52.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-23T03:00:00Z',
-    updated_at: '2025-09-23T03:00:00Z'
-  },
-  {
-    id: 'ev-vu-9',
-    device_id: 'demo-device-9',
-    start_time: '22:00:00',
-    end_time: '03:00:00',
-    usage_date: '2025-09-26',
-    calculated_cost: 12.00,
-    total_kwh: 48.0,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-26T03:00:00Z',
-    updated_at: '2025-09-26T03:00:00Z'
-  },
-  {
-    id: 'ev-vu-10',
-    device_id: 'demo-device-9',
-    start_time: '21:00:00',
-    end_time: '02:00:00',
-    usage_date: '2025-09-29',
-    calculated_cost: 12.00,
-    total_kwh: 48.0,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-29T02:00:00Z',
-    updated_at: '2025-09-29T02:00:00Z'
-  },
-  // Vy's Tesla Model 3 - 622.08 kWh total, $155.52 (8 sessions, all after 9pm off-peak @ $0.25/kWh)
-  {
-    id: 'ev-vy-1',
-    device_id: 'demo-device-10',
-    start_time: '21:00:00',
-    end_time: '05:00:00',
-    usage_date: '2025-09-03',
-    calculated_cost: 19.20,
-    total_kwh: 76.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vy',
-    created_at: '2025-09-03T05:00:00Z',
-    updated_at: '2025-09-03T05:00:00Z'
-  },
-  {
-    id: 'ev-vy-2',
-    device_id: 'demo-device-10',
-    start_time: '22:00:00',
-    end_time: '06:00:00',
-    usage_date: '2025-09-06',
-    calculated_cost: 19.20,
-    total_kwh: 76.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vy',
-    created_at: '2025-09-06T06:00:00Z',
-    updated_at: '2025-09-06T06:00:00Z'
-  },
-  {
-    id: 'ev-vy-3',
-    device_id: 'demo-device-10',
-    start_time: '21:30:00',
-    end_time: '05:30:00',
-    usage_date: '2025-09-09',
-    calculated_cost: 19.20,
-    total_kwh: 76.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vy',
-    created_at: '2025-09-09T05:30:00Z',
-    updated_at: '2025-09-09T05:30:00Z'
-  },
-  {
-    id: 'ev-vy-4',
-    device_id: 'demo-device-10',
-    start_time: '21:00:00',
-    end_time: '05:00:00',
-    usage_date: '2025-09-12',
-    calculated_cost: 19.20,
-    total_kwh: 76.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vy',
-    created_at: '2025-09-12T05:00:00Z',
-    updated_at: '2025-09-12T05:00:00Z'
-  },
-  {
-    id: 'ev-vy-5',
-    device_id: 'demo-device-10',
-    start_time: '22:00:00',
-    end_time: '06:00:00',
-    usage_date: '2025-09-16',
-    calculated_cost: 19.20,
-    total_kwh: 76.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vy',
-    created_at: '2025-09-16T06:00:00Z',
-    updated_at: '2025-09-16T06:00:00Z'
-  },
-  {
-    id: 'ev-vy-6',
-    device_id: 'demo-device-10',
-    start_time: '21:30:00',
-    end_time: '05:30:00',
-    usage_date: '2025-09-19',
-    calculated_cost: 19.20,
-    total_kwh: 76.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vy',
-    created_at: '2025-09-19T05:30:00Z',
-    updated_at: '2025-09-19T05:30:00Z'
-  },
-  {
-    id: 'ev-vy-7',
-    device_id: 'demo-device-10',
-    start_time: '21:00:00',
-    end_time: '05:00:00',
-    usage_date: '2025-09-24',
-    calculated_cost: 19.20,
-    total_kwh: 76.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vy',
-    created_at: '2025-09-24T05:00:00Z',
-    updated_at: '2025-09-24T05:00:00Z'
-  },
-  {
-    id: 'ev-vy-8',
-    device_id: 'demo-device-10',
-    start_time: '22:00:00',
-    end_time: '04:00:00',
-    usage_date: '2025-09-27',
-    calculated_cost: 14.40,
-    total_kwh: 57.6,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vy',
-    created_at: '2025-09-27T04:00:00Z',
-    updated_at: '2025-09-27T04:00:00Z'
-  },
-  
-  // === SHARED DEVICE LOGS (25 total) - ~$57.52 ===
-  // Room AC (10 logs) - 1200W
-  // 9/1 Mon, 9/4 Thu, 9/7 Sun, 9/10 Wed, 9/13 Sat, 9/16 Tue, 9/19 Fri, 9/22 Mon, 9/25 Thu, 9/28 Sun
-  {
-    id: 'ac-1',
-    device_id: 'demo-device-5',
-    start_time: '14:00:00',
-    end_time: '22:00:00',
-    usage_date: '2025-09-01',
-    calculated_cost: 3.90,
-    total_kwh: 9.6,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-01T22:00:00Z',
-    updated_at: '2025-09-01T22:00:00Z',
-    assigned_users: ['demo-user-vu', 'demo-user-thuy', 'demo-user-vy', 'demo-user-han']
-  },
-  {
-    id: 'ac-2',
-    device_id: 'demo-device-5',
-    start_time: '13:00:00',
-    end_time: '21:00:00',
-    usage_date: '2025-09-04',
-    calculated_cost: 4.05,
-    total_kwh: 9.6,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-thuy',
-    created_at: '2025-09-04T21:00:00Z',
-    updated_at: '2025-09-04T21:00:00Z',
-    assigned_users: ['demo-user-thuy', 'demo-user-han']
-  },
-  {
-    id: 'ac-3',
-    device_id: 'demo-device-5',
-    start_time: '15:00:00',
-    end_time: '23:00:00',
-    usage_date: '2025-09-07',
-    calculated_cost: 2.64,
-    total_kwh: 9.6,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vy',
-    created_at: '2025-09-07T23:00:00Z',
-    updated_at: '2025-09-07T23:00:00Z',
-    assigned_users: ['demo-user-vy', 'demo-user-vu']
-  },
-  {
-    id: 'ac-4',
-    device_id: 'demo-device-5',
-    start_time: '14:00:00',
-    end_time: '22:00:00',
-    usage_date: '2025-09-10',
-    calculated_cost: 3.90,
-    total_kwh: 9.6,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-han',
-    created_at: '2025-09-10T22:00:00Z',
-    updated_at: '2025-09-10T22:00:00Z',
-    assigned_users: ['demo-user-han', 'demo-user-thuy', 'demo-user-vy']
-  },
-  {
-    id: 'ac-5',
-    device_id: 'demo-device-5',
-    start_time: '12:00:00',
-    end_time: '22:00:00',
-    usage_date: '2025-09-13',
-    calculated_cost: 3.24,
-    total_kwh: 12,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-13T22:00:00Z',
-    updated_at: '2025-09-13T22:00:00Z',
-    assigned_users: ['demo-user-vu', 'demo-user-thuy']
-  },
-  {
-    id: 'ac-6',
-    device_id: 'demo-device-5',
-    start_time: '13:00:00',
-    end_time: '21:00:00',
-    usage_date: '2025-09-16',
-    calculated_cost: 4.05,
-    total_kwh: 9.6,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-thuy',
-    created_at: '2025-09-16T21:00:00Z',
-    updated_at: '2025-09-16T21:00:00Z',
-    assigned_users: ['demo-user-thuy', 'demo-user-vy', 'demo-user-han']
-  },
-  {
-    id: 'ac-7',
-    device_id: 'demo-device-5',
-    start_time: '14:00:00',
-    end_time: '23:00:00',
-    usage_date: '2025-09-19',
-    calculated_cost: 4.32,
-    total_kwh: 10.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vy',
-    created_at: '2025-09-19T23:00:00Z',
-    updated_at: '2025-09-19T23:00:00Z',
-    assigned_users: ['demo-user-vy', 'demo-user-vu', 'demo-user-han']
-  },
-  {
-    id: 'ac-8',
-    device_id: 'demo-device-5',
-    start_time: '15:00:00',
-    end_time: '22:00:00',
-    usage_date: '2025-09-22',
-    calculated_cost: 3.36,
-    total_kwh: 8.4,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-han',
-    created_at: '2025-09-22T22:00:00Z',
-    updated_at: '2025-09-22T22:00:00Z',
-    assigned_users: ['demo-user-han', 'demo-user-vu']
-  },
-  {
-    id: 'ac-9',
-    device_id: 'demo-device-5',
-    start_time: '14:00:00',
-    end_time: '21:00:00',
-    usage_date: '2025-09-25',
-    calculated_cost: 3.48,
-    total_kwh: 8.4,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-thuy',
-    created_at: '2025-09-25T21:00:00Z',
-    updated_at: '2025-09-25T21:00:00Z',
-    assigned_users: ['demo-user-thuy', 'demo-user-vy']
-  },
-  {
-    id: 'ac-10',
-    device_id: 'demo-device-5',
-    start_time: '13:00:00',
-    end_time: '22:00:00',
-    usage_date: '2025-09-28',
-    calculated_cost: 2.97,
-    total_kwh: 10.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-28T22:00:00Z',
-    updated_at: '2025-09-28T22:00:00Z',
-    assigned_users: ['demo-user-vu', 'demo-user-han']
-  },
-  
-  // Refrigerator (10 logs) - 200W, runs 24/7 @ $0.25 avg = $1.20/day
-  {
-    id: 'fridge-1',
-    device_id: 'demo-device-2',
-    start_time: '00:00:00',
-    end_time: '23:59:00',
-    usage_date: '2025-09-01',
-    calculated_cost: 1.20,
-    total_kwh: 4.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-01T23:59:00Z',
-    updated_at: '2025-09-01T23:59:00Z',
-    assigned_users: ['demo-user-vu', 'demo-user-thuy', 'demo-user-vy', 'demo-user-han']
-  },
-  {
-    id: 'fridge-2',
-    device_id: 'demo-device-2',
-    start_time: '00:00:00',
-    end_time: '23:59:00',
-    usage_date: '2025-09-04',
-    calculated_cost: 1.20,
-    total_kwh: 4.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-thuy',
-    created_at: '2025-09-04T23:59:00Z',
-    updated_at: '2025-09-04T23:59:00Z',
-    assigned_users: ['demo-user-vu', 'demo-user-thuy', 'demo-user-vy', 'demo-user-han']
-  },
-  {
-    id: 'fridge-3',
-    device_id: 'demo-device-2',
-    start_time: '00:00:00',
-    end_time: '23:59:00',
-    usage_date: '2025-09-07',
-    calculated_cost: 1.20,
-    total_kwh: 4.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vy',
-    created_at: '2025-09-07T23:59:00Z',
-    updated_at: '2025-09-07T23:59:00Z',
-    assigned_users: ['demo-user-vu', 'demo-user-thuy', 'demo-user-vy', 'demo-user-han']
-  },
-  {
-    id: 'fridge-4',
-    device_id: 'demo-device-2',
-    start_time: '00:00:00',
-    end_time: '23:59:00',
-    usage_date: '2025-09-10',
-    calculated_cost: 1.20,
-    total_kwh: 4.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-han',
-    created_at: '2025-09-10T23:59:00Z',
-    updated_at: '2025-09-10T23:59:00Z',
-    assigned_users: ['demo-user-vu', 'demo-user-thuy', 'demo-user-vy', 'demo-user-han']
-  },
-  {
-    id: 'fridge-5',
-    device_id: 'demo-device-2',
-    start_time: '00:00:00',
-    end_time: '23:59:00',
-    usage_date: '2025-09-13',
-    calculated_cost: 1.20,
-    total_kwh: 4.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-13T23:59:00Z',
-    updated_at: '2025-09-13T23:59:00Z',
-    assigned_users: ['demo-user-vu', 'demo-user-thuy', 'demo-user-vy', 'demo-user-han']
-  },
-  {
-    id: 'fridge-6',
-    device_id: 'demo-device-2',
-    start_time: '00:00:00',
-    end_time: '23:59:00',
-    usage_date: '2025-09-16',
-    calculated_cost: 1.20,
-    total_kwh: 4.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-thuy',
-    created_at: '2025-09-16T23:59:00Z',
-    updated_at: '2025-09-16T23:59:00Z',
-    assigned_users: ['demo-user-vu', 'demo-user-thuy', 'demo-user-vy', 'demo-user-han']
-  },
-  {
-    id: 'fridge-7',
-    device_id: 'demo-device-2',
-    start_time: '00:00:00',
-    end_time: '23:59:00',
-    usage_date: '2025-09-19',
-    calculated_cost: 1.20,
-    total_kwh: 4.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vy',
-    created_at: '2025-09-19T23:59:00Z',
-    updated_at: '2025-09-19T23:59:00Z',
-    assigned_users: ['demo-user-vu', 'demo-user-thuy', 'demo-user-vy', 'demo-user-han']
-  },
-  {
-    id: 'fridge-8',
-    device_id: 'demo-device-2',
-    start_time: '00:00:00',
-    end_time: '23:59:00',
-    usage_date: '2025-09-22',
-    calculated_cost: 1.20,
-    total_kwh: 4.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-han',
-    created_at: '2025-09-22T23:59:00Z',
-    updated_at: '2025-09-22T23:59:00Z',
-    assigned_users: ['demo-user-vu', 'demo-user-thuy', 'demo-user-vy', 'demo-user-han']
-  },
-  {
-    id: 'fridge-9',
-    device_id: 'demo-device-2',
-    start_time: '00:00:00',
-    end_time: '23:59:00',
-    usage_date: '2025-09-25',
-    calculated_cost: 1.20,
-    total_kwh: 4.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-25T23:59:00Z',
-    updated_at: '2025-09-25T23:59:00Z',
-    assigned_users: ['demo-user-vu', 'demo-user-thuy', 'demo-user-vy', 'demo-user-han']
-  },
-  {
-    id: 'fridge-10',
-    device_id: 'demo-device-2',
-    start_time: '00:00:00',
-    end_time: '23:59:00',
-    usage_date: '2025-09-28',
-    calculated_cost: 1.20,
-    total_kwh: 4.8,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-thuy',
-    created_at: '2025-09-28T23:59:00Z',
-    updated_at: '2025-09-28T23:59:00Z',
-    assigned_users: ['demo-user-vu', 'demo-user-thuy', 'demo-user-vy', 'demo-user-han']
-  },
-  
-  // TVs (5 logs) - ~$4 total
-  {
-    id: 'tv-1',
-    device_id: 'demo-device-1',
-    start_time: '19:00:00',
-    end_time: '23:00:00',
-    usage_date: '2025-09-02',
-    calculated_cost: 0.19,
-    total_kwh: 0.6,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-thuy',
-    created_at: '2025-09-02T23:00:00Z',
-    updated_at: '2025-09-02T23:00:00Z',
-    assigned_users: ['demo-user-thuy', 'demo-user-han']
-  },
-  {
-    id: 'tv-2',
-    device_id: 'demo-device-4',
-    start_time: '20:00:00',
-    end_time: '22:30:00',
-    usage_date: '2025-09-09',
-    calculated_cost: 0.09,
-    total_kwh: 0.3,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-han',
-    created_at: '2025-09-09T22:30:00Z',
-    updated_at: '2025-09-09T22:30:00Z',
-    assigned_users: ['demo-user-han', 'demo-user-vy']
-  },
-  {
-    id: 'tv-3',
-    device_id: 'demo-device-1',
-    start_time: '18:00:00',
-    end_time: '23:00:00',
-    usage_date: '2025-09-16',
-    calculated_cost: 0.19,
-    total_kwh: 0.75,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vy',
-    created_at: '2025-09-16T23:00:00Z',
-    updated_at: '2025-09-16T23:00:00Z',
-    assigned_users: ['demo-user-vy', 'demo-user-vu']
-  },
-  {
-    id: 'tv-4',
-    device_id: 'demo-device-4',
-    start_time: '19:30:00',
-    end_time: '22:00:00',
-    usage_date: '2025-09-23',
-    calculated_cost: 0.09,
-    total_kwh: 0.3,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-thuy',
-    created_at: '2025-09-23T22:00:00Z',
-    updated_at: '2025-09-23T22:00:00Z',
-    assigned_users: ['demo-user-thuy', 'demo-user-vu']
-  },
-  {
-    id: 'tv-5',
-    device_id: 'demo-device-1',
-    start_time: '19:00:00',
-    end_time: '23:30:00',
-    usage_date: '2025-09-30',
-    calculated_cost: 0.17,
-    total_kwh: 0.675,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-han',
-    created_at: '2025-09-30T23:30:00Z',
-    updated_at: '2025-09-30T23:30:00Z',
-    assigned_users: ['demo-user-han', 'demo-user-thuy', 'demo-user-vy']
-  },
-  
-  // === PERSONAL DEVICE LOGS (12 total) - ~$41.20 ===
-  // Vu's Gaming PC (8 logs) - 500W
-  {
-    id: 'gaming-1',
-    device_id: 'demo-device-3',
-    start_time: '17:00:00',
-    end_time: '23:00:00',
-    usage_date: '2025-09-01',
-    calculated_cost: 1.35,
-    total_kwh: 3.0,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-01T23:00:00Z',
-    updated_at: '2025-09-01T23:00:00Z'
-  },
-  {
-    id: 'gaming-2',
-    device_id: 'demo-device-3',
-    start_time: '16:00:00',
-    end_time: '22:00:00',
-    usage_date: '2025-09-05',
-    calculated_cost: 1.40,
-    total_kwh: 3.0,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-05T22:00:00Z',
-    updated_at: '2025-09-05T22:00:00Z'
-  },
-  {
-    id: 'gaming-3',
-    device_id: 'demo-device-3',
-    start_time: '18:00:00',
-    end_time: '23:30:00',
-    usage_date: '2025-09-10',
-    calculated_cost: 1.06,
-    total_kwh: 2.75,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-10T23:30:00Z',
-    updated_at: '2025-09-10T23:30:00Z'
-  },
-  {
-    id: 'gaming-4',
-    device_id: 'demo-device-3',
-    start_time: '17:00:00',
-    end_time: '22:00:00',
-    usage_date: '2025-09-13',
-    calculated_cost: 0.85,
-    total_kwh: 2.5,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-13T22:00:00Z',
-    updated_at: '2025-09-13T22:00:00Z'
-  },
-  {
-    id: 'gaming-5',
-    device_id: 'demo-device-3',
-    start_time: '16:30:00',
-    end_time: '23:00:00',
-    usage_date: '2025-09-18',
-    calculated_cost: 1.44,
-    total_kwh: 3.25,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-18T23:00:00Z',
-    updated_at: '2025-09-18T23:00:00Z'
-  },
-  {
-    id: 'gaming-6',
-    device_id: 'demo-device-3',
-    start_time: '17:00:00',
-    end_time: '22:30:00',
-    usage_date: '2025-09-21',
-    calculated_cost: 1.13,
-    total_kwh: 2.75,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-21T22:30:00Z',
-    updated_at: '2025-09-21T22:30:00Z'
-  },
-  {
-    id: 'gaming-7',
-    device_id: 'demo-device-3',
-    start_time: '19:00:00',
-    end_time: '23:00:00',
-    usage_date: '2025-09-25',
-    calculated_cost: 0.60,
-    total_kwh: 2.0,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-25T23:00:00Z',
-    updated_at: '2025-09-25T23:00:00Z'
-  },
-  {
-    id: 'gaming-8',
-    device_id: 'demo-device-3',
-    start_time: '18:00:00',
-    end_time: '23:00:00',
-    usage_date: '2025-09-28',
-    calculated_cost: 0.78,
-    total_kwh: 2.5,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-28T23:00:00Z',
-    updated_at: '2025-09-28T23:00:00Z'
-  },
-  
-  // Thuy's Work Computer (5 logs) - 150W, 9am-5pm workdays @ $0.25 off-peak
-  {
-    id: 'work-thuy-1',
-    device_id: 'demo-device-11',
-    start_time: '09:00:00',
-    end_time: '17:00:00',
-    usage_date: '2025-09-02',
-    calculated_cost: 0.30,
-    total_kwh: 1.2,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-thuy',
-    created_at: '2025-09-02T17:00:00Z',
-    updated_at: '2025-09-02T17:00:00Z'
-  },
-  {
-    id: 'work-thuy-2',
-    device_id: 'demo-device-11',
-    start_time: '09:00:00',
-    end_time: '17:00:00',
-    usage_date: '2025-09-09',
-    calculated_cost: 0.30,
-    total_kwh: 1.2,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-thuy',
-    created_at: '2025-09-09T17:00:00Z',
-    updated_at: '2025-09-09T17:00:00Z'
-  },
-  {
-    id: 'work-thuy-3',
-    device_id: 'demo-device-11',
-    start_time: '09:00:00',
-    end_time: '17:00:00',
-    usage_date: '2025-09-16',
-    calculated_cost: 0.30,
-    total_kwh: 1.2,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-thuy',
-    created_at: '2025-09-16T17:00:00Z',
-    updated_at: '2025-09-16T17:00:00Z'
-  },
-  {
-    id: 'work-thuy-4',
-    device_id: 'demo-device-11',
-    start_time: '09:00:00',
-    end_time: '17:00:00',
-    usage_date: '2025-09-23',
-    calculated_cost: 0.30,
-    total_kwh: 1.2,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-thuy',
-    created_at: '2025-09-23T17:00:00Z',
-    updated_at: '2025-09-23T17:00:00Z'
-  },
-  {
-    id: 'work-thuy-5',
-    device_id: 'demo-device-11',
-    start_time: '09:00:00',
-    end_time: '17:00:00',
-    usage_date: '2025-09-30',
-    calculated_cost: 0.30,
-    total_kwh: 1.2,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-thuy',
-    created_at: '2025-09-30T17:00:00Z',
-    updated_at: '2025-09-30T17:00:00Z'
-  },
-  
-  // Han's Work Computer (5 logs) - 150W, 9am-5pm workdays @ $0.25 off-peak
-  {
-    id: 'work-han-1',
-    device_id: 'demo-device-12',
-    start_time: '09:00:00',
-    end_time: '17:00:00',
-    usage_date: '2025-09-03',
-    calculated_cost: 0.30,
-    total_kwh: 1.2,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-han',
-    created_at: '2025-09-03T17:00:00Z',
-    updated_at: '2025-09-03T17:00:00Z'
-  },
-  {
-    id: 'work-han-2',
-    device_id: 'demo-device-12',
-    start_time: '09:00:00',
-    end_time: '17:00:00',
-    usage_date: '2025-09-10',
-    calculated_cost: 0.30,
-    total_kwh: 1.2,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-han',
-    created_at: '2025-09-10T17:00:00Z',
-    updated_at: '2025-09-10T17:00:00Z'
-  },
-  {
-    id: 'work-han-3',
-    device_id: 'demo-device-12',
-    start_time: '09:00:00',
-    end_time: '17:00:00',
-    usage_date: '2025-09-17',
-    calculated_cost: 0.30,
-    total_kwh: 1.2,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-han',
-    created_at: '2025-09-17T17:00:00Z',
-    updated_at: '2025-09-17T17:00:00Z'
-  },
-  {
-    id: 'work-han-4',
-    device_id: 'demo-device-12',
-    start_time: '09:00:00',
-    end_time: '17:00:00',
-    usage_date: '2025-09-24',
-    calculated_cost: 0.30,
-    total_kwh: 1.2,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-han',
-    created_at: '2025-09-24T17:00:00Z',
-    updated_at: '2025-09-24T17:00:00Z'
-  },
-  {
-    id: 'work-han-5',
-    device_id: 'demo-device-12',
-    start_time: '09:00:00',
-    end_time: '17:00:00',
-    usage_date: '2025-09-29',
-    calculated_cost: 0.30,
-    total_kwh: 1.2,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-han',
-    created_at: '2025-09-29T17:00:00Z',
-    updated_at: '2025-09-29T17:00:00Z'
-  },
-  
-  // Vy's Hair Dryer (3 logs) - 1500W, morning routine @ $0.25 off-peak
-  {
-    id: 'hair-1',
-    device_id: 'demo-device-7',
-    start_time: '07:00:00',
-    end_time: '07:30:00',
-    usage_date: '2025-09-07',
-    calculated_cost: 0.19,
-    total_kwh: 0.75,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vy',
-    created_at: '2025-09-07T07:30:00Z',
-    updated_at: '2025-09-07T07:30:00Z'
-  },
-  {
-    id: 'hair-2',
-    device_id: 'demo-device-7',
-    start_time: '07:15:00',
-    end_time: '07:45:00',
-    usage_date: '2025-09-14',
-    calculated_cost: 0.19,
-    total_kwh: 0.75,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vy',
-    created_at: '2025-09-14T07:45:00Z',
-    updated_at: '2025-09-14T07:45:00Z'
-  },
-  {
-    id: 'hair-3',
-    device_id: 'demo-device-7',
-    start_time: '07:00:00',
-    end_time: '07:30:00',
-    usage_date: '2025-09-21',
-    calculated_cost: 0.19,
-    total_kwh: 0.75,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vy',
-    created_at: '2025-09-21T07:30:00Z',
-    updated_at: '2025-09-21T07:30:00Z'
-  },
-  
-  // Han's Tablet (1 log) - 15W @ $0.25 off-peak
-  {
-    id: 'tablet-1',
-    device_id: 'demo-device-8',
-    start_time: '20:00:00',
-    end_time: '22:00:00',
-    usage_date: '2025-09-15',
-    calculated_cost: 0.01,
-    total_kwh: 0.03,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-han',
-    created_at: '2025-09-15T22:00:00Z',
-    updated_at: '2025-09-15T22:00:00Z'
-  },
-  
-  // EXAMPLE: Multi-rate period log - Gaming PC 9am-9pm (crosses off-peak and on-peak)
-  {
-    id: 'gaming-multi-rate',
-    device_id: 'demo-device-3',
-    start_time: '09:00:00',
-    end_time: '21:00:00',
-    usage_date: '2025-09-30',
-    calculated_cost: 2.20,
-    total_kwh: 6.0,
-    household_id: DEMO_HOUSEHOLD_ID,
-    created_by: 'demo-user-vu',
-    created_at: '2025-09-30T21:00:00Z',
-    updated_at: '2025-09-30T21:00:00Z'
+  {
+    "id": "jul-hp-1",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "17:00:00",
+    "end_time": "21:00:00",
+    "usage_date": "2026-07-01",
+    "calculated_cost": 5.5,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.55,
+        "cost": 5.5,
+        "startTime": "17:00",
+        "endTime": "21:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-01T21:00:00Z",
+    "updated_at": "2026-07-01T21:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-pc-1",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "19:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-07-01",
+    "calculated_cost": 0.72,
+    "total_kwh": 1.8,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 2,
+        "kwh": 0.91,
+        "rate": 0.55,
+        "cost": 0.5,
+        "startTime": "19:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-01T23:00:00Z",
+    "updated_at": "2026-07-01T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-mia-1",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-07-01",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-01T17:00:00Z",
+    "updated_at": "2026-07-01T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jul-fridge-1",
+    "device_id": "demo-dev-fridge",
+    "start_time": "00:00:00",
+    "end_time": "23:59:00",
+    "usage_date": "2026-07-01",
+    "calculated_cost": 1.35,
+    "total_kwh": 4.32,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 19,
+        "kwh": 3.42,
+        "rate": 0.25,
+        "cost": 0.85,
+        "startTime": "00:00",
+        "endTime": "23:59"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 5,
+        "kwh": 0.9,
+        "rate": 0.55,
+        "cost": 0.49,
+        "startTime": "16:01",
+        "endTime": "21:01"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-01T23:59:00Z",
+    "updated_at": "2026-07-01T23:59:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-mia-2",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-07-02",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-02T17:00:00Z",
+    "updated_at": "2026-07-02T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jul-tv-2",
+    "device_id": "demo-dev-living-tv",
+    "start_time": "19:30:00",
+    "end_time": "22:00:00",
+    "usage_date": "2026-07-02",
+    "calculated_cost": 0.13,
+    "total_kwh": 0.3,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1.5,
+        "kwh": 0.18,
+        "rate": 0.55,
+        "cost": 0.1,
+        "startTime": "19:30",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 1,
+        "kwh": 0.12,
+        "rate": 0.25,
+        "cost": 0.03,
+        "startTime": "21:01",
+        "endTime": "22:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-02T22:00:00Z",
+    "updated_at": "2026-07-02T22:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-coffee-2",
+    "device_id": "demo-dev-coffee",
+    "start_time": "07:00:00",
+    "end_time": "07:20:00",
+    "usage_date": "2026-07-02",
+    "calculated_cost": 0.08,
+    "total_kwh": 0.33,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.3,
+        "kwh": 0.33,
+        "rate": 0.25,
+        "cost": 0.08,
+        "startTime": "07:00",
+        "endTime": "07:20"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-02T07:20:00Z",
+    "updated_at": "2026-07-02T07:20:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia"
+    ],
+    "source_type": "template",
+    "source_id": "demo-tmpl-coffee"
+  },
+  {
+    "id": "jul-ev-2",
+    "device_id": "demo-dev-alex-ev",
+    "start_time": "22:00:00",
+    "end_time": "05:00:00",
+    "usage_date": "2026-07-02",
+    "calculated_cost": 12.6,
+    "total_kwh": 50.4,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 50.4,
+        "rate": 0.25,
+        "cost": 12.6,
+        "startTime": "22:00",
+        "endTime": "05:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-02T05:00:00Z",
+    "updated_at": "2026-07-02T05:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-hp-3",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "17:00:00",
+    "end_time": "21:00:00",
+    "usage_date": "2026-07-03",
+    "calculated_cost": 5.5,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.55,
+        "cost": 5.5,
+        "startTime": "17:00",
+        "endTime": "21:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-03T21:00:00Z",
+    "updated_at": "2026-07-03T21:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-pc-3",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "19:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-07-03",
+    "calculated_cost": 0.72,
+    "total_kwh": 1.8,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 2,
+        "kwh": 0.91,
+        "rate": 0.55,
+        "cost": 0.5,
+        "startTime": "19:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-03T23:00:00Z",
+    "updated_at": "2026-07-03T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-mia-3",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-07-03",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-03T17:00:00Z",
+    "updated_at": "2026-07-03T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jul-sofia-3",
+    "device_id": "demo-dev-sofia-lamp",
+    "start_time": "20:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-07-03",
+    "calculated_cost": 0.04,
+    "total_kwh": 0.12,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.04,
+        "rate": 0.55,
+        "cost": 0.02,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.08,
+        "rate": 0.25,
+        "cost": 0.02,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-sofia",
+    "created_at": "2026-07-03T23:00:00Z",
+    "updated_at": "2026-07-03T23:00:00Z",
+    "assigned_users": [
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-dw-3",
+    "device_id": "demo-dev-dishwasher",
+    "start_time": "20:00:00",
+    "end_time": "21:30:00",
+    "usage_date": "2026-07-03",
+    "calculated_cost": 1.22,
+    "total_kwh": 2.7,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 1.83,
+        "rate": 0.55,
+        "cost": 1.01,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.5,
+        "kwh": 0.87,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "21:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-03T21:30:00Z",
+    "updated_at": "2026-07-03T21:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-hp-5",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "17:00:00",
+    "end_time": "21:00:00",
+    "usage_date": "2026-07-05",
+    "calculated_cost": 3.7,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Mid-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.37,
+        "cost": 3.7,
+        "startTime": "17:00",
+        "endTime": "21:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-05T21:00:00Z",
+    "updated_at": "2026-07-05T21:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-pc-5",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "19:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-07-05",
+    "calculated_cost": 0.56,
+    "total_kwh": 1.8,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Mid-Peak",
+        "hours": 2,
+        "kwh": 0.91,
+        "rate": 0.37,
+        "cost": 0.34,
+        "startTime": "19:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-05T23:00:00Z",
+    "updated_at": "2026-07-05T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-noah-5",
+    "device_id": "demo-dev-noah-console",
+    "start_time": "14:00:00",
+    "end_time": "18:00:00",
+    "usage_date": "2026-07-05",
+    "calculated_cost": 0.25,
+    "total_kwh": 0.8,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.4,
+        "rate": 0.25,
+        "cost": 0.1,
+        "startTime": "14:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "Mid-Peak",
+        "hours": 2,
+        "kwh": 0.4,
+        "rate": 0.37,
+        "cost": 0.15,
+        "startTime": "16:01",
+        "endTime": "18:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-noah",
+    "created_at": "2026-07-05T18:00:00Z",
+    "updated_at": "2026-07-05T18:00:00Z",
+    "assigned_users": [
+      "demo-user-noah"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-hp-7",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "17:00:00",
+    "end_time": "21:00:00",
+    "usage_date": "2026-07-07",
+    "calculated_cost": 5.5,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.55,
+        "cost": 5.5,
+        "startTime": "17:00",
+        "endTime": "21:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-07T21:00:00Z",
+    "updated_at": "2026-07-07T21:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-mia-7",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-07-07",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-07T17:00:00Z",
+    "updated_at": "2026-07-07T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jul-tv-7",
+    "device_id": "demo-dev-living-tv",
+    "start_time": "19:30:00",
+    "end_time": "22:00:00",
+    "usage_date": "2026-07-07",
+    "calculated_cost": 0.13,
+    "total_kwh": 0.3,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1.5,
+        "kwh": 0.18,
+        "rate": 0.55,
+        "cost": 0.1,
+        "startTime": "19:30",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 1,
+        "kwh": 0.12,
+        "rate": 0.25,
+        "cost": 0.03,
+        "startTime": "21:01",
+        "endTime": "22:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-07T22:00:00Z",
+    "updated_at": "2026-07-07T22:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-pc-8",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "19:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-07-08",
+    "calculated_cost": 0.72,
+    "total_kwh": 1.8,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 2,
+        "kwh": 0.91,
+        "rate": 0.55,
+        "cost": 0.5,
+        "startTime": "19:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-08T23:00:00Z",
+    "updated_at": "2026-07-08T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-mia-8",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-07-08",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-08T17:00:00Z",
+    "updated_at": "2026-07-08T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jul-dw-8",
+    "device_id": "demo-dev-dishwasher",
+    "start_time": "20:00:00",
+    "end_time": "21:30:00",
+    "usage_date": "2026-07-08",
+    "calculated_cost": 1.22,
+    "total_kwh": 2.7,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 1.83,
+        "rate": 0.55,
+        "cost": 1.01,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.5,
+        "kwh": 0.87,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "21:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-08T21:30:00Z",
+    "updated_at": "2026-07-08T21:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-coffee-8",
+    "device_id": "demo-dev-coffee",
+    "start_time": "07:00:00",
+    "end_time": "07:20:00",
+    "usage_date": "2026-07-08",
+    "calculated_cost": 0.08,
+    "total_kwh": 0.33,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.3,
+        "kwh": 0.33,
+        "rate": 0.25,
+        "cost": 0.08,
+        "startTime": "07:00",
+        "endTime": "07:20"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-08T07:20:00Z",
+    "updated_at": "2026-07-08T07:20:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia"
+    ],
+    "source_type": "template",
+    "source_id": "demo-tmpl-coffee"
+  },
+  {
+    "id": "jul-fridge-8",
+    "device_id": "demo-dev-fridge",
+    "start_time": "00:00:00",
+    "end_time": "23:59:00",
+    "usage_date": "2026-07-08",
+    "calculated_cost": 1.35,
+    "total_kwh": 4.32,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 19,
+        "kwh": 3.42,
+        "rate": 0.25,
+        "cost": 0.85,
+        "startTime": "00:00",
+        "endTime": "23:59"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 5,
+        "kwh": 0.9,
+        "rate": 0.55,
+        "cost": 0.49,
+        "startTime": "16:01",
+        "endTime": "21:01"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-08T23:59:00Z",
+    "updated_at": "2026-07-08T23:59:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-pc-10",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "19:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-07-10",
+    "calculated_cost": 0.72,
+    "total_kwh": 1.8,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 2,
+        "kwh": 0.91,
+        "rate": 0.55,
+        "cost": 0.5,
+        "startTime": "19:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-10T23:00:00Z",
+    "updated_at": "2026-07-10T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-mia-10",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-07-10",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-10T17:00:00Z",
+    "updated_at": "2026-07-10T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jul-coffee-10",
+    "device_id": "demo-dev-coffee",
+    "start_time": "07:00:00",
+    "end_time": "07:20:00",
+    "usage_date": "2026-07-10",
+    "calculated_cost": 0.08,
+    "total_kwh": 0.33,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.3,
+        "kwh": 0.33,
+        "rate": 0.25,
+        "cost": 0.08,
+        "startTime": "07:00",
+        "endTime": "07:20"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-10T07:20:00Z",
+    "updated_at": "2026-07-10T07:20:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia"
+    ],
+    "source_type": "template",
+    "source_id": "demo-tmpl-coffee"
+  },
+  {
+    "id": "jul-noah-12",
+    "device_id": "demo-dev-noah-console",
+    "start_time": "14:00:00",
+    "end_time": "18:00:00",
+    "usage_date": "2026-07-12",
+    "calculated_cost": 0.25,
+    "total_kwh": 0.8,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.4,
+        "rate": 0.25,
+        "cost": 0.1,
+        "startTime": "14:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "Mid-Peak",
+        "hours": 2,
+        "kwh": 0.4,
+        "rate": 0.37,
+        "cost": 0.15,
+        "startTime": "16:01",
+        "endTime": "18:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-noah",
+    "created_at": "2026-07-12T18:00:00Z",
+    "updated_at": "2026-07-12T18:00:00Z",
+    "assigned_users": [
+      "demo-user-noah"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-sofia-12",
+    "device_id": "demo-dev-sofia-lamp",
+    "start_time": "20:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-07-12",
+    "calculated_cost": 0.03,
+    "total_kwh": 0.12,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Mid-Peak",
+        "hours": 1,
+        "kwh": 0.04,
+        "rate": 0.37,
+        "cost": 0.02,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.08,
+        "rate": 0.25,
+        "cost": 0.02,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-sofia",
+    "created_at": "2026-07-12T23:00:00Z",
+    "updated_at": "2026-07-12T23:00:00Z",
+    "assigned_users": [
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-tv-12",
+    "device_id": "demo-dev-living-tv",
+    "start_time": "19:30:00",
+    "end_time": "22:00:00",
+    "usage_date": "2026-07-12",
+    "calculated_cost": 0.1,
+    "total_kwh": 0.3,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Mid-Peak",
+        "hours": 1.5,
+        "kwh": 0.18,
+        "rate": 0.37,
+        "cost": 0.07,
+        "startTime": "19:30",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 1,
+        "kwh": 0.12,
+        "rate": 0.25,
+        "cost": 0.03,
+        "startTime": "21:01",
+        "endTime": "22:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-12T22:00:00Z",
+    "updated_at": "2026-07-12T22:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-coffee-12",
+    "device_id": "demo-dev-coffee",
+    "start_time": "07:00:00",
+    "end_time": "07:20:00",
+    "usage_date": "2026-07-12",
+    "calculated_cost": 0.08,
+    "total_kwh": 0.33,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.3,
+        "kwh": 0.33,
+        "rate": 0.25,
+        "cost": 0.08,
+        "startTime": "07:00",
+        "endTime": "07:20"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-12T07:20:00Z",
+    "updated_at": "2026-07-12T07:20:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia"
+    ],
+    "source_type": "template",
+    "source_id": "demo-tmpl-coffee"
+  },
+  {
+    "id": "jul-pc-14",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "19:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-07-14",
+    "calculated_cost": 0.72,
+    "total_kwh": 1.8,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 2,
+        "kwh": 0.91,
+        "rate": 0.55,
+        "cost": 0.5,
+        "startTime": "19:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-14T23:00:00Z",
+    "updated_at": "2026-07-14T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-mia-14",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-07-14",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-14T17:00:00Z",
+    "updated_at": "2026-07-14T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jul-dw-14",
+    "device_id": "demo-dev-dishwasher",
+    "start_time": "20:00:00",
+    "end_time": "21:30:00",
+    "usage_date": "2026-07-14",
+    "calculated_cost": 1.22,
+    "total_kwh": 2.7,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 1.83,
+        "rate": 0.55,
+        "cost": 1.01,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.5,
+        "kwh": 0.87,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "21:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-14T21:30:00Z",
+    "updated_at": "2026-07-14T21:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-coffee-14",
+    "device_id": "demo-dev-coffee",
+    "start_time": "07:00:00",
+    "end_time": "07:20:00",
+    "usage_date": "2026-07-14",
+    "calculated_cost": 0.08,
+    "total_kwh": 0.33,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.3,
+        "kwh": 0.33,
+        "rate": 0.25,
+        "cost": 0.08,
+        "startTime": "07:00",
+        "endTime": "07:20"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-14T07:20:00Z",
+    "updated_at": "2026-07-14T07:20:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia"
+    ],
+    "source_type": "template",
+    "source_id": "demo-tmpl-coffee"
+  },
+  {
+    "id": "jul-hp-15",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "17:00:00",
+    "end_time": "21:00:00",
+    "usage_date": "2026-07-15",
+    "calculated_cost": 5.5,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.55,
+        "cost": 5.5,
+        "startTime": "17:00",
+        "endTime": "21:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-15T21:00:00Z",
+    "updated_at": "2026-07-15T21:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-mia-15",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-07-15",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-15T17:00:00Z",
+    "updated_at": "2026-07-15T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jul-sofia-15",
+    "device_id": "demo-dev-sofia-lamp",
+    "start_time": "20:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-07-15",
+    "calculated_cost": 0.04,
+    "total_kwh": 0.12,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.04,
+        "rate": 0.55,
+        "cost": 0.02,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.08,
+        "rate": 0.25,
+        "cost": 0.02,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-sofia",
+    "created_at": "2026-07-15T23:00:00Z",
+    "updated_at": "2026-07-15T23:00:00Z",
+    "assigned_users": [
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-tv-15",
+    "device_id": "demo-dev-living-tv",
+    "start_time": "19:30:00",
+    "end_time": "22:00:00",
+    "usage_date": "2026-07-15",
+    "calculated_cost": 0.13,
+    "total_kwh": 0.3,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1.5,
+        "kwh": 0.18,
+        "rate": 0.55,
+        "cost": 0.1,
+        "startTime": "19:30",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 1,
+        "kwh": 0.12,
+        "rate": 0.25,
+        "cost": 0.03,
+        "startTime": "21:01",
+        "endTime": "22:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-15T22:00:00Z",
+    "updated_at": "2026-07-15T22:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-fridge-15",
+    "device_id": "demo-dev-fridge",
+    "start_time": "00:00:00",
+    "end_time": "23:59:00",
+    "usage_date": "2026-07-15",
+    "calculated_cost": 1.35,
+    "total_kwh": 4.32,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 19,
+        "kwh": 3.42,
+        "rate": 0.25,
+        "cost": 0.85,
+        "startTime": "00:00",
+        "endTime": "23:59"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 5,
+        "kwh": 0.9,
+        "rate": 0.55,
+        "cost": 0.49,
+        "startTime": "16:01",
+        "endTime": "21:01"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-15T23:59:00Z",
+    "updated_at": "2026-07-15T23:59:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-hp-17",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "17:00:00",
+    "end_time": "21:00:00",
+    "usage_date": "2026-07-17",
+    "calculated_cost": 5.5,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.55,
+        "cost": 5.5,
+        "startTime": "17:00",
+        "endTime": "21:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-17T21:00:00Z",
+    "updated_at": "2026-07-17T21:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-pc-17",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "19:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-07-17",
+    "calculated_cost": 0.72,
+    "total_kwh": 1.8,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 2,
+        "kwh": 0.91,
+        "rate": 0.55,
+        "cost": 0.5,
+        "startTime": "19:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-17T23:00:00Z",
+    "updated_at": "2026-07-17T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-mia-17",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-07-17",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-17T17:00:00Z",
+    "updated_at": "2026-07-17T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jul-hp-19",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "17:00:00",
+    "end_time": "21:00:00",
+    "usage_date": "2026-07-19",
+    "calculated_cost": 3.7,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Mid-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.37,
+        "cost": 3.7,
+        "startTime": "17:00",
+        "endTime": "21:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-19T21:00:00Z",
+    "updated_at": "2026-07-19T21:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-noah-19",
+    "device_id": "demo-dev-noah-console",
+    "start_time": "14:00:00",
+    "end_time": "18:00:00",
+    "usage_date": "2026-07-19",
+    "calculated_cost": 0.25,
+    "total_kwh": 0.8,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.4,
+        "rate": 0.25,
+        "cost": 0.1,
+        "startTime": "14:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "Mid-Peak",
+        "hours": 2,
+        "kwh": 0.4,
+        "rate": 0.37,
+        "cost": 0.15,
+        "startTime": "16:01",
+        "endTime": "18:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-noah",
+    "created_at": "2026-07-19T18:00:00Z",
+    "updated_at": "2026-07-19T18:00:00Z",
+    "assigned_users": [
+      "demo-user-noah"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-tv-19",
+    "device_id": "demo-dev-living-tv",
+    "start_time": "19:30:00",
+    "end_time": "22:00:00",
+    "usage_date": "2026-07-19",
+    "calculated_cost": 0.1,
+    "total_kwh": 0.3,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Mid-Peak",
+        "hours": 1.5,
+        "kwh": 0.18,
+        "rate": 0.37,
+        "cost": 0.07,
+        "startTime": "19:30",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 1,
+        "kwh": 0.12,
+        "rate": 0.25,
+        "cost": 0.03,
+        "startTime": "21:01",
+        "endTime": "22:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-19T22:00:00Z",
+    "updated_at": "2026-07-19T22:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-hp-21",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "17:00:00",
+    "end_time": "21:00:00",
+    "usage_date": "2026-07-21",
+    "calculated_cost": 5.5,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.55,
+        "cost": 5.5,
+        "startTime": "17:00",
+        "endTime": "21:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-21T21:00:00Z",
+    "updated_at": "2026-07-21T21:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-pc-21",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "19:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-07-21",
+    "calculated_cost": 0.72,
+    "total_kwh": 1.8,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 2,
+        "kwh": 0.91,
+        "rate": 0.55,
+        "cost": 0.5,
+        "startTime": "19:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-21T23:00:00Z",
+    "updated_at": "2026-07-21T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-mia-21",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-07-21",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-21T17:00:00Z",
+    "updated_at": "2026-07-21T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jul-sofia-21",
+    "device_id": "demo-dev-sofia-lamp",
+    "start_time": "20:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-07-21",
+    "calculated_cost": 0.04,
+    "total_kwh": 0.12,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.04,
+        "rate": 0.55,
+        "cost": 0.02,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.08,
+        "rate": 0.25,
+        "cost": 0.02,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-sofia",
+    "created_at": "2026-07-21T23:00:00Z",
+    "updated_at": "2026-07-21T23:00:00Z",
+    "assigned_users": [
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-dw-21",
+    "device_id": "demo-dev-dishwasher",
+    "start_time": "20:00:00",
+    "end_time": "21:30:00",
+    "usage_date": "2026-07-21",
+    "calculated_cost": 1.22,
+    "total_kwh": 2.7,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 1.83,
+        "rate": 0.55,
+        "cost": 1.01,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.5,
+        "kwh": 0.87,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "21:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-21T21:30:00Z",
+    "updated_at": "2026-07-21T21:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-mia-22",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-07-22",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-22T17:00:00Z",
+    "updated_at": "2026-07-22T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jul-tv-22",
+    "device_id": "demo-dev-living-tv",
+    "start_time": "19:30:00",
+    "end_time": "22:00:00",
+    "usage_date": "2026-07-22",
+    "calculated_cost": 0.13,
+    "total_kwh": 0.3,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1.5,
+        "kwh": 0.18,
+        "rate": 0.55,
+        "cost": 0.1,
+        "startTime": "19:30",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 1,
+        "kwh": 0.12,
+        "rate": 0.25,
+        "cost": 0.03,
+        "startTime": "21:01",
+        "endTime": "22:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-22T22:00:00Z",
+    "updated_at": "2026-07-22T22:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-coffee-22",
+    "device_id": "demo-dev-coffee",
+    "start_time": "07:00:00",
+    "end_time": "07:20:00",
+    "usage_date": "2026-07-22",
+    "calculated_cost": 0.08,
+    "total_kwh": 0.33,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.3,
+        "kwh": 0.33,
+        "rate": 0.25,
+        "cost": 0.08,
+        "startTime": "07:00",
+        "endTime": "07:20"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-22T07:20:00Z",
+    "updated_at": "2026-07-22T07:20:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia"
+    ],
+    "source_type": "template",
+    "source_id": "demo-tmpl-coffee"
+  },
+  {
+    "id": "jul-fridge-22",
+    "device_id": "demo-dev-fridge",
+    "start_time": "00:00:00",
+    "end_time": "23:59:00",
+    "usage_date": "2026-07-22",
+    "calculated_cost": 1.35,
+    "total_kwh": 4.32,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 19,
+        "kwh": 3.42,
+        "rate": 0.25,
+        "cost": 0.85,
+        "startTime": "00:00",
+        "endTime": "23:59"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 5,
+        "kwh": 0.9,
+        "rate": 0.55,
+        "cost": 0.49,
+        "startTime": "16:01",
+        "endTime": "21:01"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-22T23:59:00Z",
+    "updated_at": "2026-07-22T23:59:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-pc-24",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "19:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-07-24",
+    "calculated_cost": 0.72,
+    "total_kwh": 1.8,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 2,
+        "kwh": 0.91,
+        "rate": 0.55,
+        "cost": 0.5,
+        "startTime": "19:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-24T23:00:00Z",
+    "updated_at": "2026-07-24T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-mia-24",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-07-24",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-24T17:00:00Z",
+    "updated_at": "2026-07-24T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jul-sofia-24",
+    "device_id": "demo-dev-sofia-lamp",
+    "start_time": "20:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-07-24",
+    "calculated_cost": 0.04,
+    "total_kwh": 0.12,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.04,
+        "rate": 0.55,
+        "cost": 0.02,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.08,
+        "rate": 0.25,
+        "cost": 0.02,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-sofia",
+    "created_at": "2026-07-24T23:00:00Z",
+    "updated_at": "2026-07-24T23:00:00Z",
+    "assigned_users": [
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-coffee-24",
+    "device_id": "demo-dev-coffee",
+    "start_time": "07:00:00",
+    "end_time": "07:20:00",
+    "usage_date": "2026-07-24",
+    "calculated_cost": 0.08,
+    "total_kwh": 0.33,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.3,
+        "kwh": 0.33,
+        "rate": 0.25,
+        "cost": 0.08,
+        "startTime": "07:00",
+        "endTime": "07:20"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-24T07:20:00Z",
+    "updated_at": "2026-07-24T07:20:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia"
+    ],
+    "source_type": "template",
+    "source_id": "demo-tmpl-coffee"
+  },
+  {
+    "id": "jul-noah-26",
+    "device_id": "demo-dev-noah-console",
+    "start_time": "14:00:00",
+    "end_time": "18:00:00",
+    "usage_date": "2026-07-26",
+    "calculated_cost": 0.25,
+    "total_kwh": 0.8,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.4,
+        "rate": 0.25,
+        "cost": 0.1,
+        "startTime": "14:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "Mid-Peak",
+        "hours": 2,
+        "kwh": 0.4,
+        "rate": 0.37,
+        "cost": 0.15,
+        "startTime": "16:01",
+        "endTime": "18:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-noah",
+    "created_at": "2026-07-26T18:00:00Z",
+    "updated_at": "2026-07-26T18:00:00Z",
+    "assigned_users": [
+      "demo-user-noah"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-tv-26",
+    "device_id": "demo-dev-living-tv",
+    "start_time": "19:30:00",
+    "end_time": "22:00:00",
+    "usage_date": "2026-07-26",
+    "calculated_cost": 0.1,
+    "total_kwh": 0.3,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Mid-Peak",
+        "hours": 1.5,
+        "kwh": 0.18,
+        "rate": 0.37,
+        "cost": 0.07,
+        "startTime": "19:30",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 1,
+        "kwh": 0.12,
+        "rate": 0.25,
+        "cost": 0.03,
+        "startTime": "21:01",
+        "endTime": "22:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-26T22:00:00Z",
+    "updated_at": "2026-07-26T22:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-coffee-26",
+    "device_id": "demo-dev-coffee",
+    "start_time": "07:00:00",
+    "end_time": "07:20:00",
+    "usage_date": "2026-07-26",
+    "calculated_cost": 0.08,
+    "total_kwh": 0.33,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.3,
+        "kwh": 0.33,
+        "rate": 0.25,
+        "cost": 0.08,
+        "startTime": "07:00",
+        "endTime": "07:20"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-26T07:20:00Z",
+    "updated_at": "2026-07-26T07:20:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia"
+    ],
+    "source_type": "template",
+    "source_id": "demo-tmpl-coffee"
+  },
+  {
+    "id": "jul-pc-28",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "19:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-07-28",
+    "calculated_cost": 0.72,
+    "total_kwh": 1.8,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 2,
+        "kwh": 0.91,
+        "rate": 0.55,
+        "cost": 0.5,
+        "startTime": "19:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-28T23:00:00Z",
+    "updated_at": "2026-07-28T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-mia-28",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-07-28",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-28T17:00:00Z",
+    "updated_at": "2026-07-28T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jul-dw-28",
+    "device_id": "demo-dev-dishwasher",
+    "start_time": "20:00:00",
+    "end_time": "21:30:00",
+    "usage_date": "2026-07-28",
+    "calculated_cost": 1.22,
+    "total_kwh": 2.7,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 1.83,
+        "rate": 0.55,
+        "cost": 1.01,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.5,
+        "kwh": 0.87,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "21:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-28T21:30:00Z",
+    "updated_at": "2026-07-28T21:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-coffee-28",
+    "device_id": "demo-dev-coffee",
+    "start_time": "07:00:00",
+    "end_time": "07:20:00",
+    "usage_date": "2026-07-28",
+    "calculated_cost": 0.08,
+    "total_kwh": 0.33,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.3,
+        "kwh": 0.33,
+        "rate": 0.25,
+        "cost": 0.08,
+        "startTime": "07:00",
+        "endTime": "07:20"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-28T07:20:00Z",
+    "updated_at": "2026-07-28T07:20:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia"
+    ],
+    "source_type": "template",
+    "source_id": "demo-tmpl-coffee"
+  },
+  {
+    "id": "jul-hp-29",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "17:00:00",
+    "end_time": "21:00:00",
+    "usage_date": "2026-07-29",
+    "calculated_cost": 5.5,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.55,
+        "cost": 5.5,
+        "startTime": "17:00",
+        "endTime": "21:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-29T21:00:00Z",
+    "updated_at": "2026-07-29T21:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-mia-29",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-07-29",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-29T17:00:00Z",
+    "updated_at": "2026-07-29T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jul-tv-29",
+    "device_id": "demo-dev-living-tv",
+    "start_time": "19:30:00",
+    "end_time": "22:00:00",
+    "usage_date": "2026-07-29",
+    "calculated_cost": 0.13,
+    "total_kwh": 0.3,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1.5,
+        "kwh": 0.18,
+        "rate": 0.55,
+        "cost": 0.1,
+        "startTime": "19:30",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 1,
+        "kwh": 0.12,
+        "rate": 0.25,
+        "cost": 0.03,
+        "startTime": "21:01",
+        "endTime": "22:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-07-29T22:00:00Z",
+    "updated_at": "2026-07-29T22:00:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jul-fridge-29",
+    "device_id": "demo-dev-fridge",
+    "start_time": "00:00:00",
+    "end_time": "23:59:00",
+    "usage_date": "2026-07-29",
+    "calculated_cost": 1.35,
+    "total_kwh": 4.32,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 19,
+        "kwh": 3.42,
+        "rate": 0.25,
+        "cost": 0.85,
+        "startTime": "00:00",
+        "endTime": "23:59"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 5,
+        "kwh": 0.9,
+        "rate": 0.55,
+        "cost": 0.49,
+        "startTime": "16:01",
+        "endTime": "21:01"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-29T23:59:00Z",
+    "updated_at": "2026-07-29T23:59:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-hp-2",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "16:30:00",
+    "end_time": "20:30:00",
+    "usage_date": "2026-06-02",
+    "calculated_cost": 5.5,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.55,
+        "cost": 5.5,
+        "startTime": "16:30",
+        "endTime": "20:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-02T20:30:00Z",
+    "updated_at": "2026-06-02T20:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-pc-2",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "20:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-06-02",
+    "calculated_cost": 0.47,
+    "total_kwh": 1.35,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.46,
+        "rate": 0.55,
+        "cost": 0.25,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-02T23:00:00Z",
+    "updated_at": "2026-06-02T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-mia-2",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-06-02",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-06-02T17:00:00Z",
+    "updated_at": "2026-06-02T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jun-hp-5",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "16:30:00",
+    "end_time": "20:30:00",
+    "usage_date": "2026-06-05",
+    "calculated_cost": 5.5,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.55,
+        "cost": 5.5,
+        "startTime": "16:30",
+        "endTime": "20:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-05T20:30:00Z",
+    "updated_at": "2026-06-05T20:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-pc-5",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "20:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-06-05",
+    "calculated_cost": 0.47,
+    "total_kwh": 1.35,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.46,
+        "rate": 0.55,
+        "cost": 0.25,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-05T23:00:00Z",
+    "updated_at": "2026-06-05T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-mia-5",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-06-05",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-06-05T17:00:00Z",
+    "updated_at": "2026-06-05T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jun-tv-5",
+    "device_id": "demo-dev-living-tv",
+    "start_time": "19:00:00",
+    "end_time": "21:30:00",
+    "usage_date": "2026-06-05",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.3,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 2,
+        "kwh": 0.24,
+        "rate": 0.55,
+        "cost": 0.13,
+        "startTime": "19:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.5,
+        "kwh": 0.06,
+        "rate": 0.25,
+        "cost": 0.01,
+        "startTime": "21:01",
+        "endTime": "21:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-noah",
+    "created_at": "2026-06-05T21:30:00Z",
+    "updated_at": "2026-06-05T21:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-hp-8",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "16:30:00",
+    "end_time": "20:30:00",
+    "usage_date": "2026-06-08",
+    "calculated_cost": 5.5,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.55,
+        "cost": 5.5,
+        "startTime": "16:30",
+        "endTime": "20:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-08T20:30:00Z",
+    "updated_at": "2026-06-08T20:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-pc-8",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "20:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-06-08",
+    "calculated_cost": 0.47,
+    "total_kwh": 1.35,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.46,
+        "rate": 0.55,
+        "cost": 0.25,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-08T23:00:00Z",
+    "updated_at": "2026-06-08T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-mia-8",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-06-08",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-06-08T17:00:00Z",
+    "updated_at": "2026-06-08T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jun-hp-11",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "16:30:00",
+    "end_time": "20:30:00",
+    "usage_date": "2026-06-11",
+    "calculated_cost": 5.5,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.55,
+        "cost": 5.5,
+        "startTime": "16:30",
+        "endTime": "20:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-11T20:30:00Z",
+    "updated_at": "2026-06-11T20:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-pc-11",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "20:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-06-11",
+    "calculated_cost": 0.47,
+    "total_kwh": 1.35,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.46,
+        "rate": 0.55,
+        "cost": 0.25,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-11T23:00:00Z",
+    "updated_at": "2026-06-11T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-mia-11",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-06-11",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-06-11T17:00:00Z",
+    "updated_at": "2026-06-11T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jun-hp-14",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "16:30:00",
+    "end_time": "20:30:00",
+    "usage_date": "2026-06-14",
+    "calculated_cost": 3.7,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Mid-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.37,
+        "cost": 3.7,
+        "startTime": "16:30",
+        "endTime": "20:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-14T20:30:00Z",
+    "updated_at": "2026-06-14T20:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-pc-14",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "20:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-06-14",
+    "calculated_cost": 0.39,
+    "total_kwh": 1.35,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Mid-Peak",
+        "hours": 1,
+        "kwh": 0.46,
+        "rate": 0.37,
+        "cost": 0.17,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-14T23:00:00Z",
+    "updated_at": "2026-06-14T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-tv-14",
+    "device_id": "demo-dev-living-tv",
+    "start_time": "19:00:00",
+    "end_time": "21:30:00",
+    "usage_date": "2026-06-14",
+    "calculated_cost": 0.1,
+    "total_kwh": 0.3,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Mid-Peak",
+        "hours": 2,
+        "kwh": 0.24,
+        "rate": 0.37,
+        "cost": 0.09,
+        "startTime": "19:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.5,
+        "kwh": 0.06,
+        "rate": 0.25,
+        "cost": 0.01,
+        "startTime": "21:01",
+        "endTime": "21:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-noah",
+    "created_at": "2026-06-14T21:30:00Z",
+    "updated_at": "2026-06-14T21:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-hp-17",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "16:30:00",
+    "end_time": "20:30:00",
+    "usage_date": "2026-06-17",
+    "calculated_cost": 5.5,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.55,
+        "cost": 5.5,
+        "startTime": "16:30",
+        "endTime": "20:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-17T20:30:00Z",
+    "updated_at": "2026-06-17T20:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-pc-17",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "20:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-06-17",
+    "calculated_cost": 0.47,
+    "total_kwh": 1.35,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.46,
+        "rate": 0.55,
+        "cost": 0.25,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-17T23:00:00Z",
+    "updated_at": "2026-06-17T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-mia-17",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-06-17",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-06-17T17:00:00Z",
+    "updated_at": "2026-06-17T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jun-hp-20",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "16:30:00",
+    "end_time": "20:30:00",
+    "usage_date": "2026-06-20",
+    "calculated_cost": 3.7,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Mid-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.37,
+        "cost": 3.7,
+        "startTime": "16:30",
+        "endTime": "20:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-20T20:30:00Z",
+    "updated_at": "2026-06-20T20:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-pc-20",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "20:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-06-20",
+    "calculated_cost": 0.39,
+    "total_kwh": 1.35,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Mid-Peak",
+        "hours": 1,
+        "kwh": 0.46,
+        "rate": 0.37,
+        "cost": 0.17,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-20T23:00:00Z",
+    "updated_at": "2026-06-20T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-hp-23",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "16:30:00",
+    "end_time": "20:30:00",
+    "usage_date": "2026-06-23",
+    "calculated_cost": 5.5,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.55,
+        "cost": 5.5,
+        "startTime": "16:30",
+        "endTime": "20:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-23T20:30:00Z",
+    "updated_at": "2026-06-23T20:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-pc-23",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "20:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-06-23",
+    "calculated_cost": 0.47,
+    "total_kwh": 1.35,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.46,
+        "rate": 0.55,
+        "cost": 0.25,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-23T23:00:00Z",
+    "updated_at": "2026-06-23T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-mia-23",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-06-23",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-06-23T17:00:00Z",
+    "updated_at": "2026-06-23T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jun-tv-23",
+    "device_id": "demo-dev-living-tv",
+    "start_time": "19:00:00",
+    "end_time": "21:30:00",
+    "usage_date": "2026-06-23",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.3,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 2,
+        "kwh": 0.24,
+        "rate": 0.55,
+        "cost": 0.13,
+        "startTime": "19:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 0.5,
+        "kwh": 0.06,
+        "rate": 0.25,
+        "cost": 0.01,
+        "startTime": "21:01",
+        "endTime": "21:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-noah",
+    "created_at": "2026-06-23T21:30:00Z",
+    "updated_at": "2026-06-23T21:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-hp-26",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "16:30:00",
+    "end_time": "20:30:00",
+    "usage_date": "2026-06-26",
+    "calculated_cost": 5.5,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.55,
+        "cost": 5.5,
+        "startTime": "16:30",
+        "endTime": "20:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-26T20:30:00Z",
+    "updated_at": "2026-06-26T20:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-pc-26",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "20:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-06-26",
+    "calculated_cost": 0.47,
+    "total_kwh": 1.35,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.46,
+        "rate": 0.55,
+        "cost": 0.25,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-26T23:00:00Z",
+    "updated_at": "2026-06-26T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-mia-26",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-06-26",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-06-26T17:00:00Z",
+    "updated_at": "2026-06-26T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
+  },
+  {
+    "id": "jun-hp-29",
+    "device_id": "demo-dev-heatpump",
+    "start_time": "16:30:00",
+    "end_time": "20:30:00",
+    "usage_date": "2026-06-29",
+    "calculated_cost": 5.5,
+    "total_kwh": 10,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 4,
+        "kwh": 10,
+        "rate": 0.55,
+        "cost": 5.5,
+        "startTime": "16:30",
+        "endTime": "20:30"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-29T20:30:00Z",
+    "updated_at": "2026-06-29T20:30:00Z",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-pc-29",
+    "device_id": "demo-dev-alex-pc",
+    "start_time": "20:00:00",
+    "end_time": "23:00:00",
+    "usage_date": "2026-06-29",
+    "calculated_cost": 0.47,
+    "total_kwh": 1.35,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.46,
+        "rate": 0.55,
+        "cost": 0.25,
+        "startTime": "20:00",
+        "endTime": "21:01"
+      },
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 2,
+        "kwh": 0.89,
+        "rate": 0.25,
+        "cost": 0.22,
+        "startTime": "21:01",
+        "endTime": "23:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-29T23:00:00Z",
+    "updated_at": "2026-06-29T23:00:00Z",
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "source_type": "manual"
+  },
+  {
+    "id": "jun-mia-29",
+    "device_id": "demo-dev-mia-laptop",
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "usage_date": "2026-06-29",
+    "calculated_cost": 0.15,
+    "total_kwh": 0.52,
+    "rate_breakdown": [
+      {
+        "ratePeriod": "Off-Peak",
+        "hours": 7,
+        "kwh": 0.46,
+        "rate": 0.25,
+        "cost": 0.11,
+        "startTime": "09:00",
+        "endTime": "16:01"
+      },
+      {
+        "ratePeriod": "On-Peak",
+        "hours": 1,
+        "kwh": 0.06,
+        "rate": 0.55,
+        "cost": 0.04,
+        "startTime": "16:01",
+        "endTime": "17:00"
+      }
+    ],
+    "household_id": "demo-hh-park-family-0001",
+    "created_by": "demo-user-mia",
+    "created_at": "2026-06-29T17:00:00Z",
+    "updated_at": "2026-06-29T17:00:00Z",
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "source_type": "recurring",
+    "source_id": "demo-sched-mia-work"
   }
 ]
 
-// SUMMARY: 56 realistic energy logs with ACCURATE TIME-OF-USE RATE CALCULATIONS
-// (includes 1 example multi-rate period log: Gaming PC 9am-9pm showing off-peak + on-peak breakdown)
-// EV Charging: 18 logs, 1,280.88 kWh, $320.22 @ $0.25 off-peak (all after 9pm)
-//   - Vu's Model Y: 10 logs, 658.8 kWh, $164.70
-//   - Vy's Model 3: 8 logs, 622.08 kWh, $155.52
-// Shared Devices: 25 logs, 102.675 kWh, $48.45
-//   - AC: 10 logs, 99.6 kWh, $35.86 (mixed on-peak/off-peak, weekday/weekend)
-//   - Fridge: 10 logs, 48 kWh, $12.00 @ $0.25 avg
-//   - TVs: 5 logs, 2.655 kWh, $0.59 (mostly off-peak)
-// Personal Devices: 12 logs, 24.15 kWh, $10.18
-//   - Gaming PC: 8 logs, 21.75 kWh, $8.61 (mixed on-peak/off-peak)
-//   - Work Computers: 10 logs, 12 kWh, $3.00 @ $0.25 off-peak (9am-5pm)
-//   - Hair Dryer: 3 logs, 2.25 kWh, $0.57 @ $0.25 off-peak (7am)
-//   - Tablet: 1 log, 0.03 kWh, $0.01 @ $0.25 off-peak
-// TOTAL FROM LOGS: $378.85 (1,407.705 kWh)
-// Remaining to reach ~$450: $71.15 (base charges, delivery fees, taxes, unlogged usage)
-
-// Demo Dashboard Statistics - Updated with realistic data
-export const demoDashboardStats = {
-  personalUsage: {
-    daily: { kwh: 12.5, cost: 4.25 },
-    weekly: { kwh: 87.3, cost: 29.8 },
-    monthly: { kwh: 375.2, cost: 128.45 }
+export const demoTemplates: EnergyLogTemplate[] = [
+  {
+    "id": "demo-tmpl-coffee",
+    "household_id": "demo-hh-park-family-0001",
+    "template_name": "Morning Espresso",
+    "device_id": "demo-dev-coffee",
+    "device_ids": [
+      "demo-dev-coffee"
+    ],
+    "default_start_time": "07:00:00",
+    "default_end_time": "07:20:00",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia"
+    ],
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-01T00:00:00Z",
+    "updated_at": "2026-06-01T00:00:00Z",
+    "device_name": "Espresso Machine",
+    "device_wattage": 1000
   },
+  {
+    "id": "demo-tmpl-laundry",
+    "household_id": "demo-hh-park-family-0001",
+    "template_name": "Laundry Pair",
+    "device_id": null,
+    "device_ids": [
+      "demo-dev-washer",
+      "demo-dev-dryer"
+    ],
+    "default_start_time": "10:00:00",
+    "default_end_time": "12:00:00",
+    "assigned_users": [
+      "demo-user-mia",
+      "demo-user-alex"
+    ],
+    "created_by": "demo-user-mia",
+    "created_at": "2026-06-01T00:00:00Z",
+    "updated_at": "2026-06-01T00:00:00Z",
+    "device_name": "Washer, Dryer"
+  },
+  {
+    "id": "demo-tmpl-movie",
+    "household_id": "demo-hh-park-family-0001",
+    "template_name": "Family Movie Night",
+    "device_id": "demo-dev-living-tv",
+    "device_ids": [
+      "demo-dev-living-tv"
+    ],
+    "default_start_time": "19:30:00",
+    "default_end_time": "22:00:00",
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "created_by": "demo-user-mia",
+    "created_at": "2026-06-01T00:00:00Z",
+    "updated_at": "2026-06-01T00:00:00Z",
+    "device_name": "Living Room TV",
+    "device_wattage": 120
+  },
+  {
+    "id": "demo-tmpl-gaming",
+    "household_id": "demo-hh-park-family-0001",
+    "template_name": "Noah's Afternoon Gaming",
+    "device_id": "demo-dev-noah-console",
+    "device_ids": [
+      "demo-dev-noah-console"
+    ],
+    "default_start_time": "14:00:00",
+    "default_end_time": "18:00:00",
+    "assigned_users": [
+      "demo-user-noah"
+    ],
+    "created_by": "demo-user-noah",
+    "created_at": "2026-06-01T00:00:00Z",
+    "updated_at": "2026-06-01T00:00:00Z",
+    "device_name": "Noah's Game Console",
+    "device_wattage": 200
+  },
+  {
+    "id": "demo-tmpl-study",
+    "household_id": "demo-hh-park-family-0001",
+    "template_name": "Sofia's Study Lights",
+    "device_id": "demo-dev-sofia-lamp",
+    "device_ids": [
+      "demo-dev-sofia-lamp"
+    ],
+    "default_start_time": "20:00:00",
+    "default_end_time": "23:00:00",
+    "assigned_users": [
+      "demo-user-sofia"
+    ],
+    "created_by": "demo-user-sofia",
+    "created_at": "2026-06-01T00:00:00Z",
+    "updated_at": "2026-06-01T00:00:00Z",
+    "device_name": "Sofia's Desk Lamp",
+    "device_wattage": 40
+  }
+]
+
+export const demoSchedules: RecurringSchedule[] = [
+  {
+    "id": "demo-sched-mia-work",
+    "household_id": "demo-hh-park-family-0001",
+    "schedule_name": "Mia Remote Workdays",
+    "device_id": "demo-dev-mia-laptop",
+    "recurrence_type": "weekly",
+    "days_of_week": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "start_time": "09:00:00",
+    "end_time": "17:00:00",
+    "schedule_start_date": "2026-06-01",
+    "schedule_end_date": null,
+    "assigned_users": [
+      "demo-user-mia"
+    ],
+    "is_active": true,
+    "auto_create": true,
+    "created_by": "demo-user-mia",
+    "created_at": "2026-06-01T00:00:00Z",
+    "updated_at": "2026-06-01T00:00:00Z",
+    "device_name": "Mia's Laptop",
+    "device_wattage": 65
+  },
+  {
+    "id": "demo-sched-alex-pc",
+    "household_id": "demo-hh-park-family-0001",
+    "schedule_name": "Alex Evening Coding",
+    "device_id": "demo-dev-alex-pc",
+    "recurrence_type": "weekly",
+    "days_of_week": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "start_time": "19:00:00",
+    "end_time": "23:00:00",
+    "schedule_start_date": "2026-06-01",
+    "schedule_end_date": null,
+    "assigned_users": [
+      "demo-user-alex"
+    ],
+    "is_active": true,
+    "auto_create": true,
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-01T00:00:00Z",
+    "updated_at": "2026-06-01T00:00:00Z",
+    "device_name": "Alex's Desktop PC",
+    "device_wattage": 450
+  },
+  {
+    "id": "demo-sched-noah-weekend",
+    "household_id": "demo-hh-park-family-0001",
+    "schedule_name": "Noah Weekend Console",
+    "device_id": "demo-dev-noah-console",
+    "recurrence_type": "weekly",
+    "days_of_week": [
+      0,
+      6
+    ],
+    "start_time": "14:00:00",
+    "end_time": "18:00:00",
+    "schedule_start_date": "2026-06-01",
+    "schedule_end_date": null,
+    "assigned_users": [
+      "demo-user-noah"
+    ],
+    "is_active": true,
+    "auto_create": true,
+    "created_by": "demo-user-noah",
+    "created_at": "2026-06-01T00:00:00Z",
+    "updated_at": "2026-06-01T00:00:00Z",
+    "device_name": "Noah's Game Console",
+    "device_wattage": 200
+  },
+  {
+    "id": "demo-sched-sofia-study",
+    "household_id": "demo-hh-park-family-0001",
+    "schedule_name": "Sofia Weeknight Study",
+    "device_id": "demo-dev-sofia-lamp",
+    "recurrence_type": "weekly",
+    "days_of_week": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "start_time": "20:00:00",
+    "end_time": "23:00:00",
+    "schedule_start_date": "2026-06-01",
+    "schedule_end_date": "2026-08-31",
+    "assigned_users": [
+      "demo-user-sofia"
+    ],
+    "is_active": true,
+    "auto_create": false,
+    "created_by": "demo-user-sofia",
+    "created_at": "2026-06-01T00:00:00Z",
+    "updated_at": "2026-06-01T00:00:00Z",
+    "device_name": "Sofia's Desk Lamp",
+    "device_wattage": 40
+  },
+  {
+    "id": "demo-sched-dishwasher",
+    "household_id": "demo-hh-park-family-0001",
+    "schedule_name": "Evening Dishwasher",
+    "device_id": "demo-dev-dishwasher",
+    "recurrence_type": "weekly",
+    "days_of_week": [
+      1,
+      3,
+      5
+    ],
+    "start_time": "20:00:00",
+    "end_time": "21:30:00",
+    "schedule_start_date": "2026-06-01",
+    "schedule_end_date": null,
+    "assigned_users": [
+      "demo-user-alex",
+      "demo-user-mia",
+      "demo-user-noah",
+      "demo-user-sofia"
+    ],
+    "is_active": true,
+    "auto_create": true,
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-01T00:00:00Z",
+    "updated_at": "2026-06-01T00:00:00Z",
+    "device_name": "Dishwasher",
+    "device_wattage": 1800
+  }
+]
+
+export const demoDeviceGroups: DeviceGroup[] = [
+  {
+    "id": "demo-group-laundry",
+    "household_id": "demo-hh-park-family-0001",
+    "group_name": "Laundry Pair",
+    "device_ids": [
+      "demo-dev-washer",
+      "demo-dev-dryer"
+    ],
+    "created_by": "demo-user-mia",
+    "created_at": "2026-06-01T00:00:00Z",
+    "updated_at": "2026-06-01T00:00:00Z"
+  },
+  {
+    "id": "demo-group-kitchen",
+    "household_id": "demo-hh-park-family-0001",
+    "group_name": "Kitchen Essentials",
+    "device_ids": [
+      "demo-dev-fridge",
+      "demo-dev-dishwasher",
+      "demo-dev-coffee"
+    ],
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-01T00:00:00Z",
+    "updated_at": "2026-06-01T00:00:00Z"
+  },
+  {
+    "id": "demo-group-personal",
+    "household_id": "demo-hh-park-family-0001",
+    "group_name": "Personal Workstations",
+    "device_ids": [
+      "demo-dev-alex-pc",
+      "demo-dev-mia-laptop",
+      "demo-dev-noah-console",
+      "demo-dev-sofia-lamp"
+    ],
+    "created_by": "demo-user-alex",
+    "created_at": "2026-06-01T00:00:00Z",
+    "updated_at": "2026-06-01T00:00:00Z"
+  }
+]
+
+export const demoBillSplits: (BillSplit & { split_method?: "even" | "usage_based" })[] = [
+  {
+    "id": "demo-bill-june-2026",
+    "household_id": "demo-hh-park-family-0001",
+    "month": 6,
+    "year": 2026,
+    "billing_period_start": "2026-06-01",
+    "billing_period_end": "2026-06-30",
+    "total_bill_amount": 102.54,
+    "split_method": "usage_based",
+    "user_allocations": {
+      "demo-user-alex": {
+        "personalCost": 20.26,
+        "sharedCost": 8.97,
+        "totalOwed": 29.23
+      },
+      "demo-user-mia": {
+        "personalCost": 16.39,
+        "sharedCost": 8.97,
+        "totalOwed": 25.36
+      },
+      "demo-user-noah": {
+        "personalCost": 15,
+        "sharedCost": 8.97,
+        "totalOwed": 23.97
+      },
+      "demo-user-sofia": {
+        "personalCost": 15,
+        "sharedCost": 8.97,
+        "totalOwed": 23.97
+      }
+    },
+    "created_by": "demo-user-alex",
+    "created_at": "2026-07-02T00:00:00Z",
+    "updated_at": "2026-07-02T00:00:00Z"
+  }
+]
+
+/** Legacy chart placeholders (Dashboard derives live from energy logs). */
+export const demoDashboardStats = {
+  personalUsage: { daily: { kwh: 8.2, cost: 2.4 }, weekly: { kwh: 54, cost: 16.1 }, monthly: { kwh: 210.0, cost: 83.35 } },
   householdUsage: {
-    total: { kwh: 931, cost: 350 },
+    total: { kwh: 328.5, cost: 140.89 },
     members: [
-      { name: 'Vu', kwh: 527.8, cost: 159.89 }, // Tesla + Gaming PC
-      { name: 'Vy', kwh: 308.2, cost: 124.35 }, // Tesla + Hair Dryer
-      { name: 'Thuy', kwh: 48, cost: 6.60 }, // Work Computer
-      { name: 'Han', kwh: 47, cost: 6.90 } // Work Computer + Tablet
+      { name: "Alex", kwh: 0, cost: 0 },
+      { name: "Mia", kwh: 0, cost: 0 },
+      { name: "Noah", kwh: 0, cost: 0 },
+      { name: "Sofia", kwh: 0, cost: 0 }
     ]
   },
-  ratePeriods: {
-    offPeak: { kwh: 850, cost: 212.50 }, // Most EV charging
-    midPeak: { kwh: 50, cost: 18.50 },
-    onPeak: { kwh: 31, cost: 17.05 },
-    superOffPeak: { kwh: 0, cost: 0 }
-  },
-  topDevices: [
-    { name: 'Tesla Model Y', kwh: 527.8, cost: 131.89, type: 'personal' },
-    { name: 'Tesla Model 3', kwh: 308.2, cost: 119.35, type: 'personal' },
-    { name: 'Room AC', kwh: 96, cost: 45, type: 'shared' },
-    { name: 'Gaming PC', kwh: 22.5, cost: 28, type: 'personal' }
-  ]
+  ratePeriods: { offPeak: { kwh: 0, cost: 0 }, midPeak: { kwh: 0, cost: 0 }, onPeak: { kwh: 0, cost: 0 }, superOffPeak: { kwh: 0, cost: 0 } },
+  topDevices: [] as { name: string; kwh: number; cost: number; type?: string }[]
 }
 
-// Remove old demo data sections that are no longer needed
 export const demoWeeklyUsageData = [
-  { day: 'Mon', Vu: 75.4, Thuy: 6.9, Vy: 44.0, Han: 6.7 },
-  { day: 'Tue', Vu: 75.4, Thuy: 6.9, Vy: 44.0, Han: 6.7 },
-  { day: 'Wed', Vu: 75.4, Thuy: 6.9, Vy: 44.0, Han: 6.7 },
-  { day: 'Thu', Vu: 75.4, Thuy: 6.9, Vy: 44.0, Han: 6.7 },
-  { day: 'Fri', Vu: 75.4, Thuy: 6.9, Vy: 44.0, Han: 6.7 },
-  { day: 'Sat', Vu: 75.4, Thuy: 6.9, Vy: 44.0, Han: 6.7 },
-  { day: 'Sun', Vu: 75.4, Thuy: 6.9, Vy: 44.0, Han: 6.7 }
+  { day: "Mon", Alex: 12, Mia: 5, Noah: 2, Sofia: 1 },
+  { day: "Tue", Alex: 11, Mia: 5, Noah: 1, Sofia: 1 },
+  { day: "Wed", Alex: 13, Mia: 5, Noah: 2, Sofia: 1 },
+  { day: "Thu", Alex: 12, Mia: 5, Noah: 1, Sofia: 1 },
+  { day: "Fri", Alex: 14, Mia: 5, Noah: 3, Sofia: 1 },
+  { day: "Sat", Alex: 10, Mia: 3, Noah: 6, Sofia: 2 },
+  { day: "Sun", Alex: 9, Mia: 3, Noah: 5, Sofia: 2 }
 ]
 
 export const demoMonthlyTrendData = [
-  { month: 'Oct', usage: 1380, cost: 472.0 },  // Oct 2023
-  { month: 'Nov', usage: 1290, cost: 441.3 },  // Nov 2023
-  { month: 'Dec', usage: 1450, cost: 496.0 },  // Dec 2023
-  { month: 'Jan', usage: 1520, cost: 520.0 },  // Jan 2024
-  { month: 'Feb', usage: 1410, cost: 482.5 },  // Feb 2024
-  { month: 'Mar', usage: 1340, cost: 458.3 },  // Mar 2024
-  { month: 'Apr', usage: 1275, cost: 436.2 },  // Apr 2024
-  { month: 'May', usage: 1420, cost: 485.8 },  // May 2024
-  { month: 'Jun', usage: 1585, cost: 542.1 },  // Jun 2024 (summer starts)
-  { month: 'Jul', usage: 1720, cost: 588.4 },  // Jul 2024 (peak summer)
-  { month: 'Aug', usage: 1650, cost: 564.5 },  // Aug 2024 (still summer)
-  { month: 'Sep', usage: 1421, cost: 369.67 }  // Sep 2024 (current)
+  { month: "Jan", usage: 980, cost: 268 },
+  { month: "Feb", usage: 920, cost: 251 },
+  { month: "Mar", usage: 1010, cost: 276 },
+  { month: "Apr", usage: 1080, cost: 295 },
+  { month: "May", usage: 1180, cost: 322 },
+  { month: "Jun", usage: 119, cost: 57.5 },
+  { month: "Jul", usage: 210, cost: 83.3 },
+  { month: "Aug", usage: 0, cost: 0 },
+  { month: "Sep", usage: 0, cost: 0 },
+  { month: "Oct", usage: 0, cost: 0 },
+  { month: "Nov", usage: 0, cost: 0 },
+  { month: "Dec", usage: 0, cost: 0 }
 ]
 
 export const demoDeviceUsageData = [
-  { name: 'Tesla Model Y', usage: 527.8, cost: 131.89 },
-  { name: 'Tesla Model 3', usage: 308.2, cost: 119.35 },
-  { name: 'AC', usage: 96, cost: 45 },
-  { name: 'Gaming PC', usage: 22.5, cost: 28 }
-]
-
-export const demoBillSplits: BillSplit[] = [
-  {
-    id: 'demo-bill-1',
-    household_id: DEMO_HOUSEHOLD_ID,
-    month: 9,
-    year: 2025,
-    billing_period_start: '2025-09-01',
-    billing_period_end: '2025-09-30',
-    total_bill_amount: 450,
-    user_allocations: {
-      'demo-user-vu': {
-        personalCost: 116.33,
-        sharedCost: 43.56,
-        totalOwed: 159.89
-      },
-      'demo-user-vy': {
-        personalCost: 80.79,
-        sharedCost: 43.56,
-        totalOwed: 124.35
-      },
-      'demo-user-thuy': {
-        personalCost: 39.32,
-        sharedCost: 43.56,
-        totalOwed: 82.88
-      },
-      'demo-user-han': {
-        personalCost: 39.32,
-        sharedCost: 43.56,
-        totalOwed: 82.88
-      }
-    },
-    created_by: 'demo-user-vu',
-    created_at: '2025-10-01T00:00:00Z',
-    updated_at: '2025-10-01T00:00:00Z'
-  }
+  { name: "Whole-Home Heat Pump", usage: 80, cost: 40 },
+  { name: "Alex's EV Charger", usage: 120, cost: 30 },
+  { name: "Alex's Desktop PC", usage: 20, cost: 8 },
+  { name: "Mia's Laptop", usage: 12, cost: 3 }
 ]

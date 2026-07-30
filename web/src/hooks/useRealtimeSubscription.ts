@@ -6,6 +6,7 @@ interface UseRealtimeSubscriptionOptions {
   table: string
   event?: 'INSERT' | 'UPDATE' | 'DELETE' | '*'
   filter?: string
+  enabled?: boolean
   onInsert?: (payload: any) => void
   onUpdate?: (payload: any) => void
   onDelete?: (payload: any) => void
@@ -16,6 +17,7 @@ export function useRealtimeSubscription({
   table,
   event = '*',
   filter,
+  enabled = true,
   onInsert,
   onUpdate,
   onDelete,
@@ -30,6 +32,10 @@ export function useRealtimeSubscription({
   })
 
   useEffect(() => {
+    if (!enabled) {
+      return
+    }
+
     // Prevent duplicate subscriptions
     if (channelRef.current) {
       return
@@ -83,7 +89,7 @@ export function useRealtimeSubscription({
         channelRef.current = null
       }
     }
-  }, [table, event, filter]) // Only re-subscribe if these core values change
+  }, [table, event, filter, enabled]) // Only re-subscribe if these core values change
 
   return channelRef.current
 }

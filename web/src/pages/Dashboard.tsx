@@ -685,7 +685,7 @@ export default function Dashboard() {
             <EyeIcon className="w-8 h-8 md:w-10 md:h-10 text-yellow-500" />
             <div>
               <h3 className="font-bold text-yellow-500 text-sm md:text-base">Demo Mode Active</h3>
-              <p className="text-xs md:text-sm text-yellow-200">Using demo data - Supabase unavailable</p>
+              <p className="text-xs md:text-sm text-yellow-200">Demo sandbox — changes stay on this device only</p>
             </div>
           </div>
           <Button 

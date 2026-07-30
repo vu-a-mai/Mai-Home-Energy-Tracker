@@ -1,145 +1,111 @@
-// Demo service that mimics the database service but uses local demo data
-import type { User, Device, EnergyLog, BillSplit } from '../lib/supabase'
-import {
-  demoUsers,
-  demoDevices,
-  demoEnergyLogs,
-  demoBillSplits,
-  DEMO_HOUSEHOLD_ID,
-  demoMonthlyTrendData
-} from './demoData'
+/**
+ * Demo service facade over the mutable demo store.
+ * Kept for callers that previously used demoService helpers.
+ */
 
-// Demo User Services
+import type { User, Device, EnergyLog } from '../lib/supabase'
+import {
+  DEMO_HOUSEHOLD_ID,
+  demoGetDevices,
+  demoAddDevice,
+  demoUpdateDevice,
+  demoDeleteDevice,
+  demoGetEnergyLogs,
+  demoAddEnergyLog,
+  demoUpdateEnergyLog,
+  demoDeleteEnergyLog,
+  demoGetBillSplits,
+  demoSaveBillSplit,
+  demoDeleteBillSplit,
+  getDemoCurrentUser,
+  getDemoState,
+} from './demoStore'
+import { demoMonthlyTrendData } from './demoData'
+
+export { DEMO_HOUSEHOLD_ID }
+
 export const demoUserService = {
   async getCurrentUser(): Promise<User | null> {
-    // Return the first demo user (Vu)
-    return demoUsers[0]
+    return getDemoCurrentUser()
   },
 
   async getHouseholdMembers(householdId: string): Promise<User[]> {
-    return demoUsers.filter(user => user.household_id === householdId)
-  }
+    return getDemoState().users.filter((user) => user.household_id === householdId)
+  },
 }
 
-// Demo Device Services
 export const demoDeviceService = {
   async getHouseholdDevices(householdId: string): Promise<Device[]> {
-    return demoDevices.filter(device => device.household_id === householdId)
+    return demoGetDevices().filter((device) => device.household_id === householdId)
   },
 
-  async createDevice(device: Omit<Device, 'id' | 'created_at' | 'updated_at'>): Promise<Device | null> {
-    const newDevice: Device = {
-      ...device,
-      id: `demo-device-${Date.now()}`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-    demoDevices.push(newDevice)
-    return newDevice
+  async createDevice(
+    device: Omit<Device, 'id' | 'created_at' | 'updated_at' | 'household_id' | 'created_by' | 'kwh_per_hour'>
+  ): Promise<Device | null> {
+    return demoAddDevice(device)
   },
 
   async updateDevice(id: string, updates: Partial<Device>): Promise<Device | null> {
-    const index = demoDevices.findIndex(d => d.id === id)
-    if (index === -1) return null
-    
-    demoDevices[index] = {
-      ...demoDevices[index],
-      ...updates,
-      updated_at: new Date().toISOString()
-    }
-    return demoDevices[index]
+    return demoUpdateDevice(id, updates)
   },
 
   async deleteDevice(id: string): Promise<boolean> {
-    const index = demoDevices.findIndex(d => d.id === id)
-    if (index === -1) return false
-    
-    demoDevices.splice(index, 1)
-    return true
-  }
+    return demoDeleteDevice(id)
+  },
 }
 
-// Demo Energy Log Services
 export const demoEnergyLogService = {
   async getHouseholdLogs(householdId: string, limit?: number): Promise<EnergyLog[]> {
-    let logs = demoEnergyLogs.filter(log => log.household_id === householdId)
-    if (limit) {
-      logs = logs.slice(0, limit)
-    }
+    let logs = demoGetEnergyLogs().filter((log) => log.household_id === householdId)
+    if (limit) logs = logs.slice(0, limit)
     return logs
   },
 
   async createEnergyLog(
-    log: Omit<EnergyLog, 'id' | 'calculated_cost' | 'created_at' | 'updated_at'>,
-    userIds: string[]
+    log: Omit<EnergyLog, 'id' | 'calculated_cost' | 'created_at' | 'updated_at' | 'household_id' | 'created_by' | 'total_kwh'> & {
+      calculated_cost?: number
+      total_kwh?: number
+    },
+    _userIds: string[]
   ): Promise<EnergyLog | null> {
-    const newLog: EnergyLog = {
+    return demoAddEnergyLog({
       ...log,
-      id: `demo-log-${Date.now()}`,
-      calculated_cost: 0, // Would be calculated in real implementation
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-    demoEnergyLogs.push(newLog)
-    return newLog
+      assigned_users: log.assigned_users?.length ? log.assigned_users : _userIds,
+    })
   },
 
   async updateEnergyLog(id: string, updates: Partial<EnergyLog>): Promise<EnergyLog | null> {
-    const index = demoEnergyLogs.findIndex(l => l.id === id)
-    if (index === -1) return null
-    
-    demoEnergyLogs[index] = {
-      ...demoEnergyLogs[index],
-      ...updates,
-      updated_at: new Date().toISOString()
-    }
-    return demoEnergyLogs[index]
+    return demoUpdateEnergyLog(id, updates)
   },
 
   async deleteEnergyLog(id: string): Promise<boolean> {
-    const index = demoEnergyLogs.findIndex(l => l.id === id)
-    if (index === -1) return false
-    
-    demoEnergyLogs.splice(index, 1)
-    return true
+    return demoDeleteEnergyLog(id)
   },
 
-  async getMonthlyUsage(householdId: string, year: number): Promise<any[]> {
-    // Return demo monthly trend data
+  async getMonthlyUsage(_householdId: string, _year: number): Promise<{ month: number; usage: number; cost: number }[]> {
     return demoMonthlyTrendData.map((data, index) => ({
       month: index + 1,
       usage: data.usage,
-      cost: data.cost
+      cost: data.cost,
     }))
-  }
+  },
 }
 
-// Demo Bill Split Services
 export const demoBillSplitService = {
-  async getHouseholdBillSplits(householdId: string): Promise<BillSplit[]> {
-    return demoBillSplits.filter(split => split.household_id === householdId)
+  async getHouseholdBillSplits(householdId: string) {
+    return demoGetBillSplits().filter((split) => split.household_id === householdId)
   },
 
-  async createBillSplit(billSplit: Omit<BillSplit, 'id' | 'created_at' | 'updated_at'>): Promise<BillSplit | null> {
-    const newSplit: BillSplit = {
-      ...billSplit,
-      id: `demo-bill-${Date.now()}`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-    demoBillSplits.push(newSplit)
-    return newSplit
+  async createBillSplit(
+    billSplit: Parameters<typeof demoSaveBillSplit>[0]
+  ) {
+    return demoSaveBillSplit(billSplit)
   },
 
-  async updateBillSplit(id: string, updates: Partial<BillSplit>): Promise<BillSplit | null> {
-    const index = demoBillSplits.findIndex(s => s.id === id)
-    if (index === -1) return null
-    
-    demoBillSplits[index] = {
-      ...demoBillSplits[index],
-      ...updates,
-      updated_at: new Date().toISOString()
-    }
-    return demoBillSplits[index]
-  }
+  async updateBillSplit(id: string, updates: Record<string, unknown>) {
+    const existing = demoGetBillSplits().find((s) => s.id === id)
+    if (!existing) return null
+    demoDeleteBillSplit(id)
+    return demoSaveBillSplit({ ...existing, ...updates } as Parameters<typeof demoSaveBillSplit>[0])
+  },
 }

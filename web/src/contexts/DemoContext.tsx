@@ -1,5 +1,6 @@
 import { createContext, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
+import { clearDemoStore, initDemoStore } from '../demo/demoStore'
 
 interface DemoContextType {
   isDemoMode: boolean
@@ -18,14 +19,22 @@ function readStoredDemoMode(): boolean {
 }
 
 export function DemoProvider({ children }: { children: ReactNode }) {
-  const [isDemoMode, setIsDemoMode] = useState(readStoredDemoMode)
+  const [isDemoMode, setIsDemoMode] = useState(() => {
+    const enabled = readStoredDemoMode()
+    if (enabled) {
+      initDemoStore(false)
+    }
+    return enabled
+  })
 
   const enableDemoMode = () => {
+    initDemoStore(false)
     setIsDemoMode(true)
     localStorage.setItem('demo_mode', 'true')
   }
 
   const disableDemoMode = () => {
+    clearDemoStore()
     setIsDemoMode(false)
     localStorage.removeItem('demo_mode')
   }

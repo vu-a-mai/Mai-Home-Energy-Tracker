@@ -4,16 +4,32 @@ import type { RecurringSchedule, ScheduleFormData } from '../types'
 import { toast } from 'sonner'
 import { calculateUsageCost } from '../utils/rateCalculatorFixed'
 import { formatLocalDate, parseLocalDate } from '../utils/dateUtils'
+import { useDemoMode } from '../contexts/DemoContext'
+import {
+  demoGetSchedules,
+  demoAddSchedule,
+  demoUpdateSchedule,
+  demoDeleteSchedule,
+  demoGetEnergyLogs,
+  demoAddEnergyLog,
+  demoDeleteEnergyLog,
+} from '../demo/demoStore'
 
 export function useRecurringSchedules() {
   const [schedules, setSchedules] = useState<RecurringSchedule[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { isDemoMode } = useDemoMode()
 
   const fetchSchedules = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
+
+      if (isDemoMode) {
+        setSchedules(demoGetSchedules())
+        return
+      }
 
       const { data: schedulesData, error: schedulesError } = await supabase
         .from('recurring_schedules')
@@ -40,17 +56,24 @@ export function useRecurringSchedules() {
       console.error('Error fetching schedules:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch schedules'
       setError(errorMessage)
-      toast.error(errorMessage)
+      if (!isDemoMode) toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [isDemoMode])
 
   useEffect(() => {
     fetchSchedules()
   }, [fetchSchedules])
 
   const addSchedule = async (scheduleData: ScheduleFormData) => {
+    if (isDemoMode) {
+      demoAddSchedule(scheduleData)
+      setSchedules(demoGetSchedules())
+      toast.success('Recurring schedule created successfully!')
+      return
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
@@ -85,6 +108,13 @@ export function useRecurringSchedules() {
   }
 
   const updateSchedule = async (id: string, scheduleData: Partial<ScheduleFormData>) => {
+    if (isDemoMode) {
+      demoUpdateSchedule(id, scheduleData)
+      setSchedules(demoGetSchedules())
+      toast.success('Schedule updated successfully!')
+      return
+    }
+
     try {
       const { error: updateError } = await supabase
         .from('recurring_schedules')
@@ -104,6 +134,13 @@ export function useRecurringSchedules() {
   }
 
   const toggleScheduleActive = async (id: string, isActive: boolean) => {
+    if (isDemoMode) {
+      demoUpdateSchedule(id, { is_active: isActive } as any)
+      setSchedules(demoGetSchedules())
+      toast.success(`Schedule ${isActive ? 'activated' : 'paused'} successfully!`)
+      return
+    }
+
     try {
       const { error: updateError } = await supabase
         .from('recurring_schedules')
@@ -123,6 +160,13 @@ export function useRecurringSchedules() {
   }
 
   const deleteSchedule = async (id: string) => {
+    if (isDemoMode) {
+      demoDeleteSchedule(id)
+      setSchedules(demoGetSchedules())
+      toast.success('Schedule deleted successfully!')
+      return
+    }
+
     try {
       const { error: deleteError } = await supabase
         .from('recurring_schedules')
@@ -142,6 +186,22 @@ export function useRecurringSchedules() {
   }
 
   const generateLogsFromSchedule = async (scheduleId: string, targetDate: string) => {
+    if (isDemoMode) {
+      const schedule = demoGetSchedules().find(s => s.id === scheduleId)
+      if (!schedule) throw new Error('Schedule not found')
+      demoAddEnergyLog({
+        device_id: schedule.device_id,
+        usage_date: targetDate,
+        start_time: schedule.start_time,
+        end_time: schedule.end_time,
+        assigned_users: schedule.assigned_users,
+        source_type: 'recurring',
+        source_id: scheduleId,
+      })
+      toast.success('Log generated from schedule!')
+      return { success: true }
+    }
+
     try {
       const { data, error } = await supabase.rpc('generate_recurring_logs', {
         p_schedule_id: scheduleId,
@@ -161,6 +221,27 @@ export function useRecurringSchedules() {
   }
 
   const autoGenerateLogsForDate = async (targetDate: string) => {
+    if (isDemoMode) {
+      const active = demoGetSchedules().filter(s => s.is_active && s.auto_create)
+      let successCount = 0
+      for (const schedule of active) {
+        const day = parseLocalDate(targetDate).getDay()
+        if (!schedule.days_of_week.includes(day)) continue
+        demoAddEnergyLog({
+          device_id: schedule.device_id,
+          usage_date: targetDate,
+          start_time: schedule.start_time,
+          end_time: schedule.end_time,
+          assigned_users: schedule.assigned_users,
+          source_type: 'recurring',
+          source_id: schedule.id,
+        })
+        successCount++
+      }
+      if (successCount > 0) toast.success(`Generated ${successCount} log(s) from schedules!`)
+      return []
+    }
+
     try {
       const { data, error } = await supabase.rpc('auto_generate_recurring_logs', {
         p_target_date: targetDate
@@ -192,6 +273,54 @@ export function useRecurringSchedules() {
     try {
       const schedule = schedules.find(s => s.id === scheduleId)
       if (!schedule) throw new Error('Schedule not found')
+
+      if (isDemoMode) {
+        const startDate = parseLocalDate(schedule.schedule_start_date)
+        const endDate = schedule.schedule_end_date ? parseLocalDate(schedule.schedule_end_date) : new Date()
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const actualEndDate = endDate > today ? today : endDate
+        const matchingDates: string[] = []
+        const currentDate = new Date(startDate)
+        while (currentDate <= actualEndDate) {
+          if (schedule.days_of_week.includes(currentDate.getDay())) {
+            matchingDates.push(formatLocalDate(currentDate))
+          }
+          currentDate.setDate(currentDate.getDate() + 1)
+        }
+        if (matchingDates.length === 0) {
+          toast.info('No matching dates found for this schedule')
+          return { success: 0, failed: 0, skipped: 0 }
+        }
+        let successCount = 0
+        let skippedCount = 0
+        toast.info(`Generating ${matchingDates.length} log(s)...`)
+        for (const date of matchingDates) {
+          const existing = demoGetEnergyLogs().find(
+            (l) => l.source_type === 'recurring' && l.source_id === scheduleId && l.usage_date === date
+          )
+          if (existing) {
+            if (replaceExisting) demoDeleteEnergyLog(existing.id)
+            else {
+              skippedCount++
+              continue
+            }
+          }
+          demoAddEnergyLog({
+            device_id: schedule.device_id,
+            usage_date: date,
+            start_time: schedule.start_time,
+            end_time: schedule.end_time,
+            assigned_users: schedule.assigned_users,
+            source_type: 'recurring',
+            source_id: scheduleId,
+          })
+          successCount++
+        }
+        if (successCount > 0) toast.success(`✅ Generated ${successCount} log(s) successfully!`)
+        if (skippedCount > 0) toast.info(`⏭️ Skipped ${skippedCount} existing log(s)`)
+        return { success: successCount, failed: 0, skipped: skippedCount }
+      }
 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
