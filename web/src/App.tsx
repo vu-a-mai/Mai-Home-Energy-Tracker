@@ -8,6 +8,7 @@ import LandingPage from './pages/LandingPage'
 import Dashboard from './pages/Dashboard'
 import Devices from './pages/Devices'
 import EnergyLogs from './pages/EnergyLogs'
+import DeletedLogs from './pages/DeletedLogs'
 import BillSplit from './pages/BillSplit'
 import Settings from './pages/Settings'
 import Login from './pages/Login'
@@ -43,6 +44,11 @@ function App() {
       <Toaster position="top-center" richColors closeButton className="md:!top-4 md:!right-4" />
       <NavBar />
       <AutoScheduleRunner />
+      {isDemoMode && (
+        <div className="bg-amber-500/15 border-b border-amber-500/40 text-amber-100 text-xs sm:text-sm px-3 py-2 text-center">
+          Demo mode — changes stay in this browser only and are not saved to your live household.
+        </div>
+      )}
       {syncError && (
         <div className="mx-auto max-w-7xl px-3 pt-3">
           <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
@@ -56,6 +62,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/devices" element={<Devices />} />
           <Route path="/logs" element={<EnergyLogs />} />
+          <Route path="/logs/deleted" element={<DeletedLogs />} />
           <Route path="/bill-split" element={<BillSplit />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/login" element={<Dashboard />} /> {/* Redirect logged-in users to dashboard */}

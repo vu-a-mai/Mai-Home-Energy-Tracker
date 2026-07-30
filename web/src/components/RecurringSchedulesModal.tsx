@@ -436,14 +436,14 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
       <div className="w-full sm:max-w-5xl sm:my-4 flex flex-col max-h-[100dvh] sm:max-h-[min(90vh,100dvh)]">
         <div className="energy-card flex flex-col w-full bg-card border-0 sm:border border-border rounded-none sm:rounded-lg shadow-xl min-h-0 max-h-[100dvh] sm:max-h-[min(90vh,100dvh)]">
           {/* Header — always visible so close stays reachable */}
-          <div className="p-4 sm:p-5 md:p-6 border-b border-border flex items-center justify-between flex-shrink-0 bg-card z-10">
+          <div className="p-4 sm:p-5 md:p-6 border-b border-border flex items-center justify-between flex-shrink-0 bg-slate-900 z-10">
           <div className="flex-1 min-w-0">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
               <ArrowPathIcon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-green-400 flex-shrink-0" />
-              <span className="truncate">Recurring Schedules</span>
+              <span className="truncate">Schedules (auto)</span>
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 hidden sm:block">
-              Automatically generate logs for regular usage patterns
+              Ongoing automation — generate today&apos;s logs at midnight or when someone opens the app. Use Templates for one-shot recipes.
             </p>
           </div>
           <button
@@ -948,7 +948,7 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                 </p>
               </div>
 
-              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 sticky bottom-0 sm:static bg-card pb-2 sm:pb-0 -mx-4 sm:mx-0 px-4 sm:px-0 border-t sm:border-t-0 border-border">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 sticky bottom-0 sm:static bg-slate-900 pb-2 sm:pb-0 -mx-4 sm:mx-0 px-4 sm:px-0 border-t sm:border-t-0 border-border">
                 <Button
                   type="button"
                   onClick={resetForm}

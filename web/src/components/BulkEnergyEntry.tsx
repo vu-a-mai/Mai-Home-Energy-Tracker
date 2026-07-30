@@ -182,7 +182,7 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
     <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/50 p-0 sm:p-4 overflow-y-auto overscroll-contain">
       <div className="w-full sm:max-w-2xl sm:my-4 flex flex-col max-h-[100dvh] sm:max-h-[min(90vh,100dvh)]">
         <Card className="energy-card flex flex-col w-full bg-card border-0 sm:border border-border rounded-none sm:rounded-lg shadow-xl min-h-0 max-h-[100dvh] sm:max-h-[min(90vh,100dvh)]">
-          <CardHeader className="p-4 sm:p-5 md:p-6 border-b border-border flex-shrink-0 bg-card z-10">
+        <CardHeader className="p-4 sm:p-5 md:p-6 border-b border-border flex-shrink-0 bg-slate-900 z-10">
             <div className="flex items-center justify-between gap-3">
               <CardTitle className="text-lg sm:text-xl md:text-2xl text-foreground flex items-center gap-2 flex-1 min-w-0">
                 <BoltIcon className="w-5 h-5 sm:w-6 sm:h-6 text-orange-400 flex-shrink-0" />
@@ -419,7 +419,7 @@ export function BulkEnergyEntry({ isOpen, onClose, onSuccess }: BulkEnergyEntryP
             </div>
 
             {/* Submit */}
-            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 sticky bottom-0 sm:static bg-card pb-2 sm:pb-0 -mx-4 sm:mx-0 px-4 sm:px-0 border-t sm:border-t-0 border-border">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 sticky bottom-0 sm:static bg-slate-900 pb-2 sm:pb-0 -mx-4 sm:mx-0 px-4 sm:px-0 border-t sm:border-t-0 border-border">
               <Button
                 type="button"
                 onClick={onClose}

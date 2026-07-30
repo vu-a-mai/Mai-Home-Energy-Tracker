@@ -125,18 +125,11 @@ const DEVICE_TYPES = [
 ].sort() // Alphabetically sorted
 
 const LOCATIONS = [
-  'Vu Room',
-  'Thuy Room',
-  'Vy Room',
-  'Han Room',
   'Attic',
   'Backyard',
   'Basement',
   'Bathroom',
-  'Bedroom 1',
-  'Bedroom 2',
-  'Bedroom 3',
-  'Bedroom 4',
+  'Bedroom',
   'Dining Room',
   'Entryway',
   'Garage',
@@ -153,7 +146,6 @@ const LOCATIONS = [
   'Utility Room',
   'Other',
 ]
-//.sort() // Alphabetically sorted
 
 export default function Devices() {
   const { devices, loading, error, addDevice, updateDevice, deleteDevice } = useDevices()
@@ -436,7 +428,7 @@ export default function Devices() {
                     </span>
                   </label>
                   <div className="text-sm text-muted-foreground mt-2 ml-7">
-                    {formData.is_shared ? 'Costs will be split among users who actually used it in each session' : 'Costs will be assigned to you only'}
+                    {formData.is_shared ? 'Shared device (organizational label only — bill split still uses who you assign on each log)' : 'Personal device (organizational label only — assign users on each log for cost share)'}
                   </div>
                 </div>
 
