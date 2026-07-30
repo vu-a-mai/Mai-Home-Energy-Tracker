@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route } from 'react-router'
 import { useAuth } from './hooks/useAuth'
 import { useDemoMode } from './contexts/DemoContext'
 import { Toaster } from 'sonner'

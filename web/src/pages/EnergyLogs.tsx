@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, type ReactElement } from 'react'
 import { useEnergyLogs } from '../hooks/useEnergyLogs'
 import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
@@ -75,7 +75,7 @@ const formatTimeForInput = (timeString: string): string => {
 }
 
 // Helper function to get device-specific icon
-const getDeviceIcon = (deviceName: string): JSX.Element => {
+const getDeviceIcon = (deviceName: string): ReactElement => {
   const name = deviceName.toLowerCase()
   const iconClass = "w-4 h-4 inline-block"
   
@@ -92,7 +92,7 @@ const getDeviceIcon = (deviceName: string): JSX.Element => {
 }
 
 // Helper function to get user icon
-const getUserIcon = (userName: string): JSX.Element => {
+const getUserIcon = (userName: string): ReactElement => {
   const name = userName.toLowerCase()
   const iconClass = "w-4 h-4 inline-block"
   

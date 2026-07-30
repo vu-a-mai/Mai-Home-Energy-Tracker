@@ -16,7 +16,7 @@ interface UsePerformanceMonitorOptions {
 export function usePerformanceMonitor(
   options: UsePerformanceMonitorOptions = {}
 ) {
-  const { enabled = process.env.NODE_ENV === 'development', logToConsole = false, componentName = 'Component' } = options
+  const { enabled = import.meta.env.DEV, logToConsole = false, componentName = 'Component' } = options
   
   const [metrics, setMetrics] = useState<PerformanceMetrics>({
     renderTime: 0,

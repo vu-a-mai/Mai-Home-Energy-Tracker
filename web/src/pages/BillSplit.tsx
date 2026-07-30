@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, type ReactElement } from 'react'
 import { useEnergyLogs } from '../hooks/useEnergyLogs'
 import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
@@ -63,7 +63,7 @@ interface GlobalDiscount {
 }
 
 // Helper function to get user icon
-const getUserIcon = (userName: string): JSX.Element => {
+const getUserIcon = (userName: string): ReactElement => {
   const name = userName.toLowerCase()
   const iconClass = "w-4 h-4 inline-block"
   

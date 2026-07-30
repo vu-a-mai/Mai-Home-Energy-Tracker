@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactElement } from 'react'
 import { useDevices } from '../hooks/useDevices'
 import { toast } from 'sonner'
 import { Button } from '../components/ui/Button'
@@ -29,7 +29,7 @@ import {
 } from '@heroicons/react/24/outline'
 
 // Helper function to get device-specific icon
-const getDeviceIcon = (deviceName: string, deviceType: string): JSX.Element => {
+const getDeviceIcon = (deviceName: string, deviceType: string): ReactElement => {
   const name = deviceName.toLowerCase()
   const type = deviceType.toLowerCase()
   const iconClass = "w-5 h-5 md:w-6 md:h-6"

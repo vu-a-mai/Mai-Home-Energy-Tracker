@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useDemoMode } from '../contexts/DemoContext'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card'

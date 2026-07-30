@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useDemoMode } from '../contexts/DemoContext'
