@@ -1,10 +1,11 @@
 import { createContext, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
 import { clearDemoStore, initDemoStore } from '../demo/demoStore'
+import { supabase } from '../lib/supabase'
 
 interface DemoContextType {
   isDemoMode: boolean
-  enableDemoMode: () => void
+  enableDemoMode: () => Promise<void>
   disableDemoMode: () => void
 }
 
@@ -27,7 +28,13 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     return enabled
   })
 
-  const enableDemoMode = () => {
+  const enableDemoMode = async () => {
+    // Prevent mixed live-session + demo sandbox writes
+    try {
+      await supabase.auth.signOut()
+    } catch {
+      // Continue into demo even if sign-out fails (e.g. offline)
+    }
     initDemoStore(false)
     setIsDemoMode(true)
     localStorage.setItem('demo_mode', 'true')

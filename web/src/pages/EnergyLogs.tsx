@@ -3,7 +3,9 @@ import { useEnergyLogs } from '../hooks/useEnergyLogs'
 import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
 import { useAuth } from '../hooks/useAuth'
+import { useDemoMode } from '../contexts/DemoContext'
 import { useDeviceGroups } from '../hooks/useDeviceGroups'
+import { demoDeleteEnergyLog } from '../demo/demoStore'
 import { toast } from 'sonner'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -109,6 +111,7 @@ export default function EnergyLogs() {
   const { devices, refreshDevices } = useDevices()
   const { users: householdUsers } = useHouseholdUsers()
   const { user } = useAuth()
+  const { isDemoMode } = useDemoMode()
   const { addTemplate } = useTemplates()
   const { deviceGroups, addDeviceGroup } = useDeviceGroups()
   const [showForm, setShowForm] = useState(false)
@@ -466,6 +469,17 @@ export default function EnergyLogs() {
   const handleBulkDelete = async (options: DeleteOptions) => {
     try {
       const logIds = filteredLogs.map(log => log.id)
+
+      if (isDemoMode) {
+        let deleted = 0
+        for (const id of logIds) {
+          if (demoDeleteEnergyLog(id)) deleted++
+        }
+        toast.success(`Deleted ${deleted} demo log(s)`)
+        setShowDeleteModal(false)
+        refreshEnergyLogs()
+        return
+      }
       
       if (options.mode === 'permanent' || options.skipRecovery) {
         // Permanent delete

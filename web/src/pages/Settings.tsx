@@ -140,19 +140,21 @@ export default function Settings() {
     }
   }
 
-  // Create auto-backup to localStorage
+  // Create auto-backup metadata only (no full logs/devices in localStorage)
   const handleAutoBackup = () => {
     try {
-      const backupData = {
-        devices,
-        energyLogs: energyLogs.slice(0, 100), // Only keep last 100 logs for space
-        billSplits: billSplits,
+      // Prefer downloadable JSON export for real data; browser storage holds
+      // non-sensitive counts only to avoid plaintext PII on shared machines.
+      const backupMeta = {
         exportDate: new Date().toISOString(),
-        version: '1.0'
+        version: '1.0',
+        deviceCount: devices.length,
+        energyLogCount: energyLogs.length,
+        billSplitCount: billSplits.length,
       }
       
-      localStorage.setItem('mai-energy-tracker-auto-backup', JSON.stringify(backupData))
-      toast.success('✅ Auto-backup saved to browser storage!')
+      localStorage.setItem('mai-energy-tracker-auto-backup', JSON.stringify(backupMeta))
+      toast.success('✅ Backup checkpoint saved. Use Export JSON for a full recoverable backup.')
     } catch (error) {
       console.error('Auto-backup error:', error)
       toast.error('❌ Failed to create auto-backup')

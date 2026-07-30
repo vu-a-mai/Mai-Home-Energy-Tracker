@@ -24,8 +24,8 @@ export default function LandingPage() {
   const navigate = useNavigate()
   const { enableDemoMode } = useDemoMode()
   
-  const handleTryDemo = () => {
-    enableDemoMode()
+  const handleTryDemo = async () => {
+    await enableDemoMode()
     navigate('/dashboard')
   }
   
