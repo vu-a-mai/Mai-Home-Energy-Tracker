@@ -2,8 +2,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import type { RecurringSchedule, ScheduleFormData } from '../types'
 import { toast } from 'sonner'
-import { calculateUsageCost } from '../utils/rateCalculatorFixed'
-import { formatLocalDate, parseLocalDate } from '../utils/dateUtils'
+import { todayLocal } from '../utils/dateUtils'
+import {
+  getMatchingScheduleDates,
+  isDateInSchedule,
+  summarizeGenerateResults,
+} from '../utils/scheduleDates'
 import { useDemoMode } from '../contexts/DemoContext'
 import {
   demoGetSchedules,
@@ -44,7 +48,6 @@ export function useRecurringSchedules() {
 
       if (schedulesError) throw schedulesError
 
-      // Map the data to include device info
       const mappedSchedules = (schedulesData || []).map(schedule => ({
         ...schedule,
         device_name: schedule.devices?.name,
@@ -135,7 +138,7 @@ export function useRecurringSchedules() {
 
   const toggleScheduleActive = async (id: string, isActive: boolean) => {
     if (isDemoMode) {
-      demoUpdateSchedule(id, { is_active: isActive } as any)
+      demoUpdateSchedule(id, { is_active: isActive } as Partial<ScheduleFormData> & { is_active?: boolean })
       setSchedules(demoGetSchedules())
       toast.success(`Schedule ${isActive ? 'activated' : 'paused'} successfully!`)
       return
@@ -189,6 +192,19 @@ export function useRecurringSchedules() {
     if (isDemoMode) {
       const schedule = demoGetSchedules().find(s => s.id === scheduleId)
       if (!schedule) throw new Error('Schedule not found')
+
+      const check = isDateInSchedule(schedule, targetDate)
+      if (!check.ok) throw new Error(check.reason || 'Cannot generate log')
+
+      const existing = demoGetEnergyLogs().find(
+        (l) =>
+          l.source_type === 'recurring' &&
+          l.source_id === scheduleId &&
+          l.usage_date === targetDate &&
+          !l.deleted_at
+      )
+      if (existing) throw new Error('Log already exists for this date and schedule')
+
       demoAddEnergyLog({
         device_id: schedule.device_id,
         usage_date: targetDate,
@@ -220,13 +236,32 @@ export function useRecurringSchedules() {
     }
   }
 
-  const autoGenerateLogsForDate = async (targetDate: string) => {
+  /**
+   * Generate auto_create schedules for a local civil date.
+   * @param silent When true, only toast real failures (used by app-open runner).
+   */
+  const autoGenerateLogsForDate = async (
+    targetDate: string,
+    options: { silent?: boolean } = {}
+  ) => {
+    const silent = options.silent === true
+
     if (isDemoMode) {
       const active = demoGetSchedules().filter(s => s.is_active && s.auto_create)
-      let successCount = 0
+      let created = 0
       for (const schedule of active) {
-        const day = parseLocalDate(targetDate).getDay()
-        if (!schedule.days_of_week.includes(day)) continue
+        const check = isDateInSchedule(schedule, targetDate)
+        if (!check.ok) continue
+
+        const existing = demoGetEnergyLogs().find(
+          (l) =>
+            l.source_type === 'recurring' &&
+            l.source_id === schedule.id &&
+            l.usage_date === targetDate &&
+            !l.deleted_at
+        )
+        if (existing) continue
+
         demoAddEnergyLog({
           device_id: schedule.device_id,
           usage_date: targetDate,
@@ -236,10 +271,12 @@ export function useRecurringSchedules() {
           source_type: 'recurring',
           source_id: schedule.id,
         })
-        successCount++
+        created++
       }
-      if (successCount > 0) toast.success(`Generated ${successCount} log(s) from schedules!`)
-      return []
+      if (!silent && created > 0) {
+        toast.success(`Generated ${created} log(s) from schedules!`)
+      }
+      return { created, replaced: 0, skipped: 0, failed: 0, results: [] }
     }
 
     try {
@@ -250,54 +287,54 @@ export function useRecurringSchedules() {
       if (error) throw error
 
       const results = data || []
-      const successCount = results.filter((r: any) => r.success).length
-      const failCount = results.filter((r: any) => !r.success).length
+      const summary = summarizeGenerateResults(results)
+      const createdOrReplaced = summary.created + summary.replaced
 
-      if (successCount > 0) {
-        toast.success(`Generated ${successCount} log(s) from schedules!`)
+      if (!silent && createdOrReplaced > 0) {
+        toast.success(`Generated ${createdOrReplaced} log(s) from schedules!`)
       }
-      if (failCount > 0) {
-        toast.warning(`${failCount} schedule(s) failed to generate logs`)
+      if (!silent && summary.failed > 0) {
+        toast.warning(`${summary.failed} schedule(s) failed to generate logs`)
       }
+      // Expected skips stay silent
 
-      return results
+      return { ...summary, results }
     } catch (err) {
       console.error('Error auto-generating logs:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to auto-generate logs'
-      toast.error(errorMessage)
+      if (!silent) toast.error(errorMessage)
       throw err
     }
   }
 
-  const bulkGenerateLogsForSchedule = async (scheduleId: string, replaceExisting: boolean = false) => {
+  const bulkGenerateLogsForSchedule = async (
+    scheduleId: string,
+    replaceExisting: boolean = false
+  ) => {
     try {
       const schedule = schedules.find(s => s.id === scheduleId)
       if (!schedule) throw new Error('Schedule not found')
 
+      const endDate = todayLocal()
+
       if (isDemoMode) {
-        const startDate = parseLocalDate(schedule.schedule_start_date)
-        const endDate = schedule.schedule_end_date ? parseLocalDate(schedule.schedule_end_date) : new Date()
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        const actualEndDate = endDate > today ? today : endDate
-        const matchingDates: string[] = []
-        const currentDate = new Date(startDate)
-        while (currentDate <= actualEndDate) {
-          if (schedule.days_of_week.includes(currentDate.getDay())) {
-            matchingDates.push(formatLocalDate(currentDate))
-          }
-          currentDate.setDate(currentDate.getDate() + 1)
-        }
+        const matchingDates = getMatchingScheduleDates(schedule, endDate)
         if (matchingDates.length === 0) {
           toast.info('No matching dates found for this schedule')
           return { success: 0, failed: 0, skipped: 0 }
         }
+
         let successCount = 0
         let skippedCount = 0
         toast.info(`Generating ${matchingDates.length} log(s)...`)
+
         for (const date of matchingDates) {
           const existing = demoGetEnergyLogs().find(
-            (l) => l.source_type === 'recurring' && l.source_id === scheduleId && l.usage_date === date
+            (l) =>
+              l.source_type === 'recurring' &&
+              l.source_id === scheduleId &&
+              l.usage_date === date &&
+              !l.deleted_at
           )
           if (existing) {
             if (replaceExisting) demoDeleteEnergyLog(existing.id)
@@ -317,135 +354,44 @@ export function useRecurringSchedules() {
           })
           successCount++
         }
+
         if (successCount > 0) toast.success(`✅ Generated ${successCount} log(s) successfully!`)
         if (skippedCount > 0) toast.info(`⏭️ Skipped ${skippedCount} existing log(s)`)
         return { success: successCount, failed: 0, skipped: skippedCount }
       }
 
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
+      const { data, error } = await supabase.rpc('bulk_generate_recurring_logs', {
+        p_schedule_id: scheduleId,
+        p_end_date: endDate,
+        p_replace_existing: replaceExisting,
+      })
 
-      const { data: userData } = await supabase
-        .from('users')
-        .select('household_id')
-        .eq('id', user.id)
-        .single()
+      if (error) throw error
 
-      if (!userData?.household_id) throw new Error('No household found')
-
-      // Calculate all matching dates (local civil dates)
-      const startDate = parseLocalDate(schedule.schedule_start_date)
-      const endDate = schedule.schedule_end_date ? parseLocalDate(schedule.schedule_end_date) : new Date()
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      
-      // Don't generate logs for future dates
-      const actualEndDate = endDate > today ? today : endDate
-
-      const matchingDates: string[] = []
-      const currentDate = new Date(startDate)
-
-      while (currentDate <= actualEndDate) {
-        const dayOfWeek = currentDate.getDay()
-        if (schedule.days_of_week.includes(dayOfWeek)) {
-          matchingDates.push(formatLocalDate(currentDate))
-        }
-        currentDate.setDate(currentDate.getDate() + 1)
-      }
-
-      if (matchingDates.length === 0) {
+      const results = data || []
+      if (results.length === 0) {
         toast.info('No matching dates found for this schedule')
         return { success: 0, failed: 0, skipped: 0 }
       }
 
-      // Generate logs for all matching dates
-      let successCount = 0
-      let failedCount = 0
-      let skippedCount = 0
+      const summary = summarizeGenerateResults(results)
+      const successCount = summary.created + summary.replaced
 
-      toast.info(`Generating ${matchingDates.length} log(s)...`)
-
-      for (const date of matchingDates) {
-        try {
-          // Check if log already exists
-          const { data: existingLog } = await supabase
-            .from('energy_logs')
-            .select('id')
-            .eq('source_type', 'recurring')
-            .eq('source_id', scheduleId)
-            .eq('usage_date', date)
-            .single()
-
-          if (existingLog) {
-            if (replaceExisting) {
-              // Delete existing log first
-              const { error: deleteError } = await supabase
-                .from('energy_logs')
-                .delete()
-                .eq('id', existingLog.id)
-
-              if (deleteError) {
-                console.error(`Failed to delete existing log for ${date}:`, deleteError)
-                failedCount++
-                continue
-              }
-            } else {
-              // Skip if not replacing
-              skippedCount++
-              continue
-            }
-          }
-
-          // Create the log with client-side costs (DB trigger will also align via TOU calculator)
-          const wattage = (schedule as { device_wattage?: number }).device_wattage ?? 0
-          const costCalc = calculateUsageCost(
-            wattage,
-            schedule.start_time,
-            schedule.end_time,
-            date
-          )
-
-          const { error: insertError } = await supabase
-            .from('energy_logs')
-            .insert({
-              household_id: userData.household_id,
-              device_id: schedule.device_id,
-              usage_date: date,
-              start_time: schedule.start_time,
-              end_time: schedule.end_time,
-              total_kwh: costCalc.totalKwh,
-              calculated_cost: costCalc.totalCost,
-              rate_breakdown: costCalc.breakdown,
-              assigned_users: schedule.assigned_users,
-              created_by: user.id,
-              source_type: 'recurring',
-              source_id: scheduleId
-            })
-
-          if (insertError) {
-            console.error(`Failed to create log for ${date}:`, insertError)
-            failedCount++
-          } else {
-            successCount++
-          }
-        } catch (err) {
-          console.error(`Error processing date ${date}:`, err)
-          failedCount++
-        }
-      }
-
-      // Show results
       if (successCount > 0) {
         toast.success(`✅ Generated ${successCount} log(s) successfully!`)
       }
-      if (skippedCount > 0) {
-        toast.info(`⏭️ Skipped ${skippedCount} existing log(s)`)
+      if (summary.skipped > 0) {
+        toast.info(`⏭️ Skipped ${summary.skipped} existing log(s)`)
       }
-      if (failedCount > 0) {
-        toast.error(`❌ Failed to generate ${failedCount} log(s)`)
+      if (summary.failed > 0) {
+        toast.error(`❌ Failed to generate ${summary.failed} log(s)`)
       }
 
-      return { success: successCount, failed: failedCount, skipped: skippedCount }
+      return {
+        success: successCount,
+        failed: summary.failed,
+        skipped: summary.skipped,
+      }
     } catch (err) {
       console.error('Error bulk generating logs:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to bulk generate logs'
@@ -468,3 +414,7 @@ export function useRecurringSchedules() {
     refreshSchedules: fetchSchedules
   }
 }
+
+// Re-export helpers used by modal/preview for consistency
+export { getMatchingScheduleDates, countMatchingScheduleDays } from '../utils/scheduleDates'
+export { formatLocalDate, parseLocalDate } from '../utils/dateUtils'

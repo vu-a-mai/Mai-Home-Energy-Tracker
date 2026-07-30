@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useDevices } from '../hooks/useDevices'
 import { useEnergyLogs } from '../hooks/useEnergyLogs'
 import { useBillSplits } from '../contexts/BillSplitContext'
+import { useHouseholdTimezone } from '../hooks/useHouseholdTimezone'
 import { toast } from 'sonner'
 import { Button } from '../components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card'
@@ -12,7 +13,7 @@ import {
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
   CircleStackIcon,
-    BoltIcon,
+  BoltIcon,
   ArrowPathIcon,
   ExclamationTriangleIcon,
   UserCircleIcon,
@@ -22,24 +23,48 @@ import {
   FolderIcon,
   CpuChipIcon,
   ClipboardDocumentListIcon,
-    CurrencyDollarIcon,
-    LightBulbIcon,
-    CodeBracketSquareIcon,
-    ServerStackIcon,
-    PaintBrushIcon,
-    RocketLaunchIcon,
-    ChartPieIcon,
-    Squares2X2Icon
+  CurrencyDollarIcon,
+  LightBulbIcon,
+  CodeBracketSquareIcon,
+  ServerStackIcon,
+  PaintBrushIcon,
+  RocketLaunchIcon,
+  ChartPieIcon,
+  Squares2X2Icon,
+  GlobeAmericasIcon
 } from '@heroicons/react/24/outline'
+
+const COMMON_TIMEZONES = [
+  'America/Los_Angeles',
+  'America/Denver',
+  'America/Chicago',
+  'America/New_York',
+  'America/Phoenix',
+  'America/Anchorage',
+  'Pacific/Honolulu',
+  'UTC',
+]
 
 export default function Settings() {
   const { user } = useAuth()
   const { devices } = useDevices()
   const { energyLogs } = useEnergyLogs()
   const { billSplits } = useBillSplits()
+  const {
+    timezone,
+    browserTimezone,
+    loading: timezoneLoading,
+    saving: timezoneSaving,
+    saveTimezone,
+  } = useHouseholdTimezone()
   const [importing, setImporting] = useState(false)
+  const [selectedTimezone, setSelectedTimezone] = useState<string | null>(null)
 
-  // Export all data as JSON
+  const timezoneOptions = Array.from(
+    new Set([browserTimezone, timezone, ...COMMON_TIMEZONES].filter(Boolean))
+  )
+  const draftTimezone = selectedTimezone ?? timezone
+
   const handleExportAll = () => {
     try {
       if (!user?.id) {
@@ -54,7 +79,6 @@ export default function Settings() {
     }
   }
 
-  // Export devices only
   const handleExportDevices = () => {
     try {
       exportDevicesToCSV(devices)
@@ -65,7 +89,6 @@ export default function Settings() {
     }
   }
 
-  // Export energy logs only
   const handleExportEnergyLogs = () => {
     try {
       if (!user?.id) {
@@ -80,7 +103,6 @@ export default function Settings() {
     }
   }
 
-  // Export bill splits only
   const handleExportBillSplits = () => {
     try {
       const dataStr = JSON.stringify(billSplits, null, 2)
@@ -91,7 +113,7 @@ export default function Settings() {
       link.download = `bill-splits-backup-${new Date().toISOString().split('T')[0]}.json`
       link.click()
       URL.revokeObjectURL(url)
-      
+
       toast.success('✅ Bill splits exported successfully!')
     } catch (error) {
       console.error('Export error:', error)
@@ -99,7 +121,6 @@ export default function Settings() {
     }
   }
 
-  // Export energy logs as CSV
   const handleExportCSV = () => {
     try {
       exportEnergyLogsToCSV(energyLogs)
@@ -110,7 +131,6 @@ export default function Settings() {
     }
   }
 
-  // Handle file import
   const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
@@ -119,32 +139,27 @@ export default function Settings() {
     try {
       const text = await file.text()
       const data = JSON.parse(text)
-      
-      // Display import summary
+
       const summary = []
       if (data.devices && data.devices.length > 0) summary.push(`${data.devices.length} devices`)
       if (data.energyLogs && data.energyLogs.length > 0) summary.push(`${data.energyLogs.length} energy logs`)
-      
+
       toast.success(`✅ Backup loaded: ${summary.join(', ')}`, {
         description: 'Data has been imported to the database'
       })
-      
+
       console.log('Backup data loaded:', data)
-      
     } catch (error) {
       console.error('Import error:', error)
       toast.error('❌ Failed to import backup file')
     } finally {
       setImporting(false)
-      event.target.value = '' // Reset file input
+      event.target.value = ''
     }
   }
 
-  // Create auto-backup metadata only (no full logs/devices in localStorage)
   const handleAutoBackup = () => {
     try {
-      // Prefer downloadable JSON export for real data; browser storage holds
-      // non-sensitive counts only to avoid plaintext PII on shared machines.
       const backupMeta = {
         exportDate: new Date().toISOString(),
         version: '1.0',
@@ -152,7 +167,7 @@ export default function Settings() {
         energyLogCount: energyLogs.length,
         billSplitCount: billSplits.length,
       }
-      
+
       localStorage.setItem('mai-energy-tracker-auto-backup', JSON.stringify(backupMeta))
       toast.success('✅ Backup checkpoint saved. Use Export JSON for a full recoverable backup.')
     } catch (error) {
@@ -161,9 +176,17 @@ export default function Settings() {
     }
   }
 
+  const handleSaveTimezone = async () => {
+    try {
+      await saveTimezone(draftTimezone)
+      setSelectedTimezone(null)
+    } catch {
+      // toast handled in hook
+    }
+  }
+
   return (
     <div className="max-w-7xl mx-auto min-h-dvh bg-background text-foreground font-sans fade-in">
-      {/* Header */}
       <header className="mb-4 p-3 md:p-4 energy-header-gradient rounded-xl text-white shadow-xl">
         <h1 className="text-xl md:text-2xl font-bold energy-pulse flex items-center gap-3">
           <Cog6ToothIcon className="w-7 h-7 md:w-8 md:h-8 text-purple-400" />
@@ -174,9 +197,7 @@ export default function Settings() {
         </p>
       </header>
 
-      {/* Top Section: Account Info & Data Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4 slide-up">
-        {/* Account Information */}
         <Card className="energy-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-base md:text-lg text-foreground flex items-center gap-2">
@@ -196,7 +217,6 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* Data Summary */}
         <Card className="energy-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-base md:text-lg text-foreground flex items-center gap-2">
@@ -223,7 +243,54 @@ export default function Settings() {
         </Card>
       </div>
 
-      {/* Data Backup & Restore */}
+      <section className="mb-4 slide-up">
+        <Card className="energy-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base md:text-lg text-foreground flex items-center gap-2">
+              <GlobeAmericasIcon className="w-5 h-5 text-emerald-400" />
+              Household Timezone
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Used for midnight auto-create of recurring schedule logs. Default is America/Los_Angeles.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+              <label className="flex-1 text-xs sm:text-sm">
+                <span className="text-muted-foreground mb-1 block">Timezone</span>
+                <select
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+                  value={draftTimezone}
+                  disabled={timezoneLoading || timezoneSaving}
+                  onChange={(e) => setSelectedTimezone(e.target.value)}
+                >
+                  {timezoneOptions.map((tz) => (
+                    <option key={tz} value={tz}>
+                      {tz}
+                      {tz === browserTimezone ? ' (browser — recommended)' : ''}
+                      {tz === 'America/Los_Angeles' && tz !== browserTimezone ? ' (default)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Button
+                type="button"
+                onClick={handleSaveTimezone}
+                disabled={timezoneLoading || timezoneSaving || draftTimezone === timezone}
+                className="energy-action-btn"
+              >
+                {timezoneSaving ? 'Saving…' : 'Save timezone'}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Current: <span className="font-medium text-foreground">{timezoneLoading ? 'Loading…' : timezone}</span>
+              {' · '}
+              Browser: <span className="font-medium text-foreground">{browserTimezone}</span>
+            </p>
+          </CardContent>
+        </Card>
+      </section>
+
       <section className="slide-up">
         <Card className="energy-card">
           <CardHeader className="pb-3">
@@ -236,14 +303,12 @@ export default function Settings() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Export Section */}
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
                 <ArrowDownTrayIcon className="w-4 h-4 text-green-400" />
                 Export
               </h3>
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-                {/* Export All */}
                 <button
                   onClick={handleExportAll}
                   className="group relative overflow-hidden bg-gradient-to-br from-green-500/20 to-emerald-500/20 hover:from-green-500/30 hover:to-emerald-500/30 border border-green-500/40 hover:border-green-500/60 rounded-lg p-3 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/20"
@@ -257,7 +322,6 @@ export default function Settings() {
                   </div>
                 </button>
 
-                {/* Export Devices */}
                 <button
                   onClick={handleExportDevices}
                   className="group relative overflow-hidden bg-gradient-to-br from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 border border-blue-500/40 hover:border-blue-500/60 rounded-lg p-3 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20"
@@ -271,7 +335,6 @@ export default function Settings() {
                   </div>
                 </button>
 
-                {/* Export Energy Logs */}
                 <button
                   onClick={handleExportEnergyLogs}
                   className="group relative overflow-hidden bg-gradient-to-br from-orange-500/20 to-red-500/20 hover:from-orange-500/30 hover:to-red-500/30 border border-orange-500/40 hover:border-orange-500/60 rounded-lg p-3 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/20"
@@ -285,7 +348,6 @@ export default function Settings() {
                   </div>
                 </button>
 
-                {/* Export Bill Splits */}
                 <button
                   onClick={handleExportBillSplits}
                   className="group relative overflow-hidden bg-gradient-to-br from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 border border-purple-500/40 hover:border-purple-500/60 rounded-lg p-3 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/20"
@@ -299,7 +361,6 @@ export default function Settings() {
                   </div>
                 </button>
 
-                {/* Export CSV */}
                 <button
                   onClick={handleExportCSV}
                   className="group relative overflow-hidden bg-gradient-to-br from-yellow-500/20 to-amber-500/20 hover:from-yellow-500/30 hover:to-amber-500/30 border border-yellow-500/40 hover:border-yellow-500/60 rounded-lg p-3 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-yellow-500/20"
@@ -313,13 +374,12 @@ export default function Settings() {
                   </div>
                 </button>
 
-                {/* Auto Backup */}
                 <button
                   onClick={handleAutoBackup}
                   className="group relative overflow-hidden bg-gradient-to-br from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/40 hover:border-cyan-500/60 rounded-lg p-3 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/20"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">🔄</span>
+                    <ArrowPathIcon className="w-6 h-6 text-cyan-400" />
                     <div className="text-left flex-1">
                       <div className="font-semibold text-xs text-foreground">Browser</div>
                       <div className="text-[10px] text-cyan-400">Auto</div>
@@ -329,7 +389,6 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* Import Section */}
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
                 <ArrowUpTrayIcon className="w-4 h-4 text-purple-400" />
@@ -379,10 +438,8 @@ export default function Settings() {
         </Card>
       </section>
 
-      {/* Tech Stack & Credits Section */}
       <section className="mt-8 border-t border-border pt-8">
         <div className="max-w-4xl mx-auto">
-          {/* Tech Stack */}
           <div className="mb-8">
             <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
               <CpuChipIcon className="w-5 h-5 text-cyan-400" />
@@ -448,7 +505,6 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Credits */}
           <div className="text-center space-y-2 pb-4">
             <p className="text-sm text-foreground font-medium flex items-center justify-center gap-2">
               <LightBulbIcon className="w-4 h-4 text-yellow-400" />
@@ -460,8 +516,6 @@ export default function Settings() {
           </div>
         </div>
       </section>
-
     </div>
   )
 }
-

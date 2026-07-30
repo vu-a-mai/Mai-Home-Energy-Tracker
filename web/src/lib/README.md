@@ -14,6 +14,8 @@ This folder contains SQL scripts for Mai Home Energy Tracker database setup and 
 | `14-fix-security-warnings.sql` | Security fixes for functions (search_path) | Run on existing database to fix security warnings |
 | `53-align-tou-cost-calculator.sql` | Align `calculate_energy_cost` with app TOU-D-PRIME rates; overnight/day boundaries | **Run on existing projects** after the July 2026 cost-hardening release |
 | `54-secure-recurring-and-cleanup-rpcs.sql` | Household-scope recurring RPCs; revoke client cleanup | **Run on existing projects** to close cross-tenant RPC gaps |
+| `55-complete-auto-scheduling.sql` | Unified recurring generation, bulk RPC, household timezone, service due-runner | **Run on existing projects** to enable auto-create |
+| `56-schedule-auto-scheduling-cron.sql` | Hourly pg_cron job calling `run_due_recurring_schedules` | **Optional** after 55; requires pg_cron |
 
 ### Archived Scripts
 
@@ -54,6 +56,35 @@ Run: 54-secure-recurring-and-cleanup-rpcs.sql
 ```
 
 Scopes recurring log generation to the caller's household and removes client execute rights on global cleanup.
+
+### For Existing Database (complete auto-scheduling):
+
+```bash
+1. Run: 55-complete-auto-scheduling.sql
+2. Optional: Run: 56-schedule-auto-scheduling-cron.sql  (needs pg_cron)
+```
+
+What this enables:
+
+- **Today-only auto-create** for schedules with `auto_create = true`
+- **Per-household timezone** (`household_settings`, default `America/Los_Angeles`) editable in Settings
+- **Server midnight runner** via `run_due_recurring_schedules()` (service_role / cron)
+- **App-open fallback** once per local day per household
+- Soft-deleted logs no longer block regeneration; bulk generation uses the same RPC core
+
+Verify after 55:
+
+```sql
+SELECT public.is_valid_timezone('America/Los_Angeles'); -- true
+SELECT cron.jobid, jobname, schedule FROM cron.job
+  WHERE jobname = 'mai-run-due-recurring-schedules'; -- after 56
+```
+
+Troubleshooting:
+
+- If cron migration fails, auto-create still works when a household member opens the app
+- Set timezone in **Settings → Household Timezone** (browser TZ is recommended)
+- Duplicate active recurring logs for the same schedule+date are blocked by a partial unique index
 
 ### For Existing Database with Security Warnings:
 
