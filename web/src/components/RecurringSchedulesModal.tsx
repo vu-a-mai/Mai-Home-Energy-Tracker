@@ -10,6 +10,8 @@ import { Input } from './ui/Input'
 import { Card, CardContent } from './ui/Card'
 import { MultiDeviceSelector } from './MultiDeviceSelector'
 import { SaveGroupModal } from './SaveGroupModal'
+import { DayOfWeekChips, DAYS_OF_WEEK } from './DayOfWeekChips'
+import { ReplaceExistingLogsPanel } from './ReplaceExistingLogsPanel'
 import type { ScheduleFormData } from '../types'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
@@ -36,16 +38,6 @@ interface RecurringSchedulesModalProps {
   isOpen: boolean
   onClose: () => void
 }
-
-const DAYS_OF_WEEK = [
-  { value: 0, label: 'Sun', fullLabel: 'Sunday' },
-  { value: 1, label: 'Mon', fullLabel: 'Monday' },
-  { value: 2, label: 'Tue', fullLabel: 'Tuesday' },
-  { value: 3, label: 'Wed', fullLabel: 'Wednesday' },
-  { value: 4, label: 'Thu', fullLabel: 'Thursday' },
-  { value: 5, label: 'Fri', fullLabel: 'Friday' },
-  { value: 6, label: 'Sat', fullLabel: 'Saturday' }
-]
 
 export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesModalProps) {
   const { schedules, loading, addSchedule, updateSchedule, toggleScheduleActive, deleteSchedule, generateLogsFromSchedule, bulkGenerateLogsForSchedule } = useRecurringSchedules()
@@ -104,7 +96,6 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
   const [replaceExisting, setReplaceExisting] = useState(false)
   const [existingLogsPreview, setExistingLogsPreview] = useState<any[]>([])
   const [loadingPreview, setLoadingPreview] = useState(false)
-  const [showPreview, setShowPreview] = useState(false)
   const [formData, setFormData] = useState<ScheduleFormData>({
     schedule_name: '',
     device_id: '',
@@ -298,15 +289,6 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
     setShowForm(true)
   }
 
-  const toggleDay = (day: number) => {
-    setFormData(prev => ({
-      ...prev,
-      days_of_week: prev.days_of_week.includes(day)
-        ? prev.days_of_week.filter(d => d !== day)
-        : [...prev.days_of_week, day].sort((a, b) => a - b)
-    }))
-  }
-
   const toggleUserAssignment = (userId: string) => {
     setFormData(prev => ({
       ...prev,
@@ -358,7 +340,6 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
     setBulkScheduleId(scheduleId)
     setReplaceExisting(false)
     setExistingLogsPreview([])
-    setShowPreview(false)
     setShowBulkConfirm(true)
   }
 
@@ -423,7 +404,6 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
       fetchExistingLogsPreview()
     } else {
       setExistingLogsPreview([])
-      setShowPreview(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [replaceExisting, bulkScheduleId])
@@ -806,50 +786,10 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                 )}
               </div>
 
-              <div>
-                <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-semibold text-foreground">
-                  Days of Week *
-                </label>
-                <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                  {DAYS_OF_WEEK.map(day => (
-                    <button
-                      key={day.value}
-                      type="button"
-                      onClick={() => toggleDay(day.value)}
-                      className={`px-3 sm:px-4 py-2 rounded-lg border-2 transition-all font-bold text-sm ${
-                        formData.days_of_week.includes(day.value)
-                          ? 'bg-cyan-500 border-cyan-400 text-white shadow-xl shadow-cyan-500/60 scale-105'
-                          : 'bg-slate-900/80 border-slate-700/50 text-slate-500 hover:bg-slate-800 hover:border-slate-600 hover:text-slate-300'
-                      }`}
-                    >
-                      {day.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="mt-2 sm:mt-3 flex flex-wrap gap-1.5 sm:gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, days_of_week: [1, 2, 3, 4, 5] })}
-                    className="px-3 py-1.5 text-xs font-semibold bg-blue-500/20 border border-blue-500/40 text-blue-300 rounded-md hover:bg-blue-500/30 hover:border-blue-500/60 transition-all"
-                  >
-                    📅 Weekdays
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, days_of_week: [0, 6] })}
-                    className="px-3 py-1.5 text-xs font-semibold bg-purple-500/20 border border-purple-500/40 text-purple-300 rounded-md hover:bg-purple-500/30 hover:border-purple-500/60 transition-all"
-                  >
-                    🎉 Weekends
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, days_of_week: [0, 1, 2, 3, 4, 5, 6] })}
-                    className="px-3 py-1.5 text-xs font-semibold bg-green-500/20 border border-green-500/40 text-green-300 rounded-md hover:bg-green-500/30 hover:border-green-500/60 transition-all"
-                  >
-                    🌟 Every Day
-                  </button>
-                </div>
-              </div>
+              <DayOfWeekChips
+                value={formData.days_of_week}
+                onChange={(days_of_week) => setFormData({ ...formData, days_of_week })}
+              />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
@@ -1044,73 +984,16 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                   </div>
                 </div>
                 
-                <div className="bg-yellow-500/10 border border-yellow-500/30 p-4 rounded-lg space-y-3">
-                  <label className="flex items-start gap-3 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      checked={replaceExisting}
-                      onChange={(e) => setReplaceExisting(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 cursor-pointer"
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-bold text-yellow-300 group-hover:text-yellow-200 transition-colors">
-                        Replace existing logs
-                      </div>
-                      <div className="text-xs text-yellow-400 mt-1">
-                        ⚠️ This will delete and recreate any logs that already exist for these dates
-                      </div>
-                    </div>
-                  </label>
-
-                  {/* Preview of existing logs */}
-                  {replaceExisting && (
-                    <div className="mt-3">
-                      {loadingPreview ? (
-                        <div className="text-xs text-yellow-300 flex items-center gap-2">
-                          <div className="animate-spin">⏳</div>
-                          <span>Checking for existing logs...</span>
-                        </div>
-                      ) : existingLogsPreview.length > 0 ? (
-                        <div className="bg-red-500/10 border border-red-500/30 p-3 rounded-lg">
-                          <button
-                            type="button"
-                            onClick={() => setShowPreview(!showPreview)}
-                            className="flex items-center justify-between w-full text-sm font-semibold text-red-300 hover:text-red-200 transition-colors"
-                          >
-                            <span className="flex items-center gap-2">
-                              🔄 {existingLogsPreview.length} existing log(s) will be replaced
-                            </span>
-                            <ChevronDownIcon className={`w-4 h-4 transition-transform ${showPreview ? 'rotate-180' : ''}`} />
-                          </button>
-                          
-                          {showPreview && (
-                            <div className="mt-3 space-y-1 max-h-40 overflow-y-auto">
-                              {existingLogsPreview.map((log, idx) => (
-                                <div key={idx} className="text-xs text-red-200 flex items-center gap-2 py-1">
-                                  <CalendarIcon className="w-3 h-3 flex-shrink-0" />
-                                  <span>{parseLocalDate(log.usage_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                                  <span>•</span>
-                                  <span>{log.start_time} - {log.end_time}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="text-xs text-green-300 flex items-center gap-2">
-                          <span>✓</span>
-                          <span>No existing logs found - all will be new</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
+                <div className="space-y-3">
+                  <ReplaceExistingLogsPanel
+                    checked={replaceExisting}
+                    onCheckedChange={setReplaceExisting}
+                    loading={loadingPreview}
+                    existingLogs={existingLogsPreview}
+                  />
                   {!replaceExisting && (
-                    <p className="text-xs text-slate-400 flex items-start gap-2 pl-7">
-                      <span>💡</span>
-                      <span>
-                        Existing logs will be skipped automatically. This may take a moment for large date ranges.
-                      </span>
+                    <p className="text-xs text-slate-400">
+                      Existing logs will be skipped automatically. This may take a moment for large date ranges.
                     </p>
                   )}
                 </div>

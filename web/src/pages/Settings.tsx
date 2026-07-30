@@ -1,18 +1,26 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useDevices } from '../hooks/useDevices'
 import { useEnergyLogs } from '../hooks/useEnergyLogs'
 import { useBillSplits } from '../contexts/BillSplitContext'
 import { useTemplates } from '../hooks/useTemplates'
 import { useRecurringSchedules } from '../hooks/useRecurringSchedules'
+import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
 import { useHouseholdTimezone } from '../hooks/useHouseholdTimezone'
 import { toast } from 'sonner'
 import { Button } from '../components/ui/Button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card'
-import { exportDataToJSON, exportEnergyLogsToCSV, exportDevicesToCSV } from '../utils/dataBackup'
+import {
+  exportDataToJSON,
+  exportEnergyLogsToCSV,
+  exportDevicesToCSV,
+  parseBackupFile,
+  importHouseholdBackup,
+} from '../utils/dataBackup'
 import {
   Cog6ToothIcon,
   ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
   CircleStackIcon,
   UserCircleIcon,
   ChartBarIcon,
@@ -38,11 +46,12 @@ const COMMON_TIMEZONES = [
 
 export default function Settings() {
   const { user } = useAuth()
-  const { devices } = useDevices()
-  const { energyLogs } = useEnergyLogs()
+  const { devices, addDevice, refreshDevices } = useDevices()
+  const { energyLogs, addEnergyLog, refreshEnergyLogs } = useEnergyLogs()
   const { billSplits } = useBillSplits()
-  const { templates } = useTemplates()
-  const { schedules } = useRecurringSchedules()
+  const { templates, addTemplate, refreshTemplates } = useTemplates()
+  const { schedules, addSchedule, refreshSchedules } = useRecurringSchedules()
+  const { users: householdUsers } = useHouseholdUsers()
   const {
     timezone,
     browserTimezone,
@@ -52,11 +61,14 @@ export default function Settings() {
   } = useHouseholdTimezone()
   const [selectedTimezone, setSelectedTimezone] = useState<string | null>(null)
   const [showAbout, setShowAbout] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const importInputRef = useRef<HTMLInputElement>(null)
 
   const timezoneOptions = Array.from(
     new Set([browserTimezone, timezone, ...COMMON_TIMEZONES].filter(Boolean))
   )
   const draftTimezone = selectedTimezone ?? timezone
+  const exportHouseholdId = devices[0]?.household_id || user?.id || 'unknown'
 
   const handleExportAll = () => {
     try {
@@ -64,7 +76,7 @@ export default function Settings() {
         toast.error('User not found')
         return
       }
-      exportDataToJSON(devices, energyLogs, user.id, {
+      exportDataToJSON(devices, energyLogs, exportHouseholdId, {
         templates,
         schedules,
         billSplits,
@@ -124,6 +136,64 @@ export default function Settings() {
     } catch (error) {
       console.error('Export error:', error)
       toast.error('Failed to export CSV')
+    }
+  }
+
+  const handleImportClick = () => {
+    importInputRef.current?.click()
+  }
+
+  const handleImportFile = async (file: File | null) => {
+    if (!file) return
+    setImporting(true)
+    try {
+      const backup = await parseBackupFile(file)
+      const deviceCount = backup.devices.length
+      const logCount = backup.energyLogs.length
+      const templateCount = Array.isArray(backup.templates) ? backup.templates.length : 0
+      const scheduleCount = Array.isArray(backup.schedules) ? backup.schedules.length : 0
+      const confirmed = window.confirm(
+        `Merge import into this household?\n\n` +
+          `Devices: ${deviceCount}\n` +
+          `Logs: ${logCount}\n` +
+          `Templates: ${templateCount}\n` +
+          `Schedules: ${scheduleCount}\n\n` +
+          `Matching devices are reused. Bill splits are not imported (user IDs differ across households).`
+      )
+      if (!confirmed) return
+
+      const result = await importHouseholdBackup(backup, {
+        existingDevices: devices,
+        knownUserIds: householdUsers.map((u) => u.id),
+        addDevice,
+        addEnergyLog,
+        addTemplate,
+        addSchedule,
+      })
+
+      await Promise.all([
+        refreshDevices(false),
+        refreshEnergyLogs(),
+        refreshTemplates(),
+        refreshSchedules(),
+      ])
+
+      toast.success(
+        `Imported ${result.devicesCreated} devices (${result.devicesReused} reused), ` +
+          `${result.logsImported} logs, ${result.templatesImported} templates, ` +
+          `${result.schedulesImported} schedules`
+      )
+      if (result.errors.length > 0) {
+        toast.message(`${result.errors.length} item(s) had issues`, {
+          description: result.errors.slice(0, 3).join(' · '),
+        })
+      }
+    } catch (error) {
+      console.error('Import error:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to import backup')
+    } finally {
+      setImporting(false)
+      if (importInputRef.current) importInputRef.current.value = ''
     }
   }
 
@@ -247,28 +317,55 @@ export default function Settings() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base md:text-lg text-foreground flex items-center gap-2">
               <CircleStackIcon className="w-5 h-5 text-blue-400" />
-              Export
+              Backup &amp; Export
             </CardTitle>
             <CardDescription className="text-xs">
-              Primary export includes devices, logs, templates, schedules, and bill splits. Other formats are optional.
+              Export household JSON, then merge-import it later. Matching devices are reused; bill splits are skipped.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <button
-              type="button"
-              onClick={handleExportAll}
-              className="w-full group relative overflow-hidden bg-gradient-to-br from-green-500/20 to-emerald-500/20 hover:from-green-500/30 hover:to-emerald-500/30 border border-green-500/40 hover:border-green-500/60 rounded-lg p-4 transition-all duration-300 text-left"
-            >
-              <div className="flex items-center gap-3">
-                <BriefcaseIcon className="w-8 h-8 text-green-400 shrink-0" />
-                <div className="min-w-0">
-                  <div className="font-semibold text-sm text-foreground">Export household data</div>
-                  <div className="text-xs text-green-400 mt-0.5 break-words">
-                    JSON · devices, logs, templates, schedules, bill splits
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => handleImportFile(e.target.files?.[0] ?? null)}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleExportAll}
+                className="w-full group relative overflow-hidden bg-gradient-to-br from-green-500/20 to-emerald-500/20 hover:from-green-500/30 hover:to-emerald-500/30 border border-green-500/40 hover:border-green-500/60 rounded-lg p-4 transition-all duration-300 text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <BriefcaseIcon className="w-8 h-8 text-green-400 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm text-foreground">Export household data</div>
+                    <div className="text-xs text-green-400 mt-0.5 break-words">
+                      JSON · devices, logs, templates, schedules, bill splits
+                    </div>
                   </div>
                 </div>
-              </div>
-            </button>
+              </button>
+              <button
+                type="button"
+                onClick={handleImportClick}
+                disabled={importing}
+                className="w-full group relative overflow-hidden bg-gradient-to-br from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 border border-blue-500/40 hover:border-blue-500/60 rounded-lg p-4 transition-all duration-300 text-left disabled:opacity-60"
+              >
+                <div className="flex items-center gap-3">
+                  <ArrowUpTrayIcon className="w-8 h-8 text-blue-400 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm text-foreground">
+                      {importing ? 'Importing…' : 'Import household data'}
+                    </div>
+                    <div className="text-xs text-blue-400 mt-0.5 break-words">
+                      Merge JSON export into this household
+                    </div>
+                  </div>
+                </div>
+              </button>
+            </div>
 
             <div>
               <div className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
