@@ -29,7 +29,8 @@ import {
   Squares2X2Icon,
   ListBulletIcon
 } from '@heroicons/react/24/outline'
-import { formatLocalDate, todayLocal } from '../utils/dateUtils'
+import { parseLocalDate, todayLocal } from '../utils/dateUtils'
+import { countMatchingScheduleDays, getMatchingScheduleDates, isDateInSchedule } from '../utils/scheduleDates'
 
 interface RecurringSchedulesModalProps {
   isOpen: boolean
@@ -337,26 +338,12 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
     if (!schedule) return
 
     const today = todayLocal()
-    
-    // Check if today is within schedule range
-    if (today < schedule.schedule_start_date) {
-      toast.error('Cannot generate log: Today is before schedule start date')
+    const check = isDateInSchedule(schedule, today)
+    if (!check.ok) {
+      toast.error(`Cannot generate log: ${check.reason}`)
       return
     }
-    
-    if (schedule.schedule_end_date && today > schedule.schedule_end_date) {
-      toast.error(`Cannot generate log: Schedule ended on ${schedule.schedule_end_date}. Please update the schedule end date or remove it.`)
-      return
-    }
-    
-    // Check if today is in the selected days
-    const dayOfWeek = new Date(today).getDay()
-    if (!schedule.days_of_week.includes(dayOfWeek)) {
-      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-      toast.error(`Cannot generate log: Schedule doesn't run on ${dayNames[dayOfWeek]}`)
-      return
-    }
-    
+
     await generateLogsFromSchedule(scheduleId, today)
   }
 
@@ -388,25 +375,8 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
     }
   }
 
-  const calculateMatchingDays = (schedule: typeof schedules[0]) => {
-    const startDate = new Date(schedule.schedule_start_date)
-    const endDate = schedule.schedule_end_date ? new Date(schedule.schedule_end_date) : new Date()
-    const today = new Date()
-    const actualEndDate = endDate > today ? today : endDate
-    
-    let count = 0
-    const currentDate = new Date(startDate)
-    
-    while (currentDate <= actualEndDate) {
-      const dayOfWeek = currentDate.getDay()
-      if (schedule.days_of_week.includes(dayOfWeek)) {
-        count++
-      }
-      currentDate.setDate(currentDate.getDate() + 1)
-    }
-    
-    return count
-  }
+  const calculateMatchingDays = (schedule: typeof schedules[0]) =>
+    countMatchingScheduleDays(schedule, todayLocal())
 
   const fetchExistingLogsPreview = async () => {
     if (!replaceExisting || !bulkScheduleId) {
@@ -419,34 +389,20 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
     
     setLoadingPreview(true)
     try {
-      // Calculate matching dates
-      const startDate = new Date(schedule.schedule_start_date)
-      const endDate = schedule.schedule_end_date ? new Date(schedule.schedule_end_date) : new Date()
-      const today = new Date()
-      const actualEndDate = endDate > today ? today : endDate
-      
-      const matchingDates: string[] = []
-      const currentDate = new Date(startDate)
-      
-      while (currentDate <= actualEndDate) {
-        const dayOfWeek = currentDate.getDay()
-        if (schedule.days_of_week.includes(dayOfWeek)) {
-          matchingDates.push(formatLocalDate(currentDate))
-        }
-        currentDate.setDate(currentDate.getDate() + 1)
-      }
+      const matchingDates = getMatchingScheduleDates(schedule, todayLocal())
       
       if (matchingDates.length === 0) {
         setExistingLogsPreview([])
         return
       }
       
-      // Query existing logs
+      // Query existing active logs (RLS already excludes soft-deleted)
       const { data, error } = await supabase
         .from('energy_logs')
         .select('usage_date, start_time, end_time')
         .eq('source_type', 'recurring')
         .eq('source_id', bulkScheduleId)
+        .is('deleted_at', null)
         .in('usage_date', matchingDates)
         .order('usage_date', { ascending: true })
       
@@ -988,7 +944,7 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                   </span>
                 </label>
                 <p className="text-xs text-muted-foreground mt-1 ml-7">
-                  Automatically generate logs for this schedule. Uncheck to manually trigger log creation.
+                  Creates today&apos;s log automatically around local midnight (server) and when someone in your household opens the app. Uncheck to require manual generate / bulk create.
                 </p>
               </div>
 
@@ -1132,7 +1088,7 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                               {existingLogsPreview.map((log, idx) => (
                                 <div key={idx} className="text-xs text-red-200 flex items-center gap-2 py-1">
                                   <CalendarIcon className="w-3 h-3 flex-shrink-0" />
-                                  <span>{new Date(log.usage_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                  <span>{parseLocalDate(log.usage_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                                   <span>•</span>
                                   <span>{log.start_time} - {log.end_time}</span>
                                 </div>

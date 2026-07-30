@@ -3,6 +3,7 @@ import { useAuth } from './hooks/useAuth'
 import { useDemoMode } from './contexts/DemoContext'
 import { Toaster } from 'sonner'
 import NavBar from './components/NavBar'
+import { AutoScheduleRunner } from './components/AutoScheduleRunner'
 import LandingPage from './pages/LandingPage'
 import Dashboard from './pages/Dashboard'
 import Devices from './pages/Devices'
@@ -41,6 +42,7 @@ function App() {
     <div className="bg-background min-h-dvh text-foreground">
       <Toaster position="top-center" richColors closeButton className="md:!top-4 md:!right-4" />
       <NavBar />
+      <AutoScheduleRunner />
       {syncError && (
         <div className="mx-auto max-w-7xl px-3 pt-3">
           <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
