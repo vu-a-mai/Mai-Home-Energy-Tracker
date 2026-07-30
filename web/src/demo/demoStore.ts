@@ -28,7 +28,7 @@ import { calculateUsageCost } from '../utils/rateCalculatorFixed'
 import { timesOverlap } from '../utils/timeOverlap'
 
 /** Bump when seed shape changes so stale localStorage sandboxes reset. */
-export const DEMO_STATE_KEY = 'demo_state_v2'
+export const DEMO_STATE_KEY = 'demo_state_v3'
 export { DEMO_HOUSEHOLD_ID, DEMO_CURRENT_USER_ID }
 
 export interface DemoBillSplit extends BillSplit {

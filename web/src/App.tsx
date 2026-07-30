@@ -33,6 +33,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/join" element={<Login />} />
         <Route path="*" element={<LandingPage />} />
       </Routes>
     )
@@ -66,6 +67,7 @@ function App() {
           <Route path="/bill-split" element={<BillSplit />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/login" element={<Dashboard />} /> {/* Redirect logged-in users to dashboard */}
+          <Route path="/join" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

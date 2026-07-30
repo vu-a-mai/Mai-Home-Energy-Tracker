@@ -15,6 +15,7 @@ export const demoUsers: User[] = [
     "email": "alex@park-demo.example",
     "name": "Alex",
     "household_id": "demo-hh-park-family-0001",
+    "household_role": "owner",
     "created_at": "2026-01-01T00:00:00Z",
     "updated_at": "2026-01-01T00:00:00Z"
   },
@@ -23,6 +24,7 @@ export const demoUsers: User[] = [
     "email": "mia@park-demo.example",
     "name": "Mia",
     "household_id": "demo-hh-park-family-0001",
+    "household_role": "editor",
     "created_at": "2026-01-01T00:00:00Z",
     "updated_at": "2026-01-01T00:00:00Z"
   },
@@ -31,6 +33,7 @@ export const demoUsers: User[] = [
     "email": "noah@park-demo.example",
     "name": "Noah",
     "household_id": "demo-hh-park-family-0001",
+    "household_role": "editor",
     "created_at": "2026-01-01T00:00:00Z",
     "updated_at": "2026-01-01T00:00:00Z"
   },
@@ -39,6 +42,7 @@ export const demoUsers: User[] = [
     "email": "sofia@park-demo.example",
     "name": "Sofia",
     "household_id": "demo-hh-park-family-0001",
+    "household_role": "viewer",
     "created_at": "2026-01-01T00:00:00Z",
     "updated_at": "2026-01-01T00:00:00Z"
   }

@@ -1,31 +1,75 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useDemoMode } from '../contexts/DemoContext'
-import { useNavigate, Link } from 'react-router'
+import { useNavigate, Link, useSearchParams } from 'react-router'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card'
 import { BoltIcon, EyeIcon } from '@heroicons/react/24/outline'
+import { acceptHouseholdInvite } from '../services/inviteService'
+import {
+  isValidInviteCodeFormat,
+  normalizeInviteCode,
+} from '../utils/householdAccess'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
   const { enableDemoMode } = useDemoMode()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  useEffect(() => {
+    const code = searchParams.get('code')
+    if (code) {
+      setInviteCode(normalizeInviteCode(code))
+    }
+  }, [searchParams])
+
+  const finishWithOptionalInvite = async () => {
+    const code = normalizeInviteCode(inviteCode)
+    if (!code) {
+      navigate('/dashboard')
+      return
+    }
+    if (!isValidInviteCodeFormat(code)) {
+      setError('Invite code looks invalid. You can join later from Settings.')
+      navigate('/settings')
+      return
+    }
+    try {
+      const result = await acceptHouseholdInvite(code)
+      if (result.joined) {
+        setInfo(`Joined household as ${result.role}.`)
+      }
+      navigate('/dashboard')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not join with that invite'
+      setError(`${message}. You can retry from Settings → Household.`)
+      navigate('/settings')
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setInfo('')
 
     try {
-      const { data, error } = await login(email, password)
-      if (error) throw error
+      const { data, error: loginError } = await login(email, password)
+      if (loginError) throw loginError
       if (data.user) {
-        navigate('/')
+        if (normalizeInviteCode(inviteCode)) {
+          await finishWithOptionalInvite()
+        } else {
+          navigate('/dashboard')
+        }
       }
     } catch (err) {
       setError('Invalid email or password. Please try again.')
@@ -34,7 +78,6 @@ export default function Login() {
       setLoading(false)
     }
   }
-
 
   const handleViewDemo = async () => {
     await enableDemoMode()
@@ -54,21 +97,20 @@ export default function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 md:space-y-6">
-
-          {/* Error Message */}
           {error && (
             <div className="bg-red-500/10 border border-red-500 text-red-600 p-4 rounded-lg text-sm slide-up">
               {error}
             </div>
           )}
-          
-          {/* Login Form */}
+          {info && (
+            <div className="bg-emerald-500/10 border border-emerald-500/50 text-emerald-700 dark:text-emerald-300 p-4 rounded-lg text-sm slide-up">
+              {info}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label 
-                htmlFor="email" 
-                className="block mb-2 font-semibold text-foreground"
-              >
+              <label htmlFor="email" className="block mb-2 font-semibold text-foreground">
                 Email Address
               </label>
               <Input
@@ -79,14 +121,12 @@ export default function Login() {
                 placeholder="Enter your email"
                 className="w-full"
                 required
+                autoComplete="email"
               />
             </div>
-            
+
             <div>
-              <label 
-                htmlFor="password" 
-                className="block mb-2 font-semibold text-foreground"
-              >
+              <label htmlFor="password-input" className="block mb-2 font-semibold text-foreground">
                 Password
               </label>
               <Input
@@ -97,17 +137,36 @@ export default function Login() {
                 placeholder="Enter your password"
                 className="w-full"
                 required
+                autoComplete="current-password"
               />
             </div>
-            
-            <Button 
-              type="submit" 
+
+            <div>
+              <label htmlFor="invite-code" className="block mb-2 font-semibold text-foreground">
+                Invite code (optional)
+              </label>
+              <Input
+                id="invite-code"
+                type="text"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(normalizeInviteCode(e.target.value))}
+                placeholder="e.g. AB12CD34"
+                className="w-full uppercase tracking-wider"
+                autoComplete="off"
+              />
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Have an invite? Sign in with it filled in to join that household.
+              </p>
+            </div>
+
+            <Button
+              type="submit"
               disabled={loading}
               className="w-full energy-action-btn py-3 md:py-4 text-base md:text-lg font-semibold"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Signing in...
                 </span>
               ) : (
@@ -116,7 +175,6 @@ export default function Login() {
             </Button>
           </form>
 
-          {/* View Demo Button */}
           <div className="pt-2 md:pt-4">
             <Button
               type="button"
@@ -131,9 +189,8 @@ export default function Login() {
             </Button>
           </div>
 
-          {/* Back to Home Link */}
           <div className="text-center pt-4">
-            <Link 
+            <Link
               to="/"
               className="text-primary hover:text-primary/80 text-sm font-medium transition-colors"
             >

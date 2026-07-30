@@ -8,6 +8,7 @@ export interface HouseholdUser {
   id: string
   name: string
   email: string
+  household_role?: 'owner' | 'editor' | 'viewer'
 }
 
 export function useHouseholdUsers() {

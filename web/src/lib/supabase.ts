@@ -15,6 +15,7 @@ export interface User {
   email: string
   name: string
   household_id: string
+  household_role?: 'owner' | 'editor' | 'viewer'
   created_at: string
   updated_at: string
 }

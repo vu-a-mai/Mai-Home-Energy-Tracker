@@ -7,14 +7,24 @@ export interface DatabaseUser {
   email: string
   name: string
   household_id: string
+  household_role?: 'owner' | 'editor' | 'viewer'
   created_at: string
+}
+
+export interface SyncUserOptions {
+  name?: string
+  /** New households: first member is owner. Defaults true for brand-new rows. */
+  asOwner?: boolean
 }
 
 /**
  * Sync authenticated user with database users table
  * Creates a new user record if it doesn't exist
  */
-export const syncUserWithDatabase = async (authUser: SupabaseUser): Promise<DatabaseUser | null> => {
+export const syncUserWithDatabase = async (
+  authUser: SupabaseUser,
+  options: SyncUserOptions = {}
+): Promise<DatabaseUser | null> => {
   try {
     // Check if user exists in database by ID
     const { data: existingUser, error: fetchError } = await supabase
@@ -57,12 +67,18 @@ export const syncUserWithDatabase = async (authUser: SupabaseUser): Promise<Data
     
     // Create a new household for the user
     const householdId = crypto.randomUUID()
+    const displayName =
+      options.name?.trim() ||
+      authUser.user_metadata?.name ||
+      authUser.email?.split('@')[0] ||
+      'User'
     
     const newUser = {
       id: authUser.id,
       email: authUser.email,
-      name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User',
-      household_id: householdId
+      name: displayName,
+      household_id: householdId,
+      household_role: options.asOwner === false ? 'editor' : 'owner',
     }
 
     const { data: createdUser, error: insertError } = await supabase
