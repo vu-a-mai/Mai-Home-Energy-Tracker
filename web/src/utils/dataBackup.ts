@@ -209,7 +209,7 @@ export function validateBackupData(data: any): { valid: boolean; errors: string[
   if (Array.isArray(data.devices)) {
     data.devices.forEach((device: any, index: number) => {
       if (!device.name) errors.push(`Device ${index}: Missing name`)
-      if (!device.wattage) errors.push(`Device ${index}: Missing wattage`)
+      if (typeof device.wattage !== 'number') errors.push(`Device ${index}: Missing wattage`)
       if (typeof device.is_shared !== 'boolean') {
         errors.push(`Device ${index}: is_shared must be boolean`)
       }
@@ -262,6 +262,247 @@ export async function parseBackupFile(file: File): Promise<BackupData> {
     
     reader.readAsText(file)
   })
+}
+
+export interface HouseholdImportAdapters {
+  existingDevices: Device[]
+  knownUserIds?: string[]
+  addDevice: (device: Omit<Device, 'id' | 'kwh_per_hour' | 'household_id' | 'created_by' | 'created_at'>) => Promise<Device>
+  addEnergyLog: (log: {
+    device_id: string
+    usage_date: string
+    start_time: string
+    end_time: string
+    assigned_users?: string[]
+    source_type?: string
+    source_id?: string
+  }) => Promise<void>
+  addTemplate?: (template: {
+    template_name: string
+    device_id: string
+    device_ids?: string[]
+    default_start_time: string
+    default_end_time: string
+    assigned_users: string[]
+  }) => Promise<void>
+  addSchedule?: (schedule: {
+    schedule_name: string
+    device_id: string
+    device_ids?: string[]
+    recurrence_type: 'daily' | 'weekly' | 'custom'
+    days_of_week: number[]
+    start_time: string
+    end_time: string
+    schedule_start_date: string
+    schedule_end_date: string | null
+    assigned_users: string[]
+    auto_create: boolean
+  }) => Promise<void>
+}
+
+export interface HouseholdImportResult {
+  devicesCreated: number
+  devicesReused: number
+  logsImported: number
+  logsSkipped: number
+  templatesImported: number
+  templatesSkipped: number
+  schedulesImported: number
+  schedulesSkipped: number
+  errors: string[]
+}
+
+function deviceKey(device: { name?: string; wattage?: number; location?: string; device_type?: string }) {
+  return [
+    (device.name || '').trim().toLowerCase(),
+    String(device.wattage ?? ''),
+    (device.location || '').trim().toLowerCase(),
+    (device.device_type || '').trim().toLowerCase(),
+  ].join('|')
+}
+
+function filterKnownUsers(ids: unknown, knownUserIds?: string[]): string[] {
+  if (!Array.isArray(ids)) return []
+  const cleaned = ids.filter((id): id is string => typeof id === 'string' && id.length > 0)
+  if (!knownUserIds || knownUserIds.length === 0) return []
+  const known = new Set(knownUserIds)
+  return cleaned.filter((id) => known.has(id))
+}
+
+/**
+ * Merge-import a household JSON export into the current household.
+ * Remaps device IDs; skips bill splits (user allocation IDs are household-specific).
+ */
+export async function importHouseholdBackup(
+  data: BackupData,
+  adapters: HouseholdImportAdapters
+): Promise<HouseholdImportResult> {
+  const result: HouseholdImportResult = {
+    devicesCreated: 0,
+    devicesReused: 0,
+    logsImported: 0,
+    logsSkipped: 0,
+    templatesImported: 0,
+    templatesSkipped: 0,
+    schedulesImported: 0,
+    schedulesSkipped: 0,
+    errors: [],
+  }
+
+  const deviceIdMap = new Map<string, string>()
+  const existingByKey = new Map(adapters.existingDevices.map((d) => [deviceKey(d), d.id]))
+
+  for (const device of data.devices) {
+    try {
+      const key = deviceKey(device)
+      const reusedId = existingByKey.get(key)
+      if (reusedId) {
+        deviceIdMap.set(device.id, reusedId)
+        result.devicesReused++
+        continue
+      }
+
+      const created = await adapters.addDevice({
+        name: device.name,
+        device_type: device.device_type || 'Other',
+        location: device.location || 'Other',
+        wattage: device.wattage,
+        is_shared: Boolean(device.is_shared),
+      })
+      deviceIdMap.set(device.id, created.id)
+      existingByKey.set(key, created.id)
+      result.devicesCreated++
+    } catch (err) {
+      result.errors.push(
+        `Device “${device.name}”: ${err instanceof Error ? err.message : 'failed to import'}`
+      )
+    }
+  }
+
+  for (const log of data.energyLogs) {
+    const mappedDeviceId = deviceIdMap.get(log.device_id)
+    if (!mappedDeviceId) {
+      result.logsSkipped++
+      continue
+    }
+    try {
+      await adapters.addEnergyLog({
+        device_id: mappedDeviceId,
+        usage_date: log.usage_date,
+        start_time: log.start_time,
+        end_time: log.end_time,
+        assigned_users: filterKnownUsers(log.assigned_users, adapters.knownUserIds),
+        source_type: 'manual',
+      })
+      result.logsImported++
+    } catch (err) {
+      result.logsSkipped++
+      result.errors.push(
+        `Log ${log.usage_date}: ${err instanceof Error ? err.message : 'failed to import'}`
+      )
+    }
+  }
+
+  const templates = Array.isArray(data.templates) ? data.templates : []
+  for (const raw of templates) {
+    const template = raw as Record<string, unknown>
+    const name = typeof template.template_name === 'string' ? template.template_name : ''
+    const start = typeof template.default_start_time === 'string' ? template.default_start_time : ''
+    const end = typeof template.default_end_time === 'string' ? template.default_end_time : ''
+    if (!name || !start || !end || !adapters.addTemplate) {
+      result.templatesSkipped++
+      continue
+    }
+
+    const deviceIdsRaw = Array.isArray(template.device_ids) ? template.device_ids : []
+    const mappedMulti = deviceIdsRaw
+      .map((id) => (typeof id === 'string' ? deviceIdMap.get(id) : undefined))
+      .filter((id): id is string => Boolean(id))
+    const singleOld = typeof template.device_id === 'string' ? template.device_id : ''
+    const mappedSingle = singleOld ? deviceIdMap.get(singleOld) : undefined
+    const primary = mappedMulti[0] || mappedSingle
+    if (!primary) {
+      result.templatesSkipped++
+      continue
+    }
+
+    try {
+      await adapters.addTemplate({
+        template_name: name,
+        device_id: primary,
+        device_ids: mappedMulti.length > 0 ? mappedMulti : undefined,
+        default_start_time: start,
+        default_end_time: end,
+        assigned_users: filterKnownUsers(template.assigned_users, adapters.knownUserIds),
+      })
+      result.templatesImported++
+    } catch (err) {
+      result.templatesSkipped++
+      result.errors.push(
+        `Template “${name}”: ${err instanceof Error ? err.message : 'failed to import'}`
+      )
+    }
+  }
+
+  const schedules = Array.isArray(data.schedules) ? data.schedules : []
+  for (const raw of schedules) {
+    const schedule = raw as Record<string, unknown>
+    const name = typeof schedule.schedule_name === 'string' ? schedule.schedule_name : ''
+    const startTime = typeof schedule.start_time === 'string' ? schedule.start_time : ''
+    const endTime = typeof schedule.end_time === 'string' ? schedule.end_time : ''
+    const startDate = typeof schedule.schedule_start_date === 'string' ? schedule.schedule_start_date : ''
+    if (!name || !startTime || !endTime || !startDate || !adapters.addSchedule) {
+      result.schedulesSkipped++
+      continue
+    }
+
+    const deviceIdsRaw = Array.isArray(schedule.device_ids) ? schedule.device_ids : []
+    const mappedMulti = deviceIdsRaw
+      .map((id) => (typeof id === 'string' ? deviceIdMap.get(id) : undefined))
+      .filter((id): id is string => Boolean(id))
+    const singleOld = typeof schedule.device_id === 'string' ? schedule.device_id : ''
+    const mappedSingle = singleOld ? deviceIdMap.get(singleOld) : undefined
+    const primary = mappedMulti[0] || mappedSingle
+    if (!primary) {
+      result.schedulesSkipped++
+      continue
+    }
+
+    const days = Array.isArray(schedule.days_of_week)
+      ? schedule.days_of_week.filter((d): d is number => typeof d === 'number')
+      : [0, 1, 2, 3, 4, 5, 6]
+    const recurrence =
+      schedule.recurrence_type === 'daily' ||
+      schedule.recurrence_type === 'weekly' ||
+      schedule.recurrence_type === 'custom'
+        ? schedule.recurrence_type
+        : 'weekly'
+
+    try {
+      await adapters.addSchedule({
+        schedule_name: name,
+        device_id: primary,
+        device_ids: mappedMulti.length > 0 ? mappedMulti : undefined,
+        recurrence_type: recurrence,
+        days_of_week: days,
+        start_time: startTime,
+        end_time: endTime,
+        schedule_start_date: startDate,
+        schedule_end_date:
+          typeof schedule.schedule_end_date === 'string' ? schedule.schedule_end_date : null,
+        assigned_users: filterKnownUsers(schedule.assigned_users, adapters.knownUserIds),
+        auto_create: Boolean(schedule.auto_create),
+      })
+      result.schedulesImported++
+    } catch (err) {
+      result.schedulesSkipped++
+      result.errors.push(
+        `Schedule “${name}”: ${err instanceof Error ? err.message : 'failed to import'}`
+      )
+    }
+  }
+
+  return result
 }
 
 /**

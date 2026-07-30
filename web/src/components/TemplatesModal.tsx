@@ -12,6 +12,8 @@ import { Card, CardContent } from './ui/Card'
 import { Badge } from './ui/badge'
 import { MultiDeviceSelector } from './MultiDeviceSelector'
 import { SaveGroupModal } from './SaveGroupModal'
+import { DayOfWeekChips } from './DayOfWeekChips'
+import { ReplaceExistingLogsPanel } from './ReplaceExistingLogsPanel'
 import type { TemplateFormData } from '../types'
 import { toast } from 'sonner'
 import { supabase } from '../lib/supabase'
@@ -26,7 +28,6 @@ import {
   DocumentDuplicateIcon,
   UserIcon,
   ChevronDownIcon,
-  CalendarIcon,
   Squares2X2Icon,
   ListBulletIcon
 } from '@heroicons/react/24/outline'
@@ -38,16 +39,6 @@ interface TemplatesModalProps {
   onClose: () => void
   onUseTemplate?: (templateId: string) => void
 }
-
-const DAYS_OF_WEEK = [
-  { value: 0, label: 'Sun', fullLabel: 'Sunday' },
-  { value: 1, label: 'Mon', fullLabel: 'Monday' },
-  { value: 2, label: 'Tue', fullLabel: 'Tuesday' },
-  { value: 3, label: 'Wed', fullLabel: 'Wednesday' },
-  { value: 4, label: 'Thu', fullLabel: 'Thursday' },
-  { value: 5, label: 'Fri', fullLabel: 'Friday' },
-  { value: 6, label: 'Sat', fullLabel: 'Saturday' }
-]
 
 export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModalProps) {
   const { user } = useAuth()
@@ -97,7 +88,6 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
   })
   const [existingLogsPreview, setExistingLogsPreview] = useState<any[]>([])
   const [loadingPreview, setLoadingPreview] = useState(false)
-  const [showPreview, setShowPreview] = useState(false)
   const [formData, setFormData] = useState<TemplateFormData>({
     template_name: '',
     device_id: '',
@@ -358,15 +348,6 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
     }
   }
 
-  const toggleDay = (day: number) => {
-    setUseTemplateData(prev => ({
-      ...prev,
-      daysOfWeek: prev.daysOfWeek.includes(day)
-        ? prev.daysOfWeek.filter(d => d !== day)
-        : [...prev.daysOfWeek, day].sort((a, b) => a - b)
-    }))
-  }
-
   const calculateMatchingDays = () => {
     if (!useDateRange || !selectedTemplateId) return 0
 
@@ -445,7 +426,6 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
       fetchExistingLogsPreview()
     } else {
       setExistingLogsPreview([])
-      setShowPreview(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useTemplateData.replaceExisting, useTemplateData.startDate, useTemplateData.endDate, useTemplateData.daysOfWeek, useDateRange, selectedTemplateId])
@@ -939,50 +919,11 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block mb-2 text-sm font-semibold text-slate-300">
-                        Select Days
-                      </label>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {DAYS_OF_WEEK.map(day => (
-                          <button
-                            key={day.value}
-                            type="button"
-                            onClick={() => toggleDay(day.value)}
-                            className={`px-3 py-2 rounded-lg border-2 transition-all font-bold text-sm ${
-                              useTemplateData.daysOfWeek.includes(day.value)
-                                ? 'bg-cyan-500 border-cyan-400 text-white shadow-lg shadow-cyan-500/50'
-                                : 'bg-slate-800 border-slate-600 text-slate-400 hover:border-slate-500'
-                            }`}
-                          >
-                            {day.label}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setUseTemplateData({ ...useTemplateData, daysOfWeek: [1, 2, 3, 4, 5] })}
-                          className="px-3 py-1.5 text-xs font-semibold bg-blue-500/20 border border-blue-500/40 text-blue-300 rounded-md hover:bg-blue-500/30"
-                        >
-                          📅 Weekdays
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setUseTemplateData({ ...useTemplateData, daysOfWeek: [0, 6] })}
-                          className="px-3 py-1.5 text-xs font-semibold bg-purple-500/20 border border-purple-500/40 text-purple-300 rounded-md hover:bg-purple-500/30"
-                        >
-                          🎉 Weekends
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setUseTemplateData({ ...useTemplateData, daysOfWeek: [0, 1, 2, 3, 4, 5, 6] })}
-                          className="px-3 py-1.5 text-xs font-semibold bg-green-500/20 border border-green-500/40 text-green-300 rounded-md hover:bg-green-500/30"
-                        >
-                          🌟 Every Day
-                        </button>
-                      </div>
-                    </div>
+                    <DayOfWeekChips
+                      label="Select Days"
+                      value={useTemplateData.daysOfWeek}
+                      onChange={(daysOfWeek) => setUseTemplateData({ ...useTemplateData, daysOfWeek })}
+                    />
 
                     {matchingDays > 0 && (
                       <div className="bg-purple-500/20 border border-purple-500/40 p-3 rounded-lg">
@@ -993,68 +934,14 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
                       </div>
                     )}
 
-                    {/* Replace Mode Checkbox */}
-                    <div className="bg-yellow-500/10 border border-yellow-500/30 p-4 rounded-lg">
-                      <label className="flex items-start gap-3 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={useTemplateData.replaceExisting}
-                          onChange={(e) => setUseTemplateData({ ...useTemplateData, replaceExisting: e.target.checked })}
-                          className="mt-0.5 w-4 h-4 cursor-pointer"
-                        />
-                        <div className="flex-1">
-                          <div className="text-sm font-bold text-yellow-300 group-hover:text-yellow-200 transition-colors">
-                            Replace existing logs
-                          </div>
-                          <div className="text-xs text-yellow-400 mt-1">
-                            ⚠️ This will delete and recreate any logs that already exist for these dates
-                          </div>
-                        </div>
-                      </label>
-
-                      {/* Preview of existing logs */}
-                      {useTemplateData.replaceExisting && (
-                        <div className="mt-3">
-                          {loadingPreview ? (
-                            <div className="text-xs text-yellow-300 flex items-center gap-2">
-                              <div className="animate-spin">⏳</div>
-                              <span>Checking for existing logs...</span>
-                            </div>
-                          ) : existingLogsPreview.length > 0 ? (
-                            <div className="bg-red-500/10 border border-red-500/30 p-3 rounded-lg">
-                              <button
-                                type="button"
-                                onClick={() => setShowPreview(!showPreview)}
-                                className="flex items-center justify-between w-full text-sm font-semibold text-red-300 hover:text-red-200 transition-colors"
-                              >
-                                <span className="flex items-center gap-2">
-                                  🔄 {existingLogsPreview.length} existing log(s) will be replaced
-                                </span>
-                                <ChevronDownIcon className={`w-4 h-4 transition-transform ${showPreview ? 'rotate-180' : ''}`} />
-                              </button>
-                              
-                              {showPreview && (
-                                <div className="mt-3 space-y-1 max-h-40 overflow-y-auto">
-                                  {existingLogsPreview.map((log, idx) => (
-                                    <div key={idx} className="text-xs text-red-200 flex items-center gap-2 py-1">
-                                      <CalendarIcon className="w-3 h-3 flex-shrink-0" />
-                                      <span>{new Date(log.usage_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                                      <span>•</span>
-                                      <span>{log.start_time} - {log.end_time}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="text-xs text-green-300 flex items-center gap-2">
-                              <span>✓</span>
-                              <span>No existing logs found - all will be new</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    <ReplaceExistingLogsPanel
+                      checked={useTemplateData.replaceExisting}
+                      onCheckedChange={(replaceExisting) =>
+                        setUseTemplateData({ ...useTemplateData, replaceExisting })
+                      }
+                      loading={loadingPreview}
+                      existingLogs={existingLogsPreview}
+                    />
                   </div>
                 )}
 

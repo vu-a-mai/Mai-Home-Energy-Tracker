@@ -33,7 +33,7 @@ interface DeviceContextType {
   devices: Device[]
   loading: boolean
   error: string | null
-  addDevice: (device: Omit<Device, 'id' | 'kwh_per_hour' | 'household_id' | 'created_by' | 'created_at'>) => Promise<void>
+  addDevice: (device: Omit<Device, 'id' | 'kwh_per_hour' | 'household_id' | 'created_by' | 'created_at'>) => Promise<Device>
   updateDevice: (id: string, updates: Partial<Device>) => Promise<void>
   deleteDevice: (id: string) => Promise<void>
   refreshDevices: (useCache?: boolean) => Promise<void>
@@ -121,10 +121,10 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const addDevice = async (deviceData: Omit<Device, 'id' | 'kwh_per_hour' | 'household_id' | 'created_by' | 'created_at'>) => {
+  const addDevice = async (deviceData: Omit<Device, 'id' | 'kwh_per_hour' | 'household_id' | 'created_by' | 'created_at'>): Promise<Device> => {
     if (isDemoMode) {
       setError(null)
-      demoAddDevice({
+      const created = demoAddDevice({
         name: deviceData.name,
         device_type: deviceData.device_type,
         location: deviceData.location,
@@ -132,7 +132,11 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
         is_shared: deviceData.is_shared,
       })
       setDevices(mapDemoDevices())
-      return
+      return {
+        ...created,
+        kwh_per_hour: created.wattage / 1000,
+        created_by: created.created_by || DEMO_CURRENT_USER_ID,
+      }
     }
 
     if (!user) throw new Error('User not authenticated')
@@ -195,6 +199,7 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
 
       setDevices((prev) => [data, ...prev])
       cache.remove(`devices-${user.id}`)
+      return data as Device
     } catch (err) {
       logger.error('Error adding device:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to add device'

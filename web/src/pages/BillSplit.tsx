@@ -1251,31 +1251,38 @@ ${householdUsers.map(user =>
                     </Card>
                   </div>
 
-                  {/* Usage Summary Bar */}
+                  {/* Usage Summary — money from saved allocations; kWh from current logs */}
                   {(() => {
                     const totalTrackedKwh = Object.values(usageStats).reduce((sum, stat) => sum + stat.totalKwh, 0)
-                    const totalTrackedCost = Object.values(usageStats).reduce((sum, stat) => 
-                      sum + stat.offPeak.cost + stat.onPeak.cost + stat.midPeak.cost + stat.superOffPeak.cost, 0
+                    const totalSavedPersonalCost = Object.values(viewingBillSplit.user_allocations).reduce(
+                      (sum, alloc) => sum + (alloc.personalCost || 0),
+                      0
                     )
-                    const untrackedCost = viewingBillSplit.total_bill_amount - totalTrackedCost
+                    const remainderFromSave = Math.max(
+                      0,
+                      viewingBillSplit.total_bill_amount - totalSavedPersonalCost
+                    )
                     
                     return (
                       <div className="bg-gradient-to-r from-slate-800 to-slate-700 p-4 rounded-lg border border-slate-600">
-                        <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-foreground mb-1 flex items-center gap-2">
                           <ChartBarIcon className="w-5 h-5 text-blue-400" />
-                          Usage Summary
+                          Saved Split Summary
                         </h3>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          Dollar amounts are from the saved split. kWh is recomputed from current logs and may differ if logs changed after save.
+                        </p>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                           <div className="text-center">
                             <div className="text-yellow-400 font-bold text-2xl mb-1">{totalTrackedKwh.toFixed(2)} kWh</div>
-                            <div className="text-muted-foreground">Total Tracked Usage</div>
+                            <div className="text-muted-foreground">Current tracked usage</div>
                           </div>
                           <div className="text-center">
-                            <div className="text-blue-400 font-bold text-2xl mb-1">${totalTrackedCost.toFixed(2)}</div>
-                            <div className="text-muted-foreground">Total Tracked Cost</div>
+                            <div className="text-blue-400 font-bold text-2xl mb-1">${totalSavedPersonalCost.toFixed(2)}</div>
+                            <div className="text-muted-foreground">Saved personal cost</div>
                           </div>
                           <div className="text-center">
-                            <div className="text-green-400 font-bold text-2xl mb-1">${untrackedCost.toFixed(2)}</div>
+                            <div className="text-green-400 font-bold text-2xl mb-1">${remainderFromSave.toFixed(2)}</div>
                             <div className="text-muted-foreground">
                       Remainder (fees + shared/unlogged)
                     </div>
@@ -1315,9 +1322,9 @@ ${householdUsers.map(user =>
                               <div>
                                 <div className="text-xs text-slate-400 mb-1 flex items-center gap-1">
                                   <BoltIcon className="w-3 h-3 text-orange-400" />
-                                  Personal Usage:
+                                  Current usage:
                                 </div>
-                                <div className="text-yellow-400 font-bold">{userStat.totalKwh.toFixed(2)} kWh</div>
+                                <div className="text-yellow-400 font-bold">{(userStat?.totalKwh ?? 0).toFixed(2)} kWh</div>
                               </div>
                               <div>
                                 <div className="text-xs text-slate-400 mb-1 flex items-center gap-1">
@@ -1346,7 +1353,7 @@ ${householdUsers.map(user =>
                             </div>
 
                             {/* Discount Breakdown */}
-                            {(userAllocation as any).discountType && (userAllocation as any).discountType !== 'none' && userStat.totalKwh > 0 && (
+                            {(userAllocation as any).discountType && (userAllocation as any).discountType !== 'none' && (userStat?.totalKwh ?? 0) > 0 && (
                               <div className="mb-3 p-2 bg-green-900/20 border border-green-700/30 rounded text-xs space-y-1">
                                 {(() => {
                                   const discountPercent = (userAllocation as any).discountPercentage || 0

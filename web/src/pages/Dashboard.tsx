@@ -1119,24 +1119,34 @@ export default function Dashboard() {
         {/* Weekly Usage */}
         <div className="mb-4 md:mb-6">
           <Card className="energy-card chart-hover">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                <ChartBarIcon className="w-5 h-5 text-blue-400" />
-                Last 7 days by person
+            <CardHeader className="px-3 sm:px-6">
+              <CardTitle className="text-base sm:text-lg text-foreground flex items-center gap-2">
+                <ChartBarIcon className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                <span className="truncate">Last 7 days by person</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-2 sm:px-6">
               {weeklyUsageData.length > 0 && weeklyUsageData.some(day => Object.keys(day).length > 2) ? (
-              <div className="h-[220px] md:h-[300px]">
+              <div className="h-[180px] sm:h-[220px] md:h-[300px] -mx-1">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyUsageData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+                <BarChart
+                  data={weeklyUsageData}
+                  margin={{ left: -12, right: 4, top: 8, bottom: 0 }}
+                  barCategoryGap="18%"
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border))" />
-                  <XAxis dataKey="day" stroke="hsl(var(--color-muted-foreground))" tick={{ fontSize: 12 }} />
+                  <XAxis
+                    dataKey="day"
+                    stroke="hsl(var(--color-muted-foreground))"
+                    tick={{ fontSize: 10 }}
+                    interval={0}
+                    tickMargin={4}
+                  />
                   <YAxis 
                     stroke="hsl(var(--color-muted-foreground))"
-                    tick={{ fontSize: 12 }}
-                    width={40}
-                    label={{ value: 'Usage (kWh)', angle: -90, position: 'insideLeft', className: 'hidden md:block', style: { textAnchor: 'middle', fill: 'hsl(var(--color-muted-foreground))' } }}
+                    tick={{ fontSize: 10 }}
+                    width={28}
+                    tickFormatter={(v) => (Number(v) >= 10 ? `${Math.round(Number(v))}` : String(v))}
                   />
                   <Tooltip 
                     contentStyle={{ 
@@ -1144,7 +1154,8 @@ export default function Dashboard() {
                       border: '1px solid hsl(var(--color-border))',
                       borderRadius: '8px',
                       color: 'hsl(var(--color-foreground))',
-                      fontSize: '14px'
+                      fontSize: '12px',
+                      maxWidth: '220px',
                     }}
                     labelStyle={{ color: 'hsl(var(--color-foreground))' }}
                     formatter={(value, name) => [`${value} kWh`, name]}
@@ -1160,6 +1171,7 @@ export default function Dashboard() {
                           key={member.id}
                           dataKey={member.name}
                           fill={chartColors[index % chartColors.length]}
+                          maxBarSize={28}
                         />
                       )
                     })}
@@ -1167,9 +1179,9 @@ export default function Dashboard() {
               </ResponsiveContainer>
               </div>
               ) : (
-                <div className="h-[220px] md:h-[300px] flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <ChartBarIcon className="w-16 h-16 mx-auto mb-2 text-blue-400 opacity-50" />
+                <div className="h-[180px] sm:h-[220px] md:h-[300px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center px-2">
+                    <ChartBarIcon className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-2 text-blue-400 opacity-50" />
                     <p className="text-sm">No energy logs in the past 7 days</p>
                     <p className="text-xs mt-1">Start logging usage to see trends</p>
                   </div>
@@ -1181,30 +1193,32 @@ export default function Dashboard() {
 
         {/* Monthly Trend Chart - Full Width */}
           <Card className="energy-card chart-hover">
-            <CardHeader>
-              <CardTitle className="text-lg text-foreground flex items-center gap-2">
-              <ArrowTrendingUpIcon className="w-5 h-5 text-green-400" />
-              Monthly Usage Trend (Last 12 Months)
+            <CardHeader className="px-3 sm:px-6">
+              <CardTitle className="text-base sm:text-lg text-foreground flex items-center gap-2">
+              <ArrowTrendingUpIcon className="w-5 h-5 text-green-400 flex-shrink-0" />
+              <span className="truncate">Monthly trend (12 mo)</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-2 sm:px-6">
             {monthlyTrendData.some(m => m.usage > 0) ? (
-              <div className="h-[220px] md:h-[300px]">
+              <div className="h-[200px] sm:h-[220px] md:h-[300px] -mx-1">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyTrendData} margin={{ left: 0, right: 8, top: 8, bottom: 8 }}>
+                <LineChart data={monthlyTrendData} margin={{ left: -12, right: 4, top: 8, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border))" />
                   <XAxis 
                     dataKey="month" 
                     stroke="hsl(var(--color-muted-foreground))" 
-                    angle={-45}
-                    textAnchor="end"
-                    height={60}
-                    tick={{ fontSize: 11 }}
+                    interval="preserveStartEnd"
+                    minTickGap={18}
+                    tick={{ fontSize: 10 }}
+                    tickMargin={6}
+                    height={36}
                   />
                   <YAxis 
                     stroke="hsl(var(--color-muted-foreground))"
-                    tick={{ fontSize: 12 }}
-                    width={40}
+                    tick={{ fontSize: 10 }}
+                    width={28}
+                    tickFormatter={(v) => (Number(v) >= 10 ? `${Math.round(Number(v))}` : String(v))}
                   />
                   <Tooltip 
                     contentStyle={{ 
@@ -1212,7 +1226,8 @@ export default function Dashboard() {
                       border: '1px solid hsl(var(--color-border))',
                       borderRadius: '8px',
                       color: 'hsl(var(--color-foreground))',
-                      fontSize: '14px'
+                      fontSize: '12px',
+                      maxWidth: '220px',
                     }}
                     labelStyle={{ color: 'hsl(var(--color-foreground))' }}
                     formatter={(value: any, name: any, props: any) => {
@@ -1225,17 +1240,17 @@ export default function Dashboard() {
                     type="monotone" 
                     dataKey="usage" 
                     stroke="#22c55e" 
-                    strokeWidth={3} 
-                    dot={{ fill: '#22c55e', r: 4 }}
-                    activeDot={{ r: 6 }}
+                    strokeWidth={2} 
+                    dot={{ fill: '#22c55e', r: 3 }}
+                    activeDot={{ r: 5 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
               </div>
             ) : (
-              <div className="h-[220px] md:h-[300px] flex items-center justify-center text-muted-foreground">
-                <div className="text-center">
-                  <ArrowTrendingUpIcon className="w-16 h-16 mx-auto mb-3 text-primary opacity-50" />
+              <div className="h-[200px] sm:h-[220px] md:h-[300px] flex items-center justify-center text-muted-foreground">
+                <div className="text-center px-2">
+                  <ArrowTrendingUpIcon className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 text-primary opacity-50" />
                   <p className="text-sm">No monthly usage data available</p>
                   <p className="text-xs mt-1">Log energy usage to see monthly trends</p>
                 </div>
