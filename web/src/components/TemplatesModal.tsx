@@ -4,6 +4,8 @@ import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
 import { useDeviceGroups } from '../hooks/useDeviceGroups'
 import { useAuth } from '../hooks/useAuth'
+import { useDemoMode } from '../contexts/DemoContext'
+import { DEMO_CURRENT_USER_ID } from '../demo/demoStore'
 import { Button } from './ui/Button'
 import { Input } from './ui/Input'
 import { Card, CardContent } from './ui/Card'
@@ -48,6 +50,8 @@ const DAYS_OF_WEEK = [
 
 export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModalProps) {
   const { user } = useAuth()
+  const { isDemoMode } = useDemoMode()
+  const currentUserId = isDemoMode ? DEMO_CURRENT_USER_ID : user?.id
   const { templates, loading, addTemplate, updateTemplate, deleteTemplate, useTemplate, bulkUseTemplate } = useTemplates()
   const { devices } = useDevices()
   const { users: householdUsers } = useHouseholdUsers()
@@ -55,7 +59,7 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
   
   const [showForm, setShowForm] = useState(false)
   const [activeTab, setActiveTab] = useState<'my' | 'all'>('my')
-  const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set([user?.id || '']))
+  const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set([currentUserId || '']))
   const [viewMode, setViewMode] = useState<'card' | 'list'>(() => {
     // Load from localStorage or default to 'list' for space efficiency
     return (localStorage.getItem('templatesViewMode') as 'card' | 'list') || 'list'
@@ -103,8 +107,8 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
   })
 
   // Group templates by user
-  const myTemplates = templates.filter(t => t.created_by === user?.id)
-  const otherTemplates = templates.filter(t => t.created_by !== user?.id)
+  const myTemplates = templates.filter(t => t.created_by === currentUserId)
+  const otherTemplates = templates.filter(t => t.created_by !== currentUserId)
   
   // Group other templates by user
   const templatesByUser = otherTemplates.reduce((acc, template) => {
@@ -132,7 +136,7 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
   const renderTemplateListItem = (template: typeof templates[0]) => (
     <div 
       key={template.id}
-      className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50 rounded-lg border border-border/50 transition-all group"
+      className="flex flex-wrap sm:flex-nowrap items-center gap-2 px-3 py-2 hover:bg-muted/50 rounded-lg border border-border/50 transition-all group"
     >
       <BoltIcon className="w-4 h-4 text-orange-400 flex-shrink-0" />
       <div className="flex-1 min-w-0 flex items-center gap-2">
@@ -143,24 +147,27 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
         <ClockIcon className="w-3.5 h-3.5 text-blue-400" />
         <span className="whitespace-nowrap">{template.default_start_time}-{template.default_end_time}</span>
       </div>
-      <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+      <div className="flex gap-1 ml-auto sm:ml-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         <button
+          type="button"
           onClick={() => handleUseTemplate(template.id)}
-          className="p-1.5 rounded hover:bg-green-500/20 text-green-500"
+          className="p-2 rounded hover:bg-green-500/20 text-green-500"
           title="Use template"
         >
           <CheckIcon className="w-4 h-4" />
         </button>
         <button
+          type="button"
           onClick={() => handleEdit(template)}
-          className="p-1.5 rounded hover:bg-blue-500/20 text-blue-500"
+          className="p-2 rounded hover:bg-blue-500/20 text-blue-500"
           title="Edit"
         >
           <PencilIcon className="w-4 h-4" />
         </button>
         <button
+          type="button"
           onClick={() => deleteTemplate(template.id)}
-          className="p-1.5 rounded hover:bg-red-500/20 text-red-500"
+          className="p-2 rounded hover:bg-red-500/20 text-red-500"
           title="Delete"
         >
           <TrashIcon className="w-4 h-4" />
@@ -489,11 +496,11 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
-      <div className="w-full sm:max-w-4xl min-h-dvh sm:min-h-0 sm:my-8">
-        <div className="energy-card w-full bg-card border-0 sm:border border-border rounded-none sm:rounded-lg shadow-xl min-h-dvh sm:min-h-0">
-          {/* Header */}
-          <div className="p-4 sm:p-5 md:p-6 border-b border-border flex items-center justify-between sticky top-0 bg-card z-10">
+    <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/50 p-0 sm:p-4 overflow-y-auto overscroll-contain">
+      <div className="w-full sm:max-w-4xl sm:my-4 flex flex-col max-h-[100dvh] sm:max-h-[min(90vh,100dvh)]">
+        <div className="energy-card flex flex-col w-full bg-card border-0 sm:border border-border rounded-none sm:rounded-lg shadow-xl min-h-0 max-h-[100dvh] sm:max-h-[min(90vh,100dvh)]">
+          {/* Header — always visible so close stays reachable */}
+          <div className="p-4 sm:p-5 md:p-6 border-b border-border flex items-center justify-between flex-shrink-0 bg-card z-10">
           <div className="flex-1 min-w-0">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
               <DocumentDuplicateIcon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-blue-400 flex-shrink-0" />
@@ -504,15 +511,17 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
             </p>
           </div>
           <button
+            type="button"
             onClick={handleClose}
-            className="p-2 h-9 w-9 sm:h-10 sm:w-10 border border-border rounded hover:bg-muted flex-shrink-0"
+            aria-label="Close templates"
+            className="p-2 h-11 w-11 sm:h-10 sm:w-10 border border-border rounded hover:bg-muted flex-shrink-0 inline-flex items-center justify-center"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 md:p-6">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-5 md:p-6">
           {!showForm ? (
             <>
               {/* Add Template Button */}
@@ -836,14 +845,30 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
         const matchingDays = calculateMatchingDays()
         
         return (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-            <div className="energy-card bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-blue-500/50 rounded-2xl shadow-2xl shadow-blue-500/20 max-w-lg w-full p-6 animate-in fade-in zoom-in duration-200">
-              <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
+          <div className="fixed inset-0 z-[60] flex items-start sm:items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto overscroll-contain">
+            <div className="energy-card bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-blue-500/50 rounded-2xl shadow-2xl shadow-blue-500/20 max-w-lg w-full max-h-[min(92dvh,100dvh)] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in duration-200">
+              <div className="flex items-start justify-between gap-3 p-4 sm:p-6 pb-2 flex-shrink-0">
+              <h3 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
                 <div className="p-2 bg-blue-500/20 rounded-lg">
                   <DocumentDuplicateIcon className="w-7 h-7 text-blue-400" />
                 </div>
                 Use Template
               </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowUseTemplateModal(false)
+                  setSelectedTemplateId(null)
+                  setUseDateRange(false)
+                }}
+                aria-label="Close use template"
+                className="p-2 h-11 w-11 border border-slate-600 rounded-lg text-slate-300 hover:bg-slate-700 flex-shrink-0 inline-flex items-center justify-center"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+              </div>
+
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 pb-4 sm:pb-6">
               
               <p className="text-slate-300 mb-6 text-sm">
                 Create energy log(s) from: <span className="font-bold text-blue-400">{template.template_name}</span>
@@ -1074,8 +1099,9 @@ export function TemplatesModal({ isOpen, onClose, onUseTemplate }: TemplatesModa
                   </div>
                 </div>
               </div>
+              </div>
               
-              <div className="flex gap-3">
+              <div className="flex gap-3 pt-2 flex-shrink-0 border-t border-slate-700 mt-2 px-4 sm:px-6 pb-4 sm:pb-6">
                 <Button
                   onClick={() => {
                     setShowUseTemplateModal(false)

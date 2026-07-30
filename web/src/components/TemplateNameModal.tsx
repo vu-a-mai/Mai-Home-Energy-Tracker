@@ -24,8 +24,8 @@ export function TemplateNameModal({ isOpen, defaultName, onConfirm, onCancel }: 
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start sm:items-center justify-center z-[60] p-0 sm:p-4">
-      <div className="energy-card bg-gradient-to-br from-slate-900 to-slate-800 border-0 sm:border-2 border-blue-500/50 rounded-none sm:rounded-2xl shadow-2xl shadow-blue-500/20 max-w-md w-full min-h-dvh sm:min-h-0 p-4 sm:p-6 animate-in fade-in zoom-in duration-200 flex flex-col">
+    <div className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto overscroll-contain">
+      <div className="energy-card bg-gradient-to-br from-slate-900 to-slate-800 border-0 sm:border-2 border-blue-500/50 rounded-none sm:rounded-2xl shadow-2xl shadow-blue-500/20 max-w-md w-full min-h-0 max-h-[100dvh] sm:max-h-[min(90vh,100dvh)] p-4 sm:p-6 animate-in fade-in zoom-in duration-200 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-start justify-between mb-3 sm:mb-4 flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
@@ -38,15 +38,17 @@ export function TemplateNameModal({ isOpen, defaultName, onConfirm, onCancel }: 
             </div>
           </div>
           <button
+            type="button"
             onClick={onCancel}
-            className="p-1.5 sm:p-2 hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0"
+            aria-label="Close save template"
+            className="p-2 h-11 w-11 hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0 inline-flex items-center justify-center"
           >
             <XMarkIcon className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+        <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col overflow-y-auto overscroll-contain">
           <div className="mb-4 sm:mb-6 flex-1">
             <label className="block text-xs sm:text-sm font-semibold text-slate-300 mb-2">
               Template Name

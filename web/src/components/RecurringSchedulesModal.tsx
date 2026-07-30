@@ -3,6 +3,8 @@ import { useRecurringSchedules } from '../hooks/useRecurringSchedules'
 import { useDevices } from '../hooks/useDevices'
 import { useHouseholdUsers } from '../hooks/useHouseholdUsers'
 import { useDeviceGroups } from '../hooks/useDeviceGroups'
+import { useDemoMode } from '../contexts/DemoContext'
+import { DEMO_CURRENT_USER_ID } from '../demo/demoStore'
 import { Button } from './ui/Button'
 import { Input } from './ui/Input'
 import { Card, CardContent } from './ui/Card'
@@ -49,6 +51,7 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
   const { devices } = useDevices()
   const { users: householdUsers } = useHouseholdUsers()
   const { deviceGroups, addDeviceGroup } = useDeviceGroups()
+  const { isDemoMode } = useDemoMode()
   
   const [showForm, setShowForm] = useState(false)
   const [activeTab, setActiveTab] = useState<'my' | 'all'>('my')
@@ -65,9 +68,14 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
     localStorage.setItem('schedulesViewMode', newMode)
   }
   
-  // Get current user ID from Supabase auth
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  // Resolve current user (demo sandbox uses fictional Park-family id)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(isDemoMode ? DEMO_CURRENT_USER_ID : null)
   useEffect(() => {
+    if (isDemoMode) {
+      setCurrentUserId(DEMO_CURRENT_USER_ID)
+      setExpandedUsers(new Set([DEMO_CURRENT_USER_ID]))
+      return
+    }
     const getCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
@@ -76,7 +84,7 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
       }
     }
     getCurrentUser()
-  }, [])
+  }, [isDemoMode])
   
   // Reset modal state when closing
   const handleClose = () => {
@@ -140,7 +148,7 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
   const renderScheduleListItem = (schedule: typeof schedules[0]) => (
     <div 
       key={schedule.id}
-      className={`flex items-center gap-2 px-3 py-2 hover:bg-muted/50 rounded-lg border border-border/50 transition-all group ${
+      className={`flex flex-wrap sm:flex-nowrap items-center gap-2 px-3 py-2 hover:bg-muted/50 rounded-lg border border-border/50 transition-all group ${
         !schedule.is_active ? 'opacity-60' : ''
       }`}
     >
@@ -158,32 +166,36 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
         <ClockIcon className="w-3.5 h-3.5 text-blue-400" />
         <span className="whitespace-nowrap">{schedule.start_time}-{schedule.end_time}</span>
       </div>
-      <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+      <div className="flex gap-1 ml-auto sm:ml-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         <button
+          type="button"
           onClick={() => toggleScheduleActive(schedule.id, !schedule.is_active)}
-          className={`p-1.5 rounded ${schedule.is_active ? 'hover:bg-yellow-500/20 text-yellow-500' : 'hover:bg-green-500/20 text-green-500'}`}
+          className={`p-2 rounded ${schedule.is_active ? 'hover:bg-yellow-500/20 text-yellow-500' : 'hover:bg-green-500/20 text-green-500'}`}
           title={schedule.is_active ? 'Pause' : 'Activate'}
         >
           {schedule.is_active ? <PauseIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4" />}
         </button>
         <button
+          type="button"
           onClick={() => handleGenerateLog(schedule.id)}
-          className="p-1.5 rounded hover:bg-cyan-500/20 text-cyan-500"
+          className="p-2 rounded hover:bg-cyan-500/20 text-cyan-500"
           title="Generate log"
           disabled={schedule.schedule_end_date ? todayLocal() > schedule.schedule_end_date : false}
         >
           <PlusIcon className="w-4 h-4" />
         </button>
         <button
+          type="button"
           onClick={() => handleEdit(schedule)}
-          className="p-1.5 rounded hover:bg-blue-500/20 text-blue-500"
+          className="p-2 rounded hover:bg-blue-500/20 text-blue-500"
           title="Edit"
         >
           <PencilIcon className="w-4 h-4" />
         </button>
         <button
+          type="button"
           onClick={() => deleteSchedule(schedule.id)}
-          className="p-1.5 rounded hover:bg-red-500/20 text-red-500"
+          className="p-2 rounded hover:bg-red-500/20 text-red-500"
           title="Delete"
         >
           <TrashIcon className="w-4 h-4" />
@@ -464,11 +476,11 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
-      <div className="w-full sm:max-w-5xl min-h-dvh sm:min-h-0 sm:my-4">
-        <div className="energy-card w-full bg-card border-0 sm:border border-border rounded-none sm:rounded-lg shadow-xl min-h-dvh sm:min-h-0 sm:max-h-[min(90vh,100dvh)] flex flex-col">
-          {/* Header */}
-          <div className="p-4 sm:p-5 md:p-6 border-b border-border flex items-center justify-between flex-shrink-0 sticky top-0 bg-card z-10">
+    <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/50 p-0 sm:p-4 overflow-y-auto overscroll-contain">
+      <div className="w-full sm:max-w-5xl sm:my-4 flex flex-col max-h-[100dvh] sm:max-h-[min(90vh,100dvh)]">
+        <div className="energy-card flex flex-col w-full bg-card border-0 sm:border border-border rounded-none sm:rounded-lg shadow-xl min-h-0 max-h-[100dvh] sm:max-h-[min(90vh,100dvh)]">
+          {/* Header — always visible so close stays reachable */}
+          <div className="p-4 sm:p-5 md:p-6 border-b border-border flex items-center justify-between flex-shrink-0 bg-card z-10">
           <div className="flex-1 min-w-0">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
               <ArrowPathIcon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-green-400 flex-shrink-0" />
@@ -479,15 +491,17 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
             </p>
           </div>
           <button
+            type="button"
             onClick={handleClose}
-            className="p-2 h-9 w-9 sm:h-10 sm:w-10 border border-border rounded hover:bg-muted flex-shrink-0"
+            aria-label="Close schedules"
+            className="p-2 h-11 w-11 sm:h-10 sm:w-10 border border-border rounded hover:bg-muted flex-shrink-0 inline-flex items-center justify-center"
           >
             <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 md:p-6">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-5 md:p-6">
           {!showForm ? (
             <>
               {/* Add Schedule Button */}
@@ -1016,14 +1030,29 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
         const matchingDays = calculateMatchingDays(schedule)
         
         return (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-            <div className="energy-card bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-purple-500/50 rounded-2xl shadow-2xl shadow-purple-500/20 max-w-lg w-full p-6 animate-in fade-in zoom-in duration-200">
-              <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
+          <div className="fixed inset-0 z-[60] flex items-start sm:items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto overscroll-contain">
+            <div className="energy-card bg-gradient-to-br from-slate-900 to-slate-800 border-2 border-purple-500/50 rounded-2xl shadow-2xl shadow-purple-500/20 max-w-lg w-full max-h-[min(92dvh,100dvh)] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in duration-200">
+              <div className="flex items-start justify-between gap-3 p-4 sm:p-6 pb-2 flex-shrink-0">
+              <h3 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
                 <div className="p-2 bg-purple-500/20 rounded-lg">
                   <CalendarIcon className="w-7 h-7 text-purple-400" />
                 </div>
                 Generate All Logs?
               </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowBulkConfirm(false)
+                  setBulkScheduleId(null)
+                }}
+                aria-label="Close bulk generate"
+                className="p-2 h-11 w-11 border border-slate-600 rounded-lg text-slate-300 hover:bg-slate-700 flex-shrink-0 inline-flex items-center justify-center"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+              </div>
+
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6">
               
               <p className="text-slate-300 mb-6 text-sm">
                 This will create energy logs for all matching dates in the schedule range.
@@ -1130,8 +1159,9 @@ export function RecurringSchedulesModal({ isOpen, onClose }: RecurringSchedulesM
                   )}
                 </div>
               </div>
+              </div>
               
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-shrink-0 border-t border-slate-700 px-4 sm:px-6 py-4">
                 <Button
                   onClick={() => {
                     setShowBulkConfirm(false)

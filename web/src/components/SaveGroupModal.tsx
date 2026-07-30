@@ -31,9 +31,9 @@ export function SaveGroupModal({ isOpen, onClose, onSave, deviceCount }: SaveGro
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-[60] p-0 sm:p-4">
-      <Card className="energy-card w-full sm:max-w-md border-0 sm:border rounded-none sm:rounded-lg min-h-dvh sm:min-h-0">
-        <CardHeader className="p-4 sm:p-5 border-b border-border sticky top-0 bg-card z-10">
+    <div className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center bg-black/50 p-0 sm:p-4 overflow-y-auto overscroll-contain">
+      <Card className="energy-card w-full sm:max-w-md border-0 sm:border rounded-none sm:rounded-lg min-h-0 max-h-[100dvh] sm:max-h-[min(90vh,100dvh)] flex flex-col overflow-hidden">
+        <CardHeader className="p-4 sm:p-5 border-b border-border flex-shrink-0 bg-card z-10">
           <CardTitle className="text-base sm:text-lg text-foreground flex items-center justify-between gap-2">
             <span className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
               <FolderPlusIcon className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400 flex-shrink-0" />
@@ -41,14 +41,15 @@ export function SaveGroupModal({ isOpen, onClose, onSave, deviceCount }: SaveGro
             </span>
             <button
               onClick={handleCancel}
-              className="p-1.5 hover:bg-muted rounded flex-shrink-0"
+              className="p-2 h-11 w-11 hover:bg-muted rounded flex-shrink-0 inline-flex items-center justify-center"
               type="button"
+              aria-label="Close save group"
             >
               <XMarkIcon className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4 sm:p-5">
+        <CardContent className="p-4 sm:p-5 overflow-y-auto overscroll-contain flex-1 min-h-0">
           <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <div>
               <label className="block mb-1.5 sm:mb-2 text-xs sm:text-sm font-semibold text-foreground">

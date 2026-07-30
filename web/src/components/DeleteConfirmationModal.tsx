@@ -84,10 +84,10 @@ export function DeleteConfirmationModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
-      <div className="energy-card bg-gradient-to-br from-slate-900 to-slate-800 border-0 sm:border-2 border-red-500/50 rounded-none sm:rounded-2xl shadow-2xl shadow-red-500/20 max-w-2xl w-full min-h-dvh sm:min-h-0 sm:my-4 sm:max-h-[min(90vh,100dvh)] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto overscroll-contain">
+      <div className="energy-card bg-gradient-to-br from-slate-900 to-slate-800 border-0 sm:border-2 border-red-500/50 rounded-none sm:rounded-2xl shadow-2xl shadow-red-500/20 max-w-2xl w-full min-h-0 max-h-[100dvh] sm:max-h-[min(90vh,100dvh)] flex flex-col">
         {/* Header */}
-        <div className="flex items-start justify-between mb-3 sm:mb-4 p-4 sm:p-6 flex-shrink-0 sticky top-0 bg-gradient-to-br from-slate-900 to-slate-800 z-10">
+        <div className="flex items-start justify-between mb-3 sm:mb-4 p-4 sm:p-6 flex-shrink-0 bg-gradient-to-br from-slate-900 to-slate-800 z-10">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="p-1.5 sm:p-2 bg-red-500/20 rounded-lg flex-shrink-0">
               <ExclamationTriangleIcon className="w-6 h-6 sm:w-8 sm:h-8 text-red-400" />
@@ -98,15 +98,17 @@ export function DeleteConfirmationModal({
             </div>
           </div>
           <button
+            type="button"
             onClick={onCancel}
-            className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+            aria-label="Close delete confirmation"
+            className="p-2 h-11 w-11 hover:bg-slate-700 rounded-lg transition-colors inline-flex items-center justify-center flex-shrink-0"
           >
             <XMarkIcon className="w-6 h-6 text-slate-400" />
           </button>
         </div>
 
         {/* Scrollable Content */}
-        <div className="overflow-y-auto flex-1 px-4 sm:px-6 pb-20 sm:pb-0">
+        <div className="overflow-y-auto overscroll-contain flex-1 min-h-0 px-4 sm:px-6 pb-20 sm:pb-0">
         
         {/* Filter Match Confirmation */}
         <div className="bg-blue-500/10 border border-blue-500/30 p-3 sm:p-4 rounded-xl mb-3 sm:mb-4">
