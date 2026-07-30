@@ -555,12 +555,12 @@ export default function EnergyLogs() {
             {showMoreMenu && (
               <div
                 role="menu"
-                className="absolute right-0 mt-2 w-56 rounded-lg border border-slate-600 bg-slate-900 text-foreground shadow-2xl z-50 overflow-hidden"
+                className="absolute right-0 mt-2 w-48 sm:w-56 rounded-lg border border-slate-600 bg-slate-900 text-foreground shadow-2xl z-50 overflow-hidden"
               >
                 <button
                   type="button"
                   role="menuitem"
-                  className="w-full text-left px-3 py-2.5 text-sm hover:bg-slate-800 flex items-center gap-2 text-slate-100"
+                  className="w-full text-left px-3 py-2.5 text-xs sm:text-sm hover:bg-slate-800 flex items-center gap-2 text-slate-100"
                   onClick={() => {
                     setShowMoreMenu(false)
                     setShowBulkEntry(true)
@@ -572,7 +572,7 @@ export default function EnergyLogs() {
                 <button
                   type="button"
                   role="menuitem"
-                  className="w-full text-left px-3 py-2.5 text-sm hover:bg-slate-800 flex items-center gap-2 text-slate-100"
+                  className="w-full text-left px-3 py-2.5 text-xs sm:text-sm hover:bg-slate-800 flex items-center gap-2 text-slate-100"
                   onClick={() => {
                     setShowMoreMenu(false)
                     setShowTemplates(true)
@@ -584,7 +584,7 @@ export default function EnergyLogs() {
                 <button
                   type="button"
                   role="menuitem"
-                  className="w-full text-left px-3 py-2.5 text-sm hover:bg-slate-800 flex items-center gap-2 text-slate-100"
+                  className="w-full text-left px-3 py-2.5 text-xs sm:text-sm hover:bg-slate-800 flex items-center gap-2 text-slate-100"
                   onClick={() => {
                     setShowMoreMenu(false)
                     setShowSchedules(true)
@@ -611,7 +611,7 @@ export default function EnergyLogs() {
       </header>
 
       {/* Summary Statistics - Color Coded */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-6 slide-up">
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-6 slide-up">
         <Card className="energy-card bg-gradient-to-br from-slate-500/10 to-gray-500/10 border-slate-500/30">
           <CardContent className="p-3 md:p-4">
             <div className="flex items-center gap-2 mb-1 md:mb-2">
@@ -927,7 +927,7 @@ export default function EnergyLogs() {
                     Record device usage to track energy consumption
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="p-3 sm:p-4 md:p-6">
+                <CardContent className="px-3 pt-3 pb-0 sm:p-4 md:p-6">
             
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                 {/* Error Message */}
@@ -1180,7 +1180,7 @@ export default function EnergyLogs() {
                 )}
 
                 {/* Form Actions - Sticky on mobile */}
-                <div className="flex flex-col sm:flex-row gap-2 justify-end pt-2 sm:pt-3 sticky bottom-0 bg-slate-900 pb-2 sm:pb-0 sm:static border-t sm:border-t-0 border-border -mx-3 sm:mx-0 px-3 sm:px-0 mt-2">
+                <div className="flex flex-col sm:flex-row gap-2 justify-end sticky bottom-0 z-20 bg-slate-900 py-3 sm:py-0 sm:static border-t sm:border-t-0 border-border -mx-3 sm:m-0 px-3 sm:px-0 mt-2 shadow-[0_-10px_20px_rgba(2,6,23,0.85)] sm:shadow-none">
                   <Button
                     type="button"
                     onClick={resetForm}
