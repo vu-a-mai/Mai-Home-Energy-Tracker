@@ -186,7 +186,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-card border border-border rounded-xl p-6 bg-gradient-to-br from-purple-500/5 to-purple-600/5 border-purple-500/20">
               <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4">
                 <FolderPlusIcon className="w-6 h-6 text-purple-400" />

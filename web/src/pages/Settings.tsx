@@ -148,7 +148,7 @@ export default function Settings() {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4 slide-up">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 slide-up">
         <Card className="energy-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-base md:text-lg text-foreground flex items-center gap-2">
@@ -229,10 +229,14 @@ export default function Settings() {
                 {timezoneSaving ? 'Saving…' : 'Save timezone'}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Current: <span className="font-medium text-foreground">{timezoneLoading ? 'Loading…' : timezone}</span>
-              {' · '}
-              Browser: <span className="font-medium text-foreground">{browserTimezone}</span>
+            <p className="text-xs text-muted-foreground break-words">
+              <span className="block sm:inline">
+                Current: <span className="font-medium text-foreground">{timezoneLoading ? 'Loading…' : timezone}</span>
+              </span>
+              <span className="hidden sm:inline"> · </span>
+              <span className="block sm:inline">
+                Browser: <span className="font-medium text-foreground">{browserTimezone}</span>
+              </span>
             </p>
           </CardContent>
         </Card>
@@ -257,9 +261,9 @@ export default function Settings() {
             >
               <div className="flex items-center gap-3">
                 <BriefcaseIcon className="w-8 h-8 text-green-400 shrink-0" />
-                <div>
+                <div className="min-w-0">
                   <div className="font-semibold text-sm text-foreground">Export household data</div>
-                  <div className="text-xs text-green-400 mt-0.5">
+                  <div className="text-xs text-green-400 mt-0.5 break-words">
                     JSON · devices, logs, templates, schedules, bill splits
                   </div>
                 </div>
@@ -329,7 +333,7 @@ export default function Settings() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <ArrowDownTrayIcon className="w-3.5 h-3.5" />
+              <ArrowDownTrayIcon className="w-3.5 h-3.5 shrink-0" />
               Soft-deleted logs can be restored from Logs → Deleted Logs while they are in the recovery window.
             </p>
           </CardContent>

@@ -680,11 +680,11 @@ ${householdUsers.map(user =>
                 <button
                   type="button"
                   onClick={() => setShowDiscounts((v) => !v)}
-                  className="w-full flex items-center justify-between px-4 py-3 text-left bg-slate-800 hover:bg-slate-750 text-sm font-semibold text-blue-300"
+                  className="w-full flex flex-col min-[400px]:flex-row items-start min-[400px]:items-center justify-between gap-1.5 px-3 sm:px-4 py-3 text-left bg-slate-800 hover:bg-slate-700 text-sm font-semibold text-blue-300"
                   aria-expanded={showDiscounts}
                 >
                   <span>Discounts (CARE / FERA)</span>
-                  <span className="text-xs text-slate-400 font-normal">
+                  <span className="text-xs text-slate-400 font-normal whitespace-normal">
                     {globalDiscount.discountType === 'none'
                       ? 'None applied'
                       : globalDiscount.discountType === 'care'
@@ -706,14 +706,14 @@ ${householdUsers.map(user =>
                       SCE TOU-D-PRIME: CARE (32.5%) • FERA (18%). Shared-pool costs are not discounted.
                     </p>
                   </div>
-                  <div className="flex gap-2 items-center">
+                  <div className="flex flex-col min-[400px]:flex-row gap-2 items-stretch min-[400px]:items-center w-full md:w-auto">
                     <select
                       value={globalDiscount.discountType}
                       onChange={(e) => setGlobalDiscount({
                         ...globalDiscount,
                         discountType: e.target.value as 'none' | 'care' | 'fera' | 'custom'
                       })}
-                      className="px-3 py-2 text-sm bg-slate-800 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px]"
+                      className="w-full md:w-auto px-3 py-2 text-sm bg-slate-800 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 md:min-w-[140px]"
                     >
                       <option value="none">No Discount</option>
                       <option value="care">CARE (32.5%)</option>
@@ -732,7 +732,7 @@ ${householdUsers.map(user =>
                           customPercentage: parseFloat(e.target.value) || 0
                         })}
                         placeholder="%"
-                        className="w-20 px-2 py-2 text-sm"
+                        className="w-full min-[400px]:w-20 px-2 py-2 text-sm"
                       />
                     )}
                   </div>
@@ -742,7 +742,7 @@ ${householdUsers.map(user =>
               </div>
 
               {/* Summary - Color Coded */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-6">
                 {/* Billing Period */}
                 <Card className="energy-card bg-gradient-to-br from-slate-500/10 to-gray-500/10 border-slate-500/30">
                   <CardContent className="p-4">
@@ -846,7 +846,7 @@ ${householdUsers.map(user =>
               </div>
 
               {/* Individual Breakdowns - Compact Design */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
                 {householdUsers.map(user => (
                   <Card key={user.id} className="energy-card hover:border-primary/50 transition-all">
                     <CardContent className="p-4">
